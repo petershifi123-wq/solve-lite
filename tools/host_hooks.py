@@ -169,7 +169,17 @@ def host_spec(host_id: str) -> HostSpec:
 
 
 def hook_command(plugin_root: Path) -> str:
-    return '%s "%s"' % (PYTHON, (plugin_root / HOOK_SCRIPT_REL).as_posix())
+    """Absolute-path command; works in hosts that never expand ${PLUGIN_ROOT}.
+
+    WorkBuddy reported the failure mode directly: a command that relies on
+    ${PLUGIN_ROOT} is executed by the host's shell, where the variable is unset,
+    so the path collapses to "/hooks/..." and the hook never runs.  We therefore
+    bake the resolved absolute path in, and still export PLUGIN_ROOT for the hook
+    script's own use.
+    """
+    root = Path(plugin_root).resolve()
+    script = root / HOOK_SCRIPT_REL
+    return 'PLUGIN_ROOT="%s" %s "%s"' % (root, PYTHON, script)
 
 
 def one_step_command(plugin_root: Path) -> str:

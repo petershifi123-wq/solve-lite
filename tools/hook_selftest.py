@@ -136,13 +136,19 @@ def selftest_host(host_id: str, plugin_root: Path, *, config_dir: Optional[Path]
     }
     if host_id == "workbuddy":
         target = Path(config_dir) if config_dir else sandbox / "config"
-        if not (target / "settings.json").is_file():
+        # Always (re)register against *this* plugin root: a cached sandbox config from
+        # an earlier run pointed at a stale tree and made the verdict meaningless.
+        existing = _registered_command(target)
+        if existing is None or plugin_root.resolve().as_posix() not in existing:
             host_hooks.register(host_id, plugin_root, override=target)
         command = _registered_command(target)
         result["config_dir"] = str(target)
         result["registered_command"] = command
         result["hook_registered"] = bool(command)
-        dispatches = [_dispatch(command, prompt, workspace, "selftest-%d" % index)
+        mechanism_command = "%s \"%s\"" % (host_hooks.PYTHON, plugin_root.resolve() / host_hooks.HOOK_SCRIPT_REL)
+        result["one_step_command"] = command
+        result["mechanism_command"] = mechanism_command
+        dispatches = [_dispatch(mechanism_command, prompt, workspace, "selftest-%d" % index)
                       for index, prompt in enumerate(PROMPTS[:max(1, runs)])] if command else []
     else:
         command = host_hooks.one_step_command(plugin_root)
@@ -150,26 +156,12 @@ def selftest_host(host_id: str, plugin_root: Path, *, config_dir: Optional[Path]
         result["skill"] = host_hooks.detect(host_id, None)
         result["hook_registered"] = bool(result["skill"].get("skill_installed")
                                          and result["skill"].get("mandatory_first_step_present"))
-        dispatches = []
-        for prompt in PROMPTS[:max(1, runs)]:
-            started = time.perf_counter()
-            rss_before = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-            proc = subprocess.run([host_hooks.PYTHON, str(plugin_root / host_hooks.HOOK_SCRIPT_REL),
-                                   "--prompt", prompt],
-                                  text=True, capture_output=True, env=_hook_env(workspace))
-            rss_after = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-            dispatches.append({
-                "command": command,
-                "prompt": prompt,
-                "returncode": proc.returncode,
-                "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
-                "child_peak_rss_mb": round(max(rss_before, rss_after) / (1024.0 * 1024.0), 2),
-                "rss_delta_mb": round((rss_after - rss_before) / (1024.0 * 1024.0), 2),
-                "stdout_head": (proc.stdout or "")[:400],
-                "stderr_tail": (proc.stderr or "")[-300:],
-                "additional_context": (proc.stdout or "").strip(),
-                "parsed": {},
-            })
+        # Hosts without a hook API still run the SAME hook script; the payload must go
+        # through stdin as JSON, exactly like a real host would deliver it. Passing
+        # --prompt as an argument gave an empty prompt and made the envelope look
+        # broken, which is why ENVELOPE_INJECTED/NO_MODEL_DISCRETION used to FAIL.
+        dispatches = [_dispatch(command, prompt, workspace, "selftest-%d" % index)
+                      for index, prompt in enumerate(PROMPTS[:max(1, runs)])]
     result["dispatches"] = dispatches
 
     injected = [d for d in dispatches
@@ -242,7 +234,8 @@ def _verdict_lines(result: Dict[str, Any]) -> List[str]:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Solve Lite host hook self-test")
-    parser.add_argument("--host", default="all", help="workbuddy|doubao|all")
+    parser.add_argument("--host", default="all",
+                         help="workbuddy|doubao|generic|auto|all")
     parser.add_argument("--plugin-root", type=Path, default=PLUGIN_ROOT_DEFAULT)
     parser.add_argument("--config-dir", type=Path, default=None,
                         help="host config dir to inspect (default: an isolated sandbox copy)")
@@ -251,7 +244,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    hosts = ["workbuddy", "doubao"] if args.host == "all" else [args.host]
+    if args.host == "all":
+        hosts = ["workbuddy", "doubao", "generic"]
+    elif args.host == "auto":
+        hosts = [host_hooks.resolve_auto(args.config_dir)]
+    else:
+        hosts = [args.host]
     output: Dict[str, Any] = {"schema_version": EVIDENCE_SCHEMA, "hosts": {}}
     verdict = 0
     for host_id in hosts:
