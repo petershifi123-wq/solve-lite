@@ -2,11 +2,13 @@
 
 ## 0.1.5 — 2026-09-27
 
-- Introduces the **Lite Runtime**: ~4.6MB, CPU-only, ~24MB idle RAM, no PyTorch, no model weights, offline native decision runtime (native subset only, `LITE_NATIVE_CAPABILITIES=MARKOV_ONLY`).
-- The 2.33GB specialist model assets become `OPTIONAL` / `NOT_REQUIRED_FOR_LITE`; when the pack is absent the specialist routes return `SPECIALIST_CAPABILITY_UNAVAILABLE` instead of blocking the whole runtime.
-- Retires the headline `~42.8×` latency claim into `HISTORICAL_FROZEN_RESULT`. The current validated full-capability build measures 40.77 ms mean against Jev 1388.33 ms official remote API end-to-end (~34×), same comparison caliber as before.
-- Records host evidence naming: `HOST_SHAPED_COLD_INSTALL_COMPATIBILITY=PASS`, `NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN`, `FULL_UI_LIFECYCLE=NOT_CLAIMED`.
-- Keeps frozen math / threshold / calibration / probability unchanged; the only native delta is a lazy-import fix in the LITE build so the default path no longer requires PyTorch or model weights.
+- Publishes the two capability surfaces: **Lite Runtime** (~4.6MB · CPU-only · ~24MB idle RAM · No PyTorch · No model weights · Offline native decision runtime) and **Specialist Runtime** (optional semantic capabilities using external model packs and ML dependencies).
+- States the 2.33GB specialist assets as `OPTIONAL · NOT REQUIRED FOR LITE`.
+- Headlines the current validated latency scope `~34×` (Solve Lite full-capability mean 40.767 ms vs Jev 1388.328 ms = 34.06×). The earlier frozen figures (mean 32.46 ms, ~42.8×) are retained only as `HISTORICAL_FROZEN_RESULT` and are no longer the headline claim.
+- Keeps the frozen benchmark record unchanged: 92.53% vs Jev 53.67%, 3–0 across three frozen rounds, 1,500 cases / 7,500 decisions, 6 vs 282 wrong answers at ≥90% confidence.
+- Names host evidence as `HOST_SHAPED_COLD_INSTALL_COMPATIBILITY=PASS`, `NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN`, `FULL_UI_LIFECYCLE=NOT_CLAIMED`.
+- Keeps Native Core 0.1.3, external model ownership, fail-closed loading, `PUBLIC_SELF_CONTAINED_DISTRIBUTION=FALSE` and all protected product boundaries unchanged.
+- Does not modify math, thresholds, calibration, probability or markov implementations; no Core rebuild and no Core binary byte mutation.
 
 ## 0.1.4 — 2026-09-26
 

@@ -22,14 +22,15 @@ Solve Lite 是面向 AI Agent 的 CPU 优先本地决策运行时。它通过一
 
 **Specialist Runtime** — Optional semantic capabilities using external model packs and ML dependencies.
 
-**Lite 默认运行时** — 约 4.6MB，普通 CPU 运行，空闲内存约 24MB，无需 PyTorch、无需模型权重、完全本地运行原生决策能力。
+**Lite 默认运行时**：约 4.6MB，普通 CPU 运行，空闲内存约 24MB，无需 PyTorch、无需模型权重、完全本地运行原生决策能力。
 
 **Specialist 专家运行时** — 可选的语义扩展能力，使用外部模型包与 ML 依赖。
 
 ```
-2.33GB specialist assets = OPTIONAL / NOT REQUIRED FOR LITE
+2.33GB specialist assets = OPTIONAL
+                         = NOT REQUIRED FOR LITE
 Lite  = 4.6MB / native subset / zero model weights
-Full  = 20 workflows / specialist expansion / 92.53% / 3-0 / ~34x
+Full  = 20 workflows / specialist expansion / 92.53% / 3–0 / ~34x
 ```
 
 ## Why Solve Lite / 为什么使用 Solve Lite
@@ -88,7 +89,9 @@ The public repository contains the source-available integration layer, Universal
 
 **Core Release 只包含原生二进制。模型运行资产不再分发，必须由用户或 Owner 独立提供。**
 
-The 2.33GB specialist assets are `OPTIONAL` and `NOT_REQUIRED_FOR_LITE`.
+The 2.33GB specialist assets are **OPTIONAL · NOT REQUIRED FOR LITE**.
+
+2.33GB 专家资产为 **OPTIONAL · NOT REQUIRED FOR LITE**（可选，Lite 运行时不需要）。
 
 The five runtime model directories are `EXTERNAL_REQUIRED`, are not in GitHub or Release assets, and are never auto-downloaded. Missing or mismatched runtime assets fail closed with `CORE_ASSET_UNAVAILABLE`; there is no fallback computation.
 
