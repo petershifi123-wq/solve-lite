@@ -1,0 +1,58 @@
+{
+  "schema": "solve-lite.core-asset-manifest.v1",
+  "product_version": "0.1.3",
+  "distribution": "separate-local-closed-core",
+  "artifacts_in_public_tree": false,
+  "verified_runtime_platform": "macOS-arm64",
+  "python_abi": "cp39-darwin",
+  "artifact_container": "Mach-O-universal2",
+  "public_abi": {
+    "status": "BLOCKED_PENDING_PUBLIC_CORE_ASSET",
+    "module": null,
+    "artifact": null,
+    "route_prompt": "route_prompt",
+    "healthcheck": "healthcheck"
+  },
+  "artifacts": [
+    {
+      "name": "_slk0.cpython-39-darwin.so",
+      "sha256": "8d79ffcd7c0a0f6f5bcd14d5181af477f5d257e22bdf76d2d7a7fa5be5b95a4a",
+      "bytes": 541016
+    },
+    {
+      "name": "_slk1.cpython-39-darwin.so",
+      "sha256": "7bef8d8342049e6c276aa1f3f8e5ed6454f368643b1cfa8e6fd80dd5aa281c3b",
+      "bytes": 326152
+    },
+    {
+      "name": "_slk2.cpython-39-darwin.so",
+      "sha256": "761ce2a89024ee880744a8d49a0a9e9db4c21e5d16c2830975ca326a5d5e9a22",
+      "bytes": 607272
+    },
+    {
+      "name": "_slk3.cpython-39-darwin.so",
+      "sha256": "8ec6bcdc7630297aab728cac97efde8d4b24ec97045c3db35b229f4f740a5e18",
+      "bytes": 690216
+    },
+    {
+      "name": "_slk4.cpython-39-darwin.so",
+      "sha256": "124105bff53a597b3f51c9468787da2a404d4b045226b621a39953493eadbdc5",
+      "bytes": 1084616
+    },
+    {
+      "name": "_slk5.cpython-39-darwin.so",
+      "sha256": "c1c1c067b3a63284b9b04b65c43ae98b55653907b4bc03179237965fdb34372e",
+      "bytes": 656680
+    },
+    {
+      "name": "_slk6.cpython-39-darwin.so",
+      "sha256": "c9ce0f7f49ff7d7e0241ddeb163ae550ba0a47ae2a02261786ecc67809216ad1",
+      "bytes": 358584
+    },
+    {
+      "name": "_slk7.cpython-39-darwin.so",
+      "sha256": "fff64b3324b582c60b9b902844932a039858fb4eaeaf65d2d1a5ed68935e63e9",
+      "bytes": 203176
+    }
+  ]
+}

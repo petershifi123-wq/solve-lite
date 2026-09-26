@@ -1,0 +1,12 @@
+{
+  "name": "personal",
+  "interface": {"displayName": "Solve Lite Local"},
+  "plugins": [
+    {
+      "name": "solve-lite",
+      "source": {"source": "local", "path": "./plugins/solve-lite"},
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "category": "Productivity"
+    }
+  ]
+}
