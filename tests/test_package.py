@@ -53,7 +53,12 @@ class PublicPackageContractTest(unittest.TestCase):
         core = json.loads((ROOT / "CORE_ASSET_MANIFEST.json").read_text(encoding="utf-8"))
         self.assertFalse(core["artifacts_in_public_tree"])
         self.assertEqual(len(core["artifacts"]), 8)
-        self.assertEqual(core["public_abi"]["status"], "BLOCKED_PENDING_PUBLIC_CORE_ASSET")
+        self.assertEqual(core["core_authority"], "ARCHITECTURE_A")
+        self.assertFalse(core["core_rebuild"])
+        self.assertFalse(core["core_binary_byte_mutation"])
+        self.assertEqual(core["public_abi"]["status"], "AVAILABLE")
+        self.assertEqual(core["public_abi"]["public_entry"], "route_prompt")
+        self.assertEqual(core["public_abi"]["core_native_entry"], "route_session")
         self.assertFalse(list(ROOT.rglob("*.so")))
         self.assertFalse((SCRIPTS / "solve_lite").exists())
 
