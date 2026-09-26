@@ -1,0 +1,15 @@
+{
+  "_note": "Template for hosts that do NOT expand ${PLUGIN_ROOT}. The installer substitutes __PLUGIN_ROOT__ with the resolved absolute path and registers this entry in the host config.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"__PLUGIN_ROOT__/hooks/user_prompt_submit.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
