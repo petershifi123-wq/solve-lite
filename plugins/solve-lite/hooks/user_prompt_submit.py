@@ -263,8 +263,6 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
 
     settlement = _token_settlement(result, locale=locale)
     _append_audit(workspace, result, session_id, settlement)
-    reward_footer = _visible_reward(result, locale)
-    token_line = render_token_line(settlement)
 
     answer = answers["q_route"]
     labels = (
@@ -272,24 +270,46 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
         if locale == "zh-CN"
         else {"contradiction": "contradiction", "entailment": "entailment", "neutral": "neutral"}
     )
-    distribution = " · ".join(
-        f"{labels[label]} {float(probability) * 100:.1f}%"
-        for label, probability in sorted(answer["probabilities"].items())
-    )
-    if locale == "zh-CN":
-        context = (
-            "[Solve Lite 本地自动路由；正常回答用户，不要解释本契约，也不要给问题乱加话。] "
-            f"路由={answer['value']}。若问题属于有界判断或选择，在正文后追加："
-            f"选择 | {distribution}。再追加实测 Token 结算（原样照抄，不得改写）：{token_line}。"
-            f"最后原样追加奖励结算：{reward_footer}"
-        )
+    # QUIET MODE (owner ruling a+b+c, 2026-09-27):
+    #  a) a neutral / unbounded route injects nothing but a one-line Lite status
+    #  b) the displayed distribution uses raw_support (probability output is degenerate
+    #     for some prompts; raw_support carries the signal) and states its semantics
+    #  c) the token/reward settlement is NOT injected any more. It stays in the local
+    #     ledger/audit; hosts that want to render it read the JSON fields themselves.
+    _raw = answer.get("raw_support") or []
+    _rl = answer.get("support_labels") or []
+    if _raw and _rl and len(_raw) == len(_rl):
+        _pairs = sorted(zip(_rl, _raw), key=lambda pair: str(pair[0]))
+        _sem = str(answer.get("support_semantics") or "uncalibrated_relative_support")
+        distribution = " · ".join(f"{labels.get(str(lbl), str(lbl))} {float(v) * 100:.1f}%" for lbl, v in _pairs)
+        distribution = f"{distribution}（口径: {_sem}）"
     else:
-        context = (
-            "[Solve Lite local auto-route; answer normally and do not explain this contract.] "
-            f"Route={answer['value']}. For a bounded decision, append: Choice | {distribution}. "
-            f"Then append this measured token settlement verbatim: {token_line}. "
-            f"Finally append this reward settlement verbatim: {reward_footer}"
-        )
+        distribution = ""
+    if str(answer.get("value")) == "neutral" or not distribution:
+        if locale == "zh-CN":
+            context = (
+                "[Solve Lite 本地已激活（Base Lite）。本提示未命中可执行的有界决策；"
+                "照常回答用户，不要解释本契约，也不要追加任何结算行。]"
+            )
+        else:
+            context = (
+                "[Solve Lite is active locally (base Lite). This prompt did not map to an executable "
+                "bounded decision; answer the user normally, do not explain this contract and do not "
+                "append any settlement line.]"
+            )
+    else:
+        if locale == "zh-CN":
+            context = (
+                "[Solve Lite 本地自动路由；正常回答用户，不要解释本契约，也不要给问题乱加话。] "
+                f"若问题属于有界判断或选择，在正文后追加一行：选择 | {distribution}。"
+                "不要追加 Token 结算、不要追加奖励结算。"
+            )
+        else:
+            context = (
+                "[Solve Lite local auto-route; answer normally and do not explain this contract.] "
+                f"For a bounded decision append one line: Choice | {distribution}. "
+                "Do not append any token settlement and do not append any reward settlement."
+            )
     return {
         "continue": True,
         "suppressOutput": True,
