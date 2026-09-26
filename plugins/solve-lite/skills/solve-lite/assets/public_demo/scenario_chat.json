@@ -1,0 +1,11 @@
+{
+  "scenario_id": "CHAT_RELATIONSHIP",
+  "source": "public-demo/scenario-chat.txt",
+  "text": "对方详细回应了当前话题，又主动提出一个具体问题，并说明下周有空继续聊。",
+  "axis_ids": [
+    "intent",
+    "momentum",
+    "reciprocity",
+    "next_step"
+  ]
+}

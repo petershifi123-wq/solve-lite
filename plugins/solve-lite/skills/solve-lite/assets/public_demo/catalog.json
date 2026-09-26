@@ -1,0 +1,5 @@
+[
+  {"id": "evidence-pack", "name": "Evidence Pack", "description": "Index large local text and build a cited bounded packet."},
+  {"id": "tiny-answer", "name": "Tiny Answer", "description": "Answer a small question directly without extra tools."},
+  {"id": "image-edit", "name": "Image Edit", "description": "Edit a provided bitmap image."}
+]
