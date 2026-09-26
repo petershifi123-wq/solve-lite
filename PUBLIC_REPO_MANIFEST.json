@@ -28,10 +28,10 @@
       "sha256": "56b6e32e001f6e018ff216bf73c605bc340df238d2d35b83213b3f4cede0543d"
     },
     {
-      "bytes": 2718,
+      "bytes": 4490,
       "mode": "0644",
       "path": "CORE_ASSET_MANIFEST.json",
-      "sha256": "8fddb6272b931de3244c932c24cd6411910c0b3f08daed5c24275f3a9ac7dba8"
+      "sha256": "b600174401320f9373a9f4942e1270adcdfffa5e61b660804f9ad1e605f440a3"
     },
     {
       "bytes": 1196,
@@ -46,16 +46,22 @@
       "sha256": "b9700551a013cd5b124ddaaeb84d0211a0586c256f19984cfcca03868f46e318"
     },
     {
-      "bytes": 697,
+      "bytes": 8479,
       "mode": "0644",
       "path": "README.md",
-      "sha256": "b4e9120175059f39ef56e3b5fd2a3c5e06eead42d5bf995411556990e84c2c95"
+      "sha256": "f4d02b983ca2f0db2590ab5bc67274be3c6674f83cdce55d492d63c1a8b1cdbb"
     },
     {
       "bytes": 1511,
       "mode": "0644",
       "path": "SECURITY.md",
       "sha256": "26829f9261a077d1e53cfb46c3608bafdd1d4a9da39c1bf621c2cbb157a8ec1a"
+    },
+    {
+      "bytes": 826981,
+      "mode": "0644",
+      "path": "assets/alipay-donation.jpg",
+      "sha256": "2e4f82780489f4c77f1fabc2823f1ef70977d66150b3b922cfb8557df5f8eb78"
     },
     {
       "bytes": 936,
@@ -172,10 +178,10 @@
       "sha256": "7daa5396098af3e0da29fb94b1a9b84c7b5dff61f0769176986935ed0fcaaf58"
     },
     {
-      "bytes": 5616,
+      "bytes": 8522,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_abi.py",
-      "sha256": "4b236693bf22e0857a16345d30ddf675b90dd45f42dd54df8616d047912b33f9"
+      "sha256": "28d94f262f5a779bdebe355014faab988525ce393932bdcf22282bd7c143a6a7"
     },
     {
       "bytes": 7554,
@@ -184,16 +190,16 @@
       "sha256": "0323f50b2cad7567ee4d2e1fb330565d43a4fa99be9fc50fd39fd8e288d83e6c"
     },
     {
-      "bytes": 5882,
+      "bytes": 8666,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-      "sha256": "1248d0d371a51bf590fe0699a72810768a1bb0c54eba6b60bc569bc18288aecb"
+      "sha256": "28101444014d6fe2e01f4051675900e38ac95ba93fea1061dd3d7939a28714f2"
     },
     {
-      "bytes": 4012,
+      "bytes": 4790,
       "mode": "0644",
       "path": "tests/test_package.py",
-      "sha256": "c09f7e68788a42e6dafe2039ff2099895d58d4f3c81fafe8e208d1038ca47bd4"
+      "sha256": "e95fdd841188d960aba3acbd86f836dd8d715fb9549ff32a59853085a88c5b1f"
     },
     {
       "bytes": 954,
@@ -244,8 +250,8 @@
       "sha256": "4e34d69899bd101ab1a871c4515221922b2b1e23464087cb7da1b03c658f5852"
     }
   ],
-  "payload_file_count": 39,
-  "payload_tree_sha256": "c028dd66d8afda97ee961f5c71dc654587fa40798b0c65394cc89811315f8072",
+  "payload_file_count": 40,
+  "payload_tree_sha256": "4928cf6324cab270070b91e53befeb84dea34b925135b440ac4de1de5a7af121",
   "schema": "solve-lite.public-repo-manifest.v1",
   "source_authority_manifest_sha256": "f81821e9e76b9bee22aa373c1e33ed5dfc0df6ab013357d22de8f6ab59008507",
   "source_authority_tree_sha256": "d12ebbc7da56009701a036704d0f3e489d9817e0122405d6645c7d57fb765760",

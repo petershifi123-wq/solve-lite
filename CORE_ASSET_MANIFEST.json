@@ -2,6 +2,7 @@
   "schema": "solve-lite.core-asset-manifest.v2",
   "product_version": "0.1.3",
   "distribution": "separate-local-closed-core",
+  "public_self_contained_distribution": false,
   "core_authority": "ARCHITECTURE_A",
   "core_rebuild": false,
   "core_binary_byte_mutation": false,
@@ -19,6 +20,51 @@
     "healthcheck": "healthcheck",
     "compatibility_bridge": "solve_lite_abi:route_prompt",
     "runtime_asset_root": "."
+  },
+  "runtime_model_assets": {
+    "status": "EXTERNAL_REQUIRED",
+    "distribution": "BYO_OR_OWNER_SUPPLIED",
+    "included_in_public_repository": false,
+    "included_in_release": false,
+    "auto_download": false,
+    "fallback_computation": false,
+    "owner_manifest": "OWNER_RUNTIME_ASSET_MANIFEST.json",
+    "owner_manifest_schema": "solve-lite.owner-runtime-assets.v1",
+    "total_files": 109,
+    "total_bytes": 2333776695,
+    "tree_sha256": "62326a7600b3cc568ba0bd1cb39121510c491a6522e10bd746bc239b782f84a0",
+    "required_directories": [
+      {
+        "relative_path": "model-cache/ProsusAI--finbert",
+        "files": 19,
+        "bytes": 438227486,
+        "tree_sha256": "450255535e5f291a4907529f4be2b3dd02ad6a9560b26e7b8416f9d62d256bf0"
+      },
+      {
+        "relative_path": "model-cache/fabriceyhc--bert-base-uncased-dbpedia_14",
+        "files": 25,
+        "bytes": 438766508,
+        "tree_sha256": "2ce72241c2cb264fc033c3d5161555e0a3a183b12bac14335c39f5bfe48916b4"
+      },
+      {
+        "relative_path": "model-cache/distilbert--distilbert-base-uncased-finetuned-sst-2-english",
+        "files": 34,
+        "bytes": 269021509,
+        "tree_sha256": "13b3ddd2125223ccadb3ee4b7183defdc38c6c363bdfa1b2ec5a6baa24164e68"
+      },
+      {
+        "relative_path": "model-cache/cross-encoder--nli-deberta-v3-base",
+        "files": 25,
+        "bytes": 748854224,
+        "tree_sha256": "7c95d2525787e77bd45145ba9cb0d3fa7fb852dfa486a0c25f2d8320bd15e4c2"
+      },
+      {
+        "relative_path": "model-cache-public-trained/financial_sentiment",
+        "files": 6,
+        "bytes": 438906968,
+        "tree_sha256": "8abf3400471ad6ae0f45f6c4e2e0b9c681658bec94a89d30bea4fce1dc227d58"
+      }
+    ]
   },
   "artifacts": [
     {
