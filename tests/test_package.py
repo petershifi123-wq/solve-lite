@@ -101,7 +101,11 @@ class PublicPackageContractTest(unittest.TestCase):
 
     def test_healthcheck_works_without_any_asset_root(self):
         environment = dict(os.environ)
-        for name in ("SOLVE_LITE_RUNTIME_ROOT",):
+        # A fresh-install contract describes a plain environment: pin the DLC
+        # opt-in off so an ambient SOLVE_LITE_INT4_DLC in the developer's shell
+        # cannot flip this assertion.
+        for name in ("SOLVE_LITE_RUNTIME_ROOT",
+                     "SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
             environment.pop(name, None)
         script = (
             "import json,sys;"

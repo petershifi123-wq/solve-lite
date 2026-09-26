@@ -12,6 +12,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "solve-lite"
+
+# The publish harness describes the *plain* public environment.  A developer's
+# ambient DLC opt-in would make the fresh-tree view read ACTIVATED and fail
+# `dlc_not_preloaded` on a clean tree, so pin it off here.
+for _ambient in ("SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
+    os.environ.pop(_ambient, None)
 SCRIPTS = PLUGIN / "skills" / "solve-lite" / "scripts"
 RUNTIME = SCRIPTS.parent / "runtime"
 CASE = ROOT / "tests" / "fixtures" / "native_markov_case.json"

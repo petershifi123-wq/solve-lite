@@ -175,14 +175,28 @@ Lite + all public DLC -> ~187.6 MB on disk, of which 149.84 MB is the DLC downlo
 financial specialist  -> NOT_PUBLIC (not distributed, never counted in a total)
 ```
 
-Fresh-install compatibility was machine-verified on two isolated host shapes (Doubao, WorkBuddy). That scoped PASS does not claim a native desktop UI hook or full automatic lifecycle support. `PARTIAL` and `NOT_RUN` are never presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
+Fresh-install compatibility was machine-verified on two isolated host shapes (Doubao, WorkBuddy). P1 adds deterministic host activation: the installer registers a real `UserPromptSubmit` hook in the host's own writable config, and that exact registered command is then replayed with a host-shaped payload to prove it fires and injects. The desktop UI process itself was not driven with a human prompt, so `NATIVE_DESKTOP_PROCESS_INTEGRATION` stays `NOT_RUN`. Doubao Work exposes no local hook API, so the installer writes the skill plus a mandatory first-step banner into the host workspace and reports `UNAVAILABLE_NO_HOST_HOOK_API` instead of pretending. `PARTIAL` and `NOT_RUN` are never presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
-全新安装兼容性已在两个隔离宿主形态（Doubao、WorkBuddy）上通过机器验证；该范围内的 PASS 不代表桌面 UI 钩子或完整自动生命周期已经通过。`PARTIAL` 与 `NOT_RUN` 不会被包装成 PASS。详见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
+全新安装兼容性已在两个隔离宿主形态（Doubao、WorkBuddy）上通过机器验证；P1 进一步做到确定性宿主激活：安装器把真正的 `UserPromptSubmit` 钩子注册进宿主自己可写的配置，并用宿主形态的载荷回放该命令，证明钩子确实触发并注入。桌面 UI 进程本身没有被人手输入驱动过，因此 `NATIVE_DESKTOP_PROCESS_INTEGRATION` 仍为 `NOT_RUN`。豆包办公没有本地钩子 API，安装器改为把技能与「第一步必跑」硬约束写入宿主工作区，并如实报告 `UNAVAILABLE_NO_HOST_HOOK_API`。`PARTIAL` 与 `NOT_RUN` 不会被包装成 PASS。详见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
+
+Unconditional activation / 无条件激活：
+
+```bash
+python3 tools/installer.py --host auto          # register the hook in the host config (idempotent, backs up)
+bash install_workbuddy.command                  # double-click install: register + self-test + startup check (no sudo)
+bash install_doubao.command
+python3 tools/hook_selftest.py --host all --json # HOOK_FIRED=PASS/FAIL plus dispatch, ledger and latency evidence
+```
+
+The hook runs the bundled LITE layer on **every** prompt (milliseconds, no torch, no DLC) and injects what it actually measured; the model has no "activate or not" choice. When the LITE layer produced no prompt-level decision the injected receipt says exactly that and forbids inventing Choice/Token/reward lines. With an installed DLC component the same per-prompt step returns a real specialist decision.
 
 Host evidence naming / 宿主证据命名：
 
 ```
 HOST_SHAPED_FRESH_INSTALL_COMPATIBILITY=PASS
+HOST_HOOK_REGISTRATION=PASS (workbuddy) / UNAVAILABLE_NO_HOST_HOOK_API (doubao)
+HOST_HOOK_DISPATCH_REPLAY=PASS
+UNCONDITIONAL_ACTIVATION=PASS
 NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN
 FULL_UI_LIFECYCLE=NOT_CLAIMED
 ```

@@ -18,7 +18,11 @@ import solve_lite_abi as abi  # noqa: E402
 
 class PublicLiteAbi(unittest.TestCase):
     def setUp(self):
-        for name in ("SOLVE_LITE_RUNTIME_ROOT",):
+        # The public fresh-install contract describes a *plain* environment, so
+        # pin the DLC opt-in off here: an ambient SOLVE_LITE_INT4_DLC in the
+        # developer's shell would otherwise flip a fresh-clone assertion.
+        for name in ("SOLVE_LITE_RUNTIME_ROOT", "SOLVE_LITE_CORE_ASSET_ROOT",
+                     "SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
             os.environ.pop(name, None)
 
     def test_healthcheck_passes_without_any_configured_asset_root(self):

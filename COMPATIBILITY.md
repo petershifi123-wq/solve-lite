@@ -4,13 +4,13 @@ This snapshot reports only the capability proven by machine evidence. A fresh-in
 
 | Surface | Version | Status |
 |---|---|---|
-| Solve Lite public plugin | 0.1.6 | FRESH_INSTALL_ACCEPTANCE_PASS |
+| Solve Lite public plugin | 0.1.7 | FRESH_INSTALL_ACCEPTANCE_PASS |
 | LITE runtime (bundled, 8 native modules) | LITE build lot | PASS_VERIFIED_BUNDLED_RUNTIME |
 | Full-precision core manifest | v2 (historical) | HISTORICAL_REFERENCE_ONLY |
 | DLC components (review, topic, nli) | 0.1.5 packages | INSTALL_VERIFIED_OPT_IN_ACTIVATION |
 | Financial specialist DLC | not published | NOT_PUBLIC |
-| Doubao | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI |
-| WorkBuddy | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI |
+| Doubao | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI + UNAVAILABLE_NO_HOST_HOOK_API |
+| WorkBuddy | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI + HOST_HOOK_REGISTRATION_PASS |
 | Codex | prior scope | PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE |
 | Hermes | prior scope | PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE |
 | Cline | not rerun in this gate | PARTIAL_FROZEN |
@@ -20,6 +20,12 @@ This snapshot reports only the capability proven by machine evidence. A fresh-in
 | Python | 3.9.6 | TESTED |
 
 The two fresh isolated hosts each started from a clean copy of the public tree and passed: bundled-runtime healthcheck `PASS` with no asset root configured, one real offline native decision, clean `SPECIALIST_CAPABILITY_UNAVAILABLE` for a specialist case, verified installation of the three public DLC components, opt-in lazy activation left off, and byte-identical frozen kernel modules. Network attempts during runtime, credential reads, and Jev API calls were zero. Codex and Hermes were verified earlier under the owner-runtime scope and are not re-claimed here.
+
+P1 host activation adds two machine-checkable facts on top of that scoped PASS:
+
+- WorkBuddy: the installer wrote a `UserPromptSubmit` hook into the host's own writable config, and the self-test replayed **that registered command** with a host-shaped payload. The hook fired, returned a non-empty `additionalContext` carrying `activation=UNCONDITIONAL_HOOK`, and produced one ledger record per prompt. `HOST_HOOK_REGISTRATION=PASS`, `HOST_HOOK_DISPATCH_REPLAY=PASS`.
+- Doubao Work: the app bundle contains no `UserPromptSubmit`, `hookSpecificOutput` or hook-config reader, so there is nothing to register. The installer instead wrote the skill plus a mandatory first-step banner into the host workspace, asserted that banner, and printed the copy-paste one-step command. `HOST_HOOK_API=NO_HOST_HOOK_API`; the off-host pre-prompt step is asserted in its place and reported as such, not as a host hook.
+- Neither fact claims the desktop UI process itself was driven by a human prompt: `NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN`. No installer step used sudo and no system directory was written.
 
 Evidence identity:
 

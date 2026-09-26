@@ -10,16 +10,16 @@
       "sha256": "a2c4742ad70ad9e4bbe8fcec6425f5cf927c4c40ad11db2cbba98613db33ef9d"
     },
     {
-      "bytes": 7378,
+      "bytes": 10527,
       "mode": "0644",
       "path": "CHANGELOG.md",
-      "sha256": "c034ee6d48122c5e32be5c480c08056434cf24b1ace52469ef91876a385cc615"
+      "sha256": "68861946b98fa39223c0a2640dc4747d5decfe8ffdb9abe124f21cccafd496d4"
     },
     {
-      "bytes": 3392,
+      "bytes": 4548,
       "mode": "0644",
       "path": "COMPATIBILITY.md",
-      "sha256": "9198b112edec3016880042d95886f75cff35bdfaec306d9813ea771e2c27b7cb"
+      "sha256": "1dc1232ca67d130bb887b34a85191f690c17f764ff550f70015a1dc6fc7674ff"
     },
     {
       "bytes": 8617,
@@ -46,10 +46,10 @@
       "sha256": "b9700551a013cd5b124ddaaeb84d0211a0586c256f19984cfcca03868f46e318"
     },
     {
-      "bytes": 16469,
+      "bytes": 18321,
       "mode": "0644",
       "path": "README.md",
-      "sha256": "1adc7539593862177d90e9ba8f8fe9c5beb32c921fdf291409c7e57255017de2"
+      "sha256": "18d53d25af7384d6eadfaf15ec62c9453d342d2c2480a8c79d6fbf2821cb4880"
     },
     {
       "bytes": 1511,
@@ -62,6 +62,24 @@
       "mode": "0644",
       "path": "assets/alipay-donation.jpg",
       "sha256": "2e4f82780489f4c77f1fabc2823f1ef70977d66150b3b922cfb8557df5f8eb78"
+    },
+    {
+      "bytes": 2718,
+      "mode": "0755",
+      "path": "install_doubao.command",
+      "sha256": "6a62ee368345e9b8086daa7f2f663858f68e0880303e569ac5afec60467f363a"
+    },
+    {
+      "bytes": 2755,
+      "mode": "0755",
+      "path": "install_workbuddy.command",
+      "sha256": "58e7e293178c1bd8f417d31cb0175ad044a28063c53a321ceaeb47c296168043"
+    },
+    {
+      "bytes": 528,
+      "mode": "0644",
+      "path": "plugins/solve-lite/.codebuddy-plugin/plugin.json",
+      "sha256": "c77117d924b96c59c94d187e1c2c37db647a68932bf58c1a25a42fdb0f77f35f"
     },
     {
       "bytes": 1247,
@@ -448,10 +466,10 @@
       "sha256": "0c19402fdd7786506de673e6b0e948259c744974cc92f57b25899ff90ae21919"
     },
     {
-      "bytes": 6399,
+      "bytes": 6731,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-      "sha256": "dfa1b1ccd157713fb59d30dfc6dcbc2bdc118c6db469a6808468a3568d4566d0"
+      "sha256": "7b74dcce3f43bbd32daa958fabec8acc16241d11c0c42cb358fb9724210f48c0"
     },
     {
       "bytes": 11579,
@@ -472,10 +490,10 @@
       "sha256": "fa2ee71cf0cf6b1da85be99f74c27490ceacd709840d2c282ac6bce4e4226d82"
     },
     {
-      "bytes": 8757,
+      "bytes": 9024,
       "mode": "0644",
       "path": "tests/test_package.py",
-      "sha256": "f29d2601177f8f64e26729b69a1b85f3e56bf9c3ea426de80b2822a6075a4b92"
+      "sha256": "077e1169d10e6a585e38cc5e2aaeca8561f5403028bd5eabb0491fcd6b6231e0"
     },
     {
       "bytes": 959,
@@ -488,6 +506,12 @@
       "mode": "0644",
       "path": "tools/adapter.py",
       "sha256": "51ee49322443e56f41563f7fa4fc711310c7aea6597e1d0a60b5f1fd3337e7fa"
+    },
+    {
+      "bytes": 6372,
+      "mode": "0644",
+      "path": "tools/build_public_manifest.py",
+      "sha256": "87a8c6bdc68db04ff7d504c58b2494728fd13e6e92bdcbcb8b02f184ff673267"
     },
     {
       "bytes": 6627,
@@ -508,16 +532,28 @@
       "sha256": "618b88fa2f240addd7d6418c2f23028542a79f71a69757f96992b3cece27afa5"
     },
     {
-      "bytes": 10316,
+      "bytes": 12707,
       "mode": "0644",
-      "path": "tools/installer.py",
-      "sha256": "0dbde9b06e15ac596250105540f460b074ba96bc2c68f995ac637980928b7b40"
+      "path": "tools/hook_selftest.py",
+      "sha256": "3962d12156651fa01f0fad4d71dfce42940380fb71d763214ad16379928cec8b"
     },
     {
-      "bytes": 5385,
+      "bytes": 20397,
+      "mode": "0644",
+      "path": "tools/host_hooks.py",
+      "sha256": "14711ae0abb353e8ee7e0a69964622418715a47fc4ac52887ed5abefb6fd8be9"
+    },
+    {
+      "bytes": 13895,
+      "mode": "0644",
+      "path": "tools/installer.py",
+      "sha256": "ef772b89ed08deb0c1c66e97db19e8e2754573f7bd86845ac7f5a1285fb8f73c"
+    },
+    {
+      "bytes": 5704,
       "mode": "0644",
       "path": "tools/offline_harness.py",
-      "sha256": "a27aa9d6abc5956b3ed51736fb12872381a3e5601c1e2d8fa62829969dd7cd1e"
+      "sha256": "37cfcf2bf2f8e6eced7ba5be956e973278ec30e002ca4c64d50c85be0d08ce53"
     },
     {
       "bytes": 15166,
@@ -559,9 +595,9 @@
       ]
     }
   ],
-  "payload_file_count": 89,
+  "payload_file_count": 95,
   "payload_tree_hash_algorithm": "sha256(path\\0sha256\\0bytes\\0mode\\n)",
-  "payload_tree_sha256": "703468f9087794f3e7d006eaaa02bb0c68e4232fd5255d85e8c380d667be082e",
+  "payload_tree_sha256": "1f6afa1ebb709b051a47e3690f5e5d8fc26d3b4d97afe9c705b362646eb87c56",
   "schema": "solve-lite.public-repo-manifest.v3",
   "version": "0.1.6-public"
 }

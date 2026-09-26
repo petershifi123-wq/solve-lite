@@ -26,6 +26,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -149,6 +150,52 @@ def run_startup_check(root: Path) -> dict:
             "checks": parsed.get("checks"), "stderr": (proc.stderr or "").strip()[-300:]}
 
 
+def register_host_hooks(host: str, plugin_root: Path, config_dir: Path = None) -> dict:
+    """P1: install-time host registration, with the fallback command when the
+    host exposes no writable hook location."""
+    if not host or host in ("none",):
+        return {"status": "SKIPPED", "reason": "no --host requested"}
+    if str(ROOT / "tools") not in sys.path:
+        sys.path.insert(0, str(ROOT / "tools"))
+    import host_hooks  # noqa: PLC0415
+
+    hosts = ["workbuddy", "doubao"] if host == "auto" else [host]
+    payload = {"status": "PASS", "hosts": {}, "one_step_command": host_hooks.one_step_command(plugin_root)}
+    for host_id in hosts:
+        try:
+            outcome = host_hooks.register(host_id, plugin_root, override=config_dir)
+        except Exception as exc:  # noqa: BLE001 - never fail the install on a host quirk
+            outcome = {"status": "FAIL", "error": f"{type(exc).__name__}: {exc}"}
+        payload["hosts"][host_id] = outcome
+        if str(outcome.get("status")) not in ("PASS", "REGISTERED", "UNAVAILABLE"):
+            payload["status"] = "PARTIAL"
+    return payload
+
+
+def preassemble_dlc_view(dlc, runtime: Path) -> dict:
+    """P1: pre-assemble the runtime asset view at install time.
+
+    The first specialist call must not pay for symlink assembly, so it happens
+    here, once, and the second call proves the step is idempotent.
+    """
+    started = time.perf_counter()
+    try:
+        first = dlc.assemble_asset_root(runtime)
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "FAIL", "error": f"{type(exc).__name__}: {exc}",
+                "preassemble_ms": round((time.perf_counter() - started) * 1000.0, 3)}
+    first_ms = (time.perf_counter() - started) * 1000.0
+    started = time.perf_counter()
+    second = dlc.assemble_asset_root(runtime)
+    return {
+        "status": "PASS",
+        "preassemble_ms": round(first_ms, 3),
+        "second_call_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        "first_view": first,
+        "second_view": second,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="verify the base install (default)")
@@ -160,6 +207,12 @@ def main() -> int:
     parser.add_argument("--package-dir", type=Path, default=None, help="directory of DLC packages (offline mirror)")
     parser.add_argument("--release-base", default=None, help="override the release base URL")
     parser.add_argument("--no-verify", action="store_true", help="skip package checksum verification (not recommended)")
+    parser.add_argument("--host", default="none",
+                        help="register the unconditional UserPromptSubmit hook: workbuddy|doubao|auto|none")
+    parser.add_argument("--config-dir", type=Path, default=None,
+                        help="override the host config directory (isolated installs and host-shaped tests)")
+    parser.add_argument("--no-preassemble", action="store_true",
+                        help="skip the install-time DLC asset-view pre-assembly")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -209,6 +262,19 @@ def main() -> int:
             for item in results:
                 print("  " + str(item["status"]) + " " + str(item["unit_id"]))
     state = dlc.capability_view(runtime)
+    installed_units = list(summary.get("installed_unit_ids") or [])
+    preassembly = {"status": "SKIPPED", "reason": "no installed public DLC unit"}
+    if installed_units and not args.no_preassemble:
+        preassembly = preassemble_dlc_view(dlc, runtime)
+        if not args.json:
+            print("DLC_PREASSEMBLED=%s  preassemble_ms=%s  second_call_ms=%s"
+                  % (preassembly.get("status"), preassembly.get("preassemble_ms"),
+                     preassembly.get("second_call_ms")))
+    registration = register_host_hooks(str(args.host), ROOT / "plugins" / "solve-lite", args.config_dir)
+    if not args.json and registration.get("status") != "SKIPPED":
+        print("HOST_HOOK_REGISTRATION=%s  hosts=%s" % (registration.get("status"),
+                                                       ",".join(registration.get("hosts", {}))))
+        print("解决不了就照抄这条一步命令: " + str(registration.get("one_step_command")))
     startup = {"status": "SKIPPED", "returncode": None}
     if not args.skip_startup_check:
         startup = run_startup_check(ROOT)
@@ -217,7 +283,8 @@ def main() -> int:
             if startup["status"] == "FAIL":
                 print("STARTUP_CHECK=FAIL  see tools/startup_check.py --root . --json")
     payload = {"status": health.get("status"), "healthcheck": health, "install": layers,
-               "dlc": {"summary": summary, "capability": state}, "startup_check": startup}
+               "dlc": {"summary": summary, "capability": state, "preassembly": preassembly},
+               "host_registration": registration, "startup_check": startup}
     if args.json:
         print(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False))
     else:
