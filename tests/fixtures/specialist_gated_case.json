@@ -1,0 +1,82 @@
+{
+  "case_id": "financial_sentiment_sealed_test_000000",
+  "family": "financial_sentiment",
+  "questions": {
+    "q_0": {
+      "criteria": [
+        "Bearish",
+        "Neutral",
+        "Bullish"
+      ],
+      "input_ref": "item_0",
+      "instructions": "Classify the financial sentiment on the ordered scale.",
+      "type": "score"
+    },
+    "q_1": {
+      "criteria": [
+        "Bearish",
+        "Neutral",
+        "Bullish"
+      ],
+      "input_ref": "item_1",
+      "instructions": "Classify the financial sentiment on the ordered scale.",
+      "type": "score"
+    },
+    "q_2": {
+      "criteria": [
+        "Bearish",
+        "Neutral",
+        "Bullish"
+      ],
+      "input_ref": "item_2",
+      "instructions": "Classify the financial sentiment on the ordered scale.",
+      "type": "score"
+    },
+    "q_3": {
+      "criteria": [
+        "Bearish",
+        "Neutral",
+        "Bullish"
+      ],
+      "input_ref": "item_3",
+      "instructions": "Classify the financial sentiment on the ordered scale.",
+      "type": "score"
+    },
+    "q_4": {
+      "criteria": [
+        "Bearish",
+        "Neutral",
+        "Bullish"
+      ],
+      "input_ref": "item_4",
+      "instructions": "Classify the financial sentiment on the ordered scale.",
+      "type": "score"
+    }
+  },
+  "semantic_request_sha256": "e132d7e4a9d550fadae84e27c9d0b4e4019cec4a9eacc4aacff6fe3e9e6031c5",
+  "split": "sealed_test",
+  "state": {
+    "items": [
+      {
+        "id": "item_0",
+        "text": "Highlight: \"We have high confidence that we've seen what we call the internal low for the market,\" @suntrust Chief… https://t.co/md3WSyAKHT"
+      },
+      {
+        "id": "item_1",
+        "text": "Ionis Pharmaceuticals (NASDAQ:IONS) Has A Rock Solid Balance Sheet"
+      },
+      {
+        "id": "item_2",
+        "text": "Diamondrock Hospitality upgraded to sector weight from underweight at KeyBanc Capital"
+      },
+      {
+        "id": "item_3",
+        "text": "Azerbaijan's first snap parliamentary elections 'lacked genuine competition and choice,' international monitors say https://t.co/l4dHpIed1E"
+      },
+      {
+        "id": "item_4",
+        "text": "Can IES Holdings, Inc. (NASDAQ:IESC) Maintain Its Strong Returns?"
+      }
+    ]
+  }
+}

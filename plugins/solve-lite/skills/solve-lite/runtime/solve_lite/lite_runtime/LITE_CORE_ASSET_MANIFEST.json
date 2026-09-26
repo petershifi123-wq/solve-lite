@@ -1,0 +1,327 @@
+{
+  "schema": "solve-lite.lite-core-asset-manifest.v1",
+  "build_line": "LITE",
+  "base_release": "0.1.3",
+  "base_release_frozen": true,
+  "authority": "VV_RULING_A3_GATEX_LITE_RUNTIME_HOTFIX_V1",
+  "core_rebuild": true,
+  "core_binary_byte_mutation": false,
+  "algorithm_change": false,
+  "verified_runtime_platform": "macOS-arm64",
+  "python_abi": "cp39-darwin",
+  "artifact_container": "Mach-O-universal2",
+  "artifact_count": 8,
+  "artifact_bytes": 4434976,
+  "native_capabilities": [
+    "MARKOV"
+  ],
+  "specialist_capabilities": [
+    "FINANCIAL_SENTIMENT",
+    "TOPIC",
+    "REVIEW",
+    "NLI"
+  ],
+  "specialist_model_assets_required_at_startup": false,
+  "native_startup_requires_torch": false,
+  "native_startup_requires_network": false,
+  "authorized_native_delta": {
+    "module": "_slk5",
+    "file": "_slk5.cpython-39-darwin.so",
+    "rebuild_source": "lite_src/_src5_lite.py",
+    "change": "two module-level ML imports become function-local lazy imports",
+    "algorithm_lines_changed": 0
+  },
+  "hash_columns": {
+    "sha256": "raw artifact hash, valid for this exact build lot",
+    "sha256_canonical": "artifact hash after zeroing LC_UUID and LC_CODE_SIGNATURE regions; stable across link lots, used for source-level comparison"
+  },
+  "native_kernel_modules": [
+    {
+      "module": "_slk0",
+      "file": "_slk0.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk0.cpython-39-darwin.so",
+      "sha256": "e296e628122e4bdeae65d37872282818b68d174226c9dad65f5cfda918cb9b13",
+      "sha256_canonical": "fe4be7620f492d7456d681c42204fd08b7f0870b1878b68cdeb967fb3a1010aa",
+      "bytes": 541016,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "e296e628122e4bdeae65d37872282818b68d174226c9dad65f5cfda918cb9b13",
+        "bytes": 541016
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          5464,
+          16
+        ],
+        [
+          263584,
+          16
+        ],
+        [
+          538704,
+          2312
+        ]
+      ]
+    },
+    {
+      "module": "_slk1",
+      "file": "_slk1.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk1.cpython-39-darwin.so",
+      "sha256": "d4fb7c34d81c6fdf2c126a850080aa684e59f4580a90633496db522833dcd8c1",
+      "sha256_canonical": "7fa5d071934ed9252b5bc89f0db31e97aa7cf1a5de7fa834268181ad0c9225f1",
+      "bytes": 326152,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "d4fb7c34d81c6fdf2c126a850080aa684e59f4580a90633496db522833dcd8c1",
+        "bytes": 326152
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          5464,
+          16
+        ],
+        [
+          148896,
+          16
+        ],
+        [
+          324608,
+          1544
+        ]
+      ]
+    },
+    {
+      "module": "_slk2",
+      "file": "_slk2.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk2.cpython-39-darwin.so",
+      "sha256": "89b6d72069796e96daaebdaae725cf0fe20e30cd146a10eca09fd45843ca845c",
+      "sha256_canonical": "22183daab6cdebf374ed670ab5583873fe07e3b71ed5ca00f28b6217af3ca1d0",
+      "bytes": 607272,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "89b6d72069796e96daaebdaae725cf0fe20e30cd146a10eca09fd45843ca845c",
+        "bytes": 607272
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          5464,
+          16
+        ],
+        [
+          296352,
+          16
+        ],
+        [
+          604704,
+          2568
+        ]
+      ]
+    },
+    {
+      "module": "_slk3",
+      "file": "_slk3.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk3.cpython-39-darwin.so",
+      "sha256": "2f24bcbb1f855e8ead5254337a46e9cd5988c5876d8ad407bead1c148aa8df4d",
+      "sha256_canonical": "f2241ab7cff34154c43e7802bbc79bebaa1dae13dd0bec9a10b1724a2920590b",
+      "bytes": 690216,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "2f24bcbb1f855e8ead5254337a46e9cd5988c5876d8ad407bead1c148aa8df4d",
+        "bytes": 690216
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          5464,
+          16
+        ],
+        [
+          329120,
+          16
+        ],
+        [
+          687264,
+          2952
+        ]
+      ]
+    },
+    {
+      "module": "_slk4",
+      "file": "_slk4.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk4.cpython-39-darwin.so",
+      "sha256": "e9e792828114c871679a49d4fd6f4c2c7c444d24889462564fbf7bd4626e2538",
+      "sha256_canonical": "aec3b0003ba98fec88e2cfd75f946ae1382c893d99e21981be68e9820a1d76aa",
+      "bytes": 1084616,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "e9e792828114c871679a49d4fd6f4c2c7c444d24889462564fbf7bd4626e2538",
+        "bytes": 1084616
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          5464,
+          16
+        ],
+        [
+          591264,
+          16
+        ],
+        [
+          1080640,
+          3976
+        ]
+      ]
+    },
+    {
+      "module": "_slk5",
+      "file": "_slk5.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk5.cpython-39-darwin.so",
+      "sha256": "ee6a9553376bb54e257aa5792c361f3b1fd8c890dcaf926fea24129bf39f684e",
+      "sha256_canonical": "4ad82edee9e67affb0053776126e265c633948424f881be7a48baedbd13d65e5",
+      "bytes": 623944,
+      "rebuilt": true,
+      "byte_identical_to_full_core_0_1_3": false,
+      "full_core_0_1_3": {
+        "sha256": "2d3e8585737c7dc323a292dd122c6f7d394e7616f6f50a80675e4ebf183ccf7f",
+        "bytes": 656680
+      },
+      "canonical_matches_full_core_0_1_3": false,
+      "canonicalised_regions": [
+        [
+          9560,
+          16
+        ],
+        [
+          329120,
+          16
+        ],
+        [
+          621504,
+          2440
+        ]
+      ]
+    },
+    {
+      "module": "_slk6",
+      "file": "_slk6.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk6.cpython-39-darwin.so",
+      "sha256": "bb18bc692ab79223c75a62365ba01f4e037c4bee99863ad48683b4dc090763c9",
+      "sha256_canonical": "3bf66ddeaae43ce60a3ac44c97920291e78b118bb3984951f8e102ebee1078bc",
+      "bytes": 358584,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "bb18bc692ab79223c75a62365ba01f4e037c4bee99863ad48683b4dc090763c9",
+        "bytes": 358584
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          9560,
+          16
+        ],
+        [
+          181664,
+          16
+        ],
+        [
+          357040,
+          1544
+        ]
+      ]
+    },
+    {
+      "module": "_slk7",
+      "file": "_slk7.cpython-39-darwin.so",
+      "relative_path": "solve_lite/lite_runtime/_kernel_native/_slk7.cpython-39-darwin.so",
+      "sha256": "a2813defe3c08321055de7b45a81f08a9280171e75b9053ed9bfe1bcc01ead0d",
+      "sha256_canonical": "04ba53f56e301946275f691d1cb23ea7f41278eafa4768038f318424d9af9d86",
+      "bytes": 203176,
+      "rebuilt": false,
+      "byte_identical_to_full_core_0_1_3": true,
+      "full_core_0_1_3": {
+        "sha256": "a2813defe3c08321055de7b45a81f08a9280171e75b9053ed9bfe1bcc01ead0d",
+        "bytes": 203176
+      },
+      "canonical_matches_full_core_0_1_3": true,
+      "canonicalised_regions": [
+        [
+          5384,
+          16
+        ],
+        [
+          83280,
+          16
+        ],
+        [
+          202080,
+          1096
+        ]
+      ]
+    }
+  ],
+  "runtime_assets": {
+    "status": "OPTIONAL",
+    "enabled_by_default": false,
+    "distribution": "BYO_OR_OWNER_SUPPLIED",
+    "auto_download": false,
+    "fallback_computation": false,
+    "owner_manifest": "OWNER_RUNTIME_ASSET_MANIFEST.json",
+    "owner_manifest_schema": "solve-lite.owner-runtime-assets.v1",
+    "total_files": 109,
+    "total_bytes": 2333776695,
+    "tree_sha256": "62326a7600b3cc568ba0bd1cb39121510c491a6522e10bd746bc239b782f84a0",
+    "required_directories": [
+      {
+        "relative_path": "model-cache/ProsusAI--finbert",
+        "files": 19,
+        "bytes": 438227486,
+        "tree_sha256": "450255535e5f291a4907529f4be2b3dd02ad6a9560b26e7b8416f9d62d256bf0"
+      },
+      {
+        "relative_path": "model-cache/fabriceyhc--bert-base-uncased-dbpedia_14",
+        "files": 25,
+        "bytes": 438766508,
+        "tree_sha256": "2ce72241c2cb264fc033c3d5161555e0a3a183b12bac14335c39f5bfe48916b4"
+      },
+      {
+        "relative_path": "model-cache/distilbert--distilbert-base-uncased-finetuned-sst-2-english",
+        "files": 34,
+        "bytes": 269021509,
+        "tree_sha256": "13b3ddd2125223ccadb3ee4b7183defdc38c6c363bdfa1b2ec5a6baa24164e68"
+      },
+      {
+        "relative_path": "model-cache/cross-encoder--nli-deberta-v3-base",
+        "files": 25,
+        "bytes": 748854224,
+        "tree_sha256": "7c95d2525787e77bd45145ba9cb0d3fa7fb852dfa486a0c25f2d8320bd15e4c2"
+      },
+      {
+        "relative_path": "model-cache-public-trained/financial_sentiment",
+        "files": 6,
+        "bytes": 438906968,
+        "tree_sha256": "8abf3400471ad6ae0f45f6c4e2e0b9c681658bec94a89d30bea4fce1dc227d58"
+      }
+    ],
+    "missing_pack_status": "SPECIALIST_CAPABILITY_UNAVAILABLE"
+  },
+  "public_abi": {
+    "status": "AVAILABLE",
+    "module": "solve_lite.abi",
+    "public_entry": "route_prompt",
+    "core_native_entry": "route_session",
+    "healthcheck": "healthcheck",
+    "capabilities": "capabilities",
+    "compatibility_bridge": "solve_lite_abi_lite:route_prompt",
+    "runtime_asset_root": "solve_lite/lite_runtime"
+  }
+}

@@ -304,18 +304,25 @@ def check_package() -> dict[str, Any]:
     out["entrypoint"] = str(entrypoint)
     out["entrypoint_sha256"] = sha256_file(entrypoint)
     runtime_path = root / ".codex-runtime.json"
-    try:
-        runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        return {**out, "status": "FAIL", "detail": f".codex-runtime.json unreadable: {exc}"}
-    asset_root = Path(str(runtime.get("asset_root") or "")).expanduser()
-    out["asset_root"] = str(asset_root)
-    if not asset_root.is_dir():
-        return {**out, "status": "FAIL", "detail": f"asset_root missing: {asset_root}"}
+    runtime: dict[str, Any] = {}
+    if runtime_path.is_file():
+        try:
+            loaded = json.loads(runtime_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            return {**out, "status": "FAIL", "detail": f".codex-runtime.json unreadable: {exc}"}
+        if isinstance(loaded, dict):
+            runtime = loaded
+    configured = str(runtime.get("asset_root") or "").strip()
+    asset_root = Path(configured).expanduser() if configured else None
+    out["asset_root"] = str(asset_root) if asset_root else None
+    out["asset_root_origin"] = "explicit_config" if asset_root else "bundled_runtime"
+    if asset_root is not None and not asset_root.is_dir():
+        return {**out, "status": "FAIL", "detail": f"asset_root configured but missing: {asset_root}"}
     scripts = root / "skills" / "solve-lite" / "scripts"
     code = (
         "import json,sys;sys.path.insert(0,%r);"
-        "from solve_lite_abi import healthcheck;print(json.dumps(healthcheck(%r)))" % (str(scripts), str(asset_root))
+        "from solve_lite_abi import healthcheck;print(json.dumps(healthcheck(%r)))"
+        % (str(scripts), str(asset_root) if asset_root else None)
     )
     rc, output = run(["/usr/bin/python3", "-c", code], timeout=120, env={"PYTHONDONTWRITEBYTECODE": "1"})
     out["abi_healthcheck_raw"] = output.strip().splitlines()[-1] if output.strip() else ""

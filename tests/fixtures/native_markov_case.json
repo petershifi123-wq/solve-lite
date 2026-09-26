@@ -1,0 +1,405 @@
+{
+  "case_id": "markov_attribution_sealed_test_000000",
+  "family": "markov_attribution",
+  "questions": {
+    "q_0": {
+      "criteria": {
+        "step_0": "Trajectory step 0",
+        "step_1": "Trajectory step 1",
+        "step_2": "Trajectory step 2",
+        "step_3": "Trajectory step 3",
+        "step_4": "Trajectory step 4",
+        "step_5": "Trajectory step 5",
+        "step_6": "Trajectory step 6",
+        "step_7": "Trajectory step 7",
+        "step_8": "Trajectory step 8",
+        "step_9": "Trajectory step 9"
+      },
+      "instructions": "Which step has the largest absolute intervention attribution DELTA?",
+      "type": "choice"
+    },
+    "q_1": {
+      "criteria": {
+        "false": "DELTA is not positive.",
+        "true": "DELTA is positive."
+      },
+      "instructions": "At step 5, is DELTA(actual versus baseline) positive?",
+      "type": "noul"
+    },
+    "q_2": {
+      "criteria": [
+        "-2 strong negative",
+        "-1 negative",
+        "0 neutral",
+        "+1 positive",
+        "+2 strong positive"
+      ],
+      "instructions": "Bin the signed attribution at step 5.",
+      "type": "score"
+    },
+    "q_3": {
+      "criteria": {
+        "clarify": "Action clarify",
+        "resolve": "Action resolve",
+        "wait": "Action wait"
+      },
+      "instructions": "At step 5, which action maximizes Q(state, action)?",
+      "type": "choice"
+    },
+    "q_4": {
+      "criteria": {
+        "adverse": "Adverse terminal state",
+        "intermediate": "Intermediate terminal state",
+        "target_reached": "Target terminal state"
+      },
+      "instructions": "Which terminal outcome class has the highest probability after the actual action sequence?",
+      "type": "choice"
+    }
+  },
+  "semantic_request_sha256": "76402fcbf180a8ee51f1ab6e211dddc9b203cc4a71eac0fa37f83112263764b0",
+  "split": "sealed_test",
+  "state": {
+    "domain": "customer_support",
+    "gamma": 0.95,
+    "horizon": 10,
+    "model": {
+      "actions": [
+        "wait",
+        "clarify",
+        "resolve"
+      ],
+      "gamma": 0.95,
+      "generator_case_index": 200,
+      "observation_likelihood": {
+        "clarify": [
+          [
+            0.7184361377107101,
+            0.21638880630702367,
+            0.06517505598226614
+          ],
+          [
+            0.18796579370771097,
+            0.624068412584578,
+            0.18796579370771097
+          ],
+          [
+            0.18796579370771097,
+            0.624068412584578,
+            0.18796579370771097
+          ],
+          [
+            0.06517505598226614,
+            0.21638880630702367,
+            0.7184361377107101
+          ]
+        ],
+        "resolve": [
+          [
+            0.7184361377107101,
+            0.21638880630702367,
+            0.06517505598226614
+          ],
+          [
+            0.18796579370771097,
+            0.624068412584578,
+            0.18796579370771097
+          ],
+          [
+            0.18796579370771097,
+            0.624068412584578,
+            0.18796579370771097
+          ],
+          [
+            0.06517505598226614,
+            0.21638880630702367,
+            0.7184361377107101
+          ]
+        ],
+        "wait": [
+          [
+            0.7184361377107101,
+            0.21638880630702367,
+            0.06517505598226614
+          ],
+          [
+            0.18796579370771097,
+            0.624068412584578,
+            0.18796579370771097
+          ],
+          [
+            0.18796579370771097,
+            0.624068412584578,
+            0.18796579370771097
+          ],
+          [
+            0.06517505598226614,
+            0.21638880630702367,
+            0.7184361377107101
+          ]
+        ]
+      },
+      "observations": [
+        "frustrated",
+        "engaged",
+        "satisfied"
+      ],
+      "reference_policy": {
+        "0": "resolve",
+        "1": "resolve",
+        "2": "clarify",
+        "3": "wait"
+      },
+      "reward": {
+        "clarify": [
+          [
+            -1.92,
+            -0.7999999999999999,
+            0.21999999999999997,
+            1.1400000000000001
+          ],
+          [
+            -2.1,
+            -0.62,
+            0.4,
+            1.3199999999999998
+          ],
+          [
+            -2.2800000000000002,
+            -0.7999999999999999,
+            0.58,
+            1.5
+          ],
+          [
+            -2.46,
+            -0.98,
+            0.4,
+            1.6800000000000002
+          ]
+        ],
+        "resolve": [
+          [
+            -2.1,
+            -0.98,
+            0.03999999999999998,
+            0.96
+          ],
+          [
+            -2.28,
+            -0.8,
+            0.22000000000000003,
+            1.14
+          ],
+          [
+            -2.46,
+            -0.98,
+            0.39999999999999997,
+            1.32
+          ],
+          [
+            -2.6399999999999997,
+            -1.16,
+            0.22000000000000003,
+            1.5
+          ]
+        ],
+        "wait": [
+          [
+            -1.8,
+            -0.6799999999999999,
+            0.33999999999999997,
+            1.26
+          ],
+          [
+            -1.98,
+            -0.5,
+            0.52,
+            1.44
+          ],
+          [
+            -2.16,
+            -0.6799999999999999,
+            0.7,
+            1.62
+          ],
+          [
+            -2.34,
+            -0.86,
+            0.52,
+            1.8
+          ]
+        ]
+      },
+      "states": [
+        "unresolved",
+        "diagnosed",
+        "solution_offered",
+        "resolved"
+      ],
+      "transition": {
+        "clarify": [
+          [
+            0.7441206203670636,
+            0.19290602357594003,
+            0.05000900783198918,
+            0.0129643482250073
+          ],
+          [
+            0.16348776181548705,
+            0.6306418663835657,
+            0.16348776181548705,
+            0.042382609985460284
+          ],
+          [
+            0.042382609985460284,
+            0.16348776181548702,
+            0.6306418663835656,
+            0.16348776181548702
+          ],
+          [
+            0.012964348225007296,
+            0.05000900783198917,
+            0.19290602357594,
+            0.7441206203670634
+          ]
+        ],
+        "resolve": [
+          [
+            0.16348776181548705,
+            0.6306418663835657,
+            0.16348776181548705,
+            0.042382609985460284
+          ],
+          [
+            0.042382609985460284,
+            0.16348776181548702,
+            0.6306418663835656,
+            0.16348776181548702
+          ],
+          [
+            0.012964348225007296,
+            0.05000900783198917,
+            0.19290602357594,
+            0.7441206203670634
+          ],
+          [
+            0.012964348225007296,
+            0.05000900783198917,
+            0.19290602357594,
+            0.7441206203670634
+          ]
+        ],
+        "wait": [
+          [
+            0.7441206203670636,
+            0.19290602357594003,
+            0.05000900783198918,
+            0.0129643482250073
+          ],
+          [
+            0.7441206203670636,
+            0.19290602357594003,
+            0.05000900783198918,
+            0.0129643482250073
+          ],
+          [
+            0.16348776181548705,
+            0.6306418663835657,
+            0.16348776181548705,
+            0.042382609985460284
+          ],
+          [
+            0.042382609985460284,
+            0.16348776181548702,
+            0.6306418663835656,
+            0.16348776181548702
+          ]
+        ]
+      }
+    },
+    "schema": "MDP_ATTRIBUTION_V1",
+    "specified_step": 5,
+    "terminal_target": "resolved",
+    "trajectory": [
+      {
+        "actual_action": "clarify",
+        "baseline_action": "wait",
+        "observation": "engaged",
+        "realized_reward": 0.58,
+        "state": "solution_offered",
+        "step": 0
+      },
+      {
+        "actual_action": "resolve",
+        "baseline_action": "wait",
+        "observation": "satisfied",
+        "realized_reward": 0.4,
+        "state": "solution_offered",
+        "step": 1
+      },
+      {
+        "actual_action": "wait",
+        "baseline_action": "wait",
+        "observation": "engaged",
+        "realized_reward": -0.68,
+        "state": "solution_offered",
+        "step": 2
+      },
+      {
+        "actual_action": "resolve",
+        "baseline_action": "wait",
+        "observation": "frustrated",
+        "realized_reward": -0.8,
+        "state": "diagnosed",
+        "step": 3
+      },
+      {
+        "actual_action": "resolve",
+        "baseline_action": "wait",
+        "observation": "frustrated",
+        "realized_reward": 0.22,
+        "state": "diagnosed",
+        "step": 4
+      },
+      {
+        "actual_action": "clarify",
+        "baseline_action": "wait",
+        "observation": "satisfied",
+        "realized_reward": -0.8,
+        "state": "solution_offered",
+        "step": 5
+      },
+      {
+        "actual_action": "clarify",
+        "baseline_action": "wait",
+        "observation": "engaged",
+        "realized_reward": -0.62,
+        "state": "diagnosed",
+        "step": 6
+      },
+      {
+        "actual_action": "clarify",
+        "baseline_action": "wait",
+        "observation": "engaged",
+        "realized_reward": -0.62,
+        "state": "diagnosed",
+        "step": 7
+      },
+      {
+        "actual_action": "resolve",
+        "baseline_action": "wait",
+        "observation": "engaged",
+        "realized_reward": 0.22,
+        "state": "diagnosed",
+        "step": 8
+      },
+      {
+        "actual_action": "clarify",
+        "baseline_action": "wait",
+        "observation": "engaged",
+        "realized_reward": 0.58,
+        "state": "solution_offered",
+        "step": 9
+      }
+    ]
+  }
+}

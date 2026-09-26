@@ -20,18 +20,27 @@ class AgentAutoTest(unittest.TestCase):
         self.assertEqual(len(self.hosts), 7)
         self.assertEqual([host.priority for host in self.hosts], sorted(host.priority for host in self.hosts))
         self.assertEqual(len({host.priority for host in self.hosts}), 7)
-        passed = {"codex", "hermes", "doubao", "workbuddy"}
+        passed = {"doubao", "workbuddy"}
+        prior = {"codex", "hermes"}
         self.assertTrue(all(
-            self.by_id[host].cold_fork_status == "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+            self.by_id[host].cold_fork_status == "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI"
             for host in passed
         ))
         self.assertTrue(all(
-            self.by_id[host].cold_fork_status == "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+            self.by_id[host].cold_fork_status == "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE"
+            for host in prior
+        ))
+        self.assertTrue(all(
+            self.by_id[host].cold_fork_status == "UNTESTED_PUBLIC_ABI_AVAILABLE"
             for host in {"cline", "qwen", "cursor"}
         ))
         self.assertTrue(all(
-            self.by_id[host].compatibility_status == "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+            self.by_id[host].compatibility_status == "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI"
             for host in passed
+        ))
+        self.assertTrue(all(
+            self.by_id[host].compatibility_status == "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE"
+            for host in prior
         ))
         self.assertEqual(self.by_id["cursor"].compatibility_status, "NOT_RUN")
 
@@ -166,8 +175,9 @@ class AgentAutoTest(unittest.TestCase):
         payload = json.loads(text)
         self.assertEqual(
             payload["cold_fork_test"],
-            "PASS_VERIFIED_FOUR_HOST_PUBLIC_ABI",
+            "PASS_VERIFIED_FRESH_INSTALL_TWO_HOST_PUBLIC_ABI",
         )
+        self.assertEqual(payload["cold_fork_evidence"]["scope"], "PUBLIC_REPOSITORY_ONLY")
         self.assertNotIn("/" + "Users" + "/", text)
         self.assertNotIn("PRIVATE" + "_AUDIT_DO_NOT_PUBLISH", text)
 

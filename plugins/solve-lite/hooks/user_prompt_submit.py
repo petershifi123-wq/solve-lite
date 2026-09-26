@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -17,10 +18,28 @@ def _plugin_root() -> Path:
 
 
 def _config() -> dict[str, Any]:
-    value = json.loads((_plugin_root() / ".codex-runtime.json").read_text(encoding="utf-8"))
-    if not isinstance(value.get("asset_root"), str) or not value["asset_root"]:
-        raise RuntimeError("CODEX_RUNTIME_CONFIG_INCOMPLETE")
-    return value
+    """Optional host config: a fresh install runs on the bundled LITE runtime.
+
+    A missing, unreadable or asset_root-less config file is NOT an error - the
+    loader finds the bundled runtime by itself.
+    """
+    value: dict[str, Any] = {}
+    path = _plugin_root() / ".codex-runtime.json"
+    if path.is_file():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            loaded = {}
+        if isinstance(loaded, dict):
+            value = loaded
+    asset_root = value.get("asset_root")
+    if not isinstance(asset_root, str) or not asset_root.strip():
+        asset_root = None
+    return {
+        "asset_root": asset_root,
+        "namespace": str(value.get("namespace") or "codex-desktop"),
+        "specialist_fallback": str(value.get("specialist_fallback") or "silent"),
+    }
 
 
 def _workspace() -> Path:
@@ -39,9 +58,38 @@ def _load_abi():
     scripts = str(_plugin_root() / "skills" / "solve-lite" / "scripts")
     if scripts not in sys.path:
         sys.path.insert(0, scripts)
-    from solve_lite_abi import healthcheck, route_prompt
+    from solve_lite_abi import capabilities, healthcheck, route_prompt
 
-    return healthcheck, route_prompt
+    return healthcheck, route_prompt, capabilities
+
+
+def _note(reason: str, payload: dict[str, Any]) -> None:
+    """Record why nothing was injected. A hook must never break the host."""
+    try:
+        workspace = _workspace()
+        record = {
+            "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "event": "solve_lite_hook_passthrough",
+            "reason": reason,
+            "session_id": str(payload.get("session_id") or payload.get("conversation_id") or ""),
+            "decision_injected": False,
+            "fallback_computation": False,
+        }
+        with (workspace / "hook-events.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _passthrough(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Ordinary Lite path: no local decision, so no footer is fabricated.
+
+    The specialist pack is optional and a Lite-only install must behave like a
+    quiet passthrough rather than print a Choice/Token/reward contract for a
+    decision that was never computed.
+    """
+    _note(reason, payload)
+    return {"continue": True, "suppressOutput": True}
 
 
 def _locale(prompt: str) -> str:
@@ -140,10 +188,16 @@ def render_token_line(settlement: dict[str, Any]) -> str:
 
 def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     config = _config()
-    healthcheck, route_prompt = _load_abi()
+    healthcheck, route_prompt, capabilities = _load_abi()
     health = healthcheck(config["asset_root"])
     if health.get("status") != "PASS":
-        raise RuntimeError(str(health.get("error") or "CORE_ASSET_UNAVAILABLE"))
+        return _passthrough(str(health.get("error") or "CORE_ASSET_UNAVAILABLE"), payload)
+    report = capabilities(config["asset_root"])
+    specialist = (report.get("core") or {}).get("specialist") or {}
+    if specialist.get("status") != "AVAILABLE":
+        # capability routing decides: with no specialist pack there is no answer
+        # to inject, so stay silent instead of printing a contract we cannot fill
+        return _passthrough(str(specialist.get("reason") or "SPECIALIST_CAPABILITY_UNAVAILABLE"), payload)
 
     prompt = str(payload.get("prompt") or "")
     session_id = str(payload.get("session_id") or payload.get("conversation_id") or "ordinary-session")
@@ -184,12 +238,16 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
         namespace=str(config.get("namespace") or "codex-desktop"),
         invocation_id=f"codex:{session_id}:{turn_id}",
     )
+    answers = result.get("answers") or {}
+    if result.get("status") != "PASS" or "q_route" not in answers:
+        return _passthrough(str(result.get("error") or result.get("status") or "NO_ROUTE_ANSWER"), payload)
+
     settlement = _token_settlement(result, locale=locale)
     _append_audit(workspace, result, session_id, settlement)
     reward_footer = _visible_reward(result, locale)
     token_line = render_token_line(settlement)
 
-    answer = result["answers"]["q_route"]
+    answer = answers["q_route"]
     labels = (
         {"contradiction": "不符合", "entailment": "符合", "neutral": "不确定"}
         if locale == "zh-CN"

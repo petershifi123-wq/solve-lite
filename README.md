@@ -27,10 +27,10 @@ Solve Lite 是面向 AI Agent 的 CPU 优先本地决策运行时。它通过一
 **Specialist 专家运行时** — 可选的语义扩展能力，使用外部模型包与 ML 依赖。
 
 ```
-2.33GB specialist assets = OPTIONAL
-                         = NOT REQUIRED FOR LITE
-Lite  = 4.6MB / native subset / zero model weights
-Full  = 20 workflows / specialist expansion / 92.53% / 3–0 / ~34x
+BASE LITE (this repository)      = ~4.6MB runtime / native subset / zero model weights / offline
+DLC COMPONENTS (optional)        = review 29.17MB + topic 44.32MB + nli 76.35MB download
+                                 = 149.84MB extra download on top of the ~5.7MB clone
+financial specialist DLC         = NOT_PUBLIC (licence chain unresolved, not distributed)
 ```
 
 ## Why Solve Lite / 为什么使用 Solve Lite
@@ -81,36 +81,35 @@ Solve Lite 会按任务结构显示 Noul、Choice、Score 与独立风险概率�
 
 ## Architecture and distribution truth / 架构与分发真值
 
-The public repository contains the source-available integration layer, Universal Adapter, public ABI/loader, tests, checksums and documentation. The local closed Core is distributed separately.
+The public repository contains the source-available integration layer, Universal Adapter, public ABI/loader, the LITE native kernel (8 modules), tests, checksums and documentation. A plain clone is complete: base Lite installs nothing and needs no external asset root.
 
-公开仓库包含源码可见的集成层、Universal Adapter、公共 ABI/loader、测试、校验和与文档。本地封闭 Core 单独分发。
+公开仓库包含源码可见的集成层、Universal Adapter、公共 ABI/loader、LITE 原生内核（8 个模块）、测试、校验和与文档。克隆即完整：基础 Lite 不需安装任何东西，也不需要任何外部资产根目录。
 
-**Native Core binaries only. Model runtime assets are not redistributed and must be supplied separately.**
+**Base Lite is self-contained. Specialist model assets are redistributed only as the three public DLC component packages attached to this repository's Release.**
 
-**Core Release 只包含原生二进制。模型运行资产不再分发，必须由用户或 Owner 独立提供。**
+**基础 Lite 自带完整运行时。专家模型资产仅以三个公开 DLC 组件包的形式随本仓库 Release 分发。**
 
-The 2.33GB specialist assets are **OPTIONAL · NOT REQUIRED FOR LITE**.
+The 2.33GB full-precision specialist directory tree belongs to the **HISTORICAL FULL-PRECISION REFERENCE** (`CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json`). It is **not** an install requirement, it is **not** needed by base Lite, and nothing asks you to supply it.
 
-2.33GB 专家资产为 **OPTIONAL · NOT REQUIRED FOR LITE**（可选，Lite 运行时不需要）。
+2.33GB 全精度专家目录树属于 **历史全精度参考**（`CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json`）。它不是安装要求、基础 Lite 不需要它，也不会有人要求你提供它。
 
-The five runtime model directories are `EXTERNAL_REQUIRED`, are not in GitHub or Release assets, and are never auto-downloaded. Missing or mismatched runtime assets fail closed with `CORE_ASSET_UNAVAILABLE`; there is no fallback computation.
-
-五个运行时模型目录属于 `EXTERNAL_REQUIRED`，不会进入 GitHub 或 Release，也不会自动下载。缺失或哈希不匹配时以 `CORE_ASSET_UNAVAILABLE` 关闭失败，不执行替代计算。
+Base Lite needs no model directory at all. The three public DLC components install into the repository's own DLC area (`runtime/addons/solve-lite-int4-dlc/`) from the Release. A capability whose pack is absent is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE` with the exact missing directories; `CORE_ASSET_UNAVAILABLE` is reserved for a genuinely broken native core (missing module or hash mismatch). There is never a fallback computation.
 
 ```text
 Public repository
-  -> host adapter
+  -> host adapter (or hooks/user_prompt_submit.py)
   -> public route_prompt ABI
-  -> separately supplied native Core
-  -> separately supplied owner/BYO runtime model assets
+  -> bundled LITE native Core (hash-verified by CORE_ASSET_MANIFEST.json)
+  -> optional DLC components, installed on request from this repository's Release
 ```
 
 Therefore / 因此：
 
 ```text
-PUBLIC_SELF_CONTAINED_DISTRIBUTION=FALSE
-RUNTIME_MODEL_ASSETS=EXTERNAL_REQUIRED
-MODEL_ASSETS=BYO_OR_OWNER_SUPPLIED
+PUBLIC_SELF_CONTAINED_DISTRIBUTION=TRUE            # base Lite: native decisions, offline
+CORE_ASSET_ROOT_REQUIRED=FALSE                     # no SOLVE_LITE_CORE_ASSET_ROOT needed
+RUNTIME_MODEL_ASSETS=OPTIONAL_DLC_COMPONENTS       # 3 public packs; financial NOT_PUBLIC
+SPECIALIST_PACK_REQUIRED_AT_STARTUP=FALSE
 ```
 
 ## Optional Specialist Add-ons / 可选专业能力扩展
@@ -122,13 +121,15 @@ The default Lite Runtime is about 4.6 MB and runs on an ordinary CPU, with no Py
 
 默认 Lite Runtime 约 4.6 MB，可直接在普通 CPU 本地运行，无需 PyTorch、Transformers，也无需任何模型权重。Compact Specialist Add-ons 是完全可选的高级能力扩展，用于自然语言推理、金融情绪、知识/主题路由与高级情感判断等能力。Solve Lite 不会自动下载任何扩展包。当某个任务需要尚未安装的专业能力时，Solve Lite 会明确告诉你需要哪个扩展、下载大小与预计内存占用。是否安装，由你决定。
 
-| Add-on | Capability | Download | Required by Lite |
-|---|---|---:|---|
-| `solve-lite-review-compact` | Advanced sentiment analysis (review polarity) | 34.96 MB | No |
-| `solve-lite-topic-compact` | Knowledge / topic routing | 51.86 MB | No |
-| `solve-lite-nli-compact` | Natural-language inference | 94.98 MB | No |
+| Add-on (DLC component) | Capability | Download | Installed | Required by Lite |
+|---|---|---:|---:|---|
+| `solve-lite-review-compact` | Advanced sentiment analysis (review polarity) | 29.17 MB | 29.17 MB | No |
+| `solve-lite-topic-compact` | Knowledge / topic routing | 44.32 MB | 44.32 MB | No |
+| `solve-lite-nli-compact` | Natural-language inference | 76.35 MB | 158.86 MB | No |
 
-Compressed specialist packs use a mixed int4/int3 grouped quantization scheme (see each pack's `addon.json` / the release `addon-index.json`). They reduce download and runtime footprint substantially, but may change some specialist decisions relative to the frozen full-precision reference.
+Download sizes are the measured `.tar.gz` sizes in the Release; "installed" is the uncompressed on-disk size. The three public DLC components total **149.84 MB of download**, and installing them together with the base Lite clone lands at roughly **155.6 MB on disk** — the base Lite clone alone is **~5.7 MB**. Base Lite is never described as if it included the DLC components.
+
+Compressed specialist packs use a mixed int4/int3 grouped quantization scheme (see each pack's `addon.json` / the release `addon-index.json`). They reduce download and runtime footprint substantially, but may change some specialist decisions relative to the frozen full-precision reference. Installing a DLC component never executes it: activation is opt-in (`SOLVE_LITE_INT4_DLC=1`), lazy, and keeps at most one model resident.
 
 量化版专业能力包采用 int4/int3 混合分组量化（见各包 `addon.json` 与 release 的 `addon-index.json`）。它显著降低下载与运行资源占用，但可能导致部分专业判断发生变化。
 
@@ -153,20 +154,35 @@ Start small. Add only the intelligence you actually need.
 
 ## Install and compatibility / 安装与兼容性
 
-Run the read-only package doctor before any installation:
-
 ```bash
-python3 tools/doctor.py --repo .
+git clone https://github.com/petershifi123-wq/solve-lite
+cd solve-lite
+python3 tools/installer.py                  # install: base Lite + the 3 public DLC components
+python3 tools/installer.py --skip-dlc       # base Lite only
+python3 tools/startup_check.py --json       # may I use it right now? (STARTUP_CHECK=PASS)
+python3 tools/doctor.py                     # healthcheck + capability registry
 ```
 
-The installer defaults to dry-run. Clean-host public ABI routing is machine-verified for Codex, Hermes, Doubao, and WorkBuddy. This scoped PASS does not claim a native desktop UI hook or full automatic lifecycle support. `PARTIAL` and `NOT_RUN` are never presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
+Base Lite needs nothing else. Installing DLC components never activates them: activation is opt-in (`SOLVE_LITE_INT4_DLC=1`), lazy, and keeps at most one model resident. With the opt-in switch on, the loader assembles the assetroot view and the installed components serve real specialist decisions; with it off, an installed component is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE` (reason `INT4_BACKEND_NOT_ACTIVATED`).
 
-安装器默认 dry-run。Codex、Hermes、豆包与 WorkBuddy 的 clean-host 公共 ABI 路由已通过机器验证；该范围内的 PASS 不代表桌面 UI 钩子或完整自动生命周期已经通过。`PARTIAL` 与 `NOT_RUN` 不会被包装成 PASS。详见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
+基础 Lite 不需要任何额外步骤：LITE 运行时随仓库提供，无需设置任何资产根目录变量即可 `healthcheck` 返回 `PASS`，并在离线状态下执行原生决策。安装 DLC 组件不会激活它：激活需要显式选择（`SOLVE_LITE_INT4_DLC=1`），按需延迟加载，最多常驻一个模型；开启后 loader 会组装 asset-root 视图并让已装组件真正给出专家决策，关闭时已装组件仍返回 `SPECIALIST_CAPABILITY_UNAVAILABLE`（原因 `INT4_BACKEND_NOT_ACTIVATED`）。
+
+Layered disclosure / 分层披露：
+
+```text
+Lite only            -> ~5.7 MB on disk, no network, native decisions
+Lite + all public DLC -> ~187.6 MB on disk, of which 149.84 MB is the DLC download
+financial specialist  -> NOT_PUBLIC (not distributed, never counted in a total)
+```
+
+Fresh-install compatibility was machine-verified on two isolated host shapes (Doubao, WorkBuddy). That scoped PASS does not claim a native desktop UI hook or full automatic lifecycle support. `PARTIAL` and `NOT_RUN` are never presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
+
+全新安装兼容性已在两个隔离宿主形态（Doubao、WorkBuddy）上通过机器验证；该范围内的 PASS 不代表桌面 UI 钩子或完整自动生命周期已经通过。`PARTIAL` 与 `NOT_RUN` 不会被包装成 PASS。详见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
 Host evidence naming / 宿主证据命名：
 
 ```
-HOST_SHAPED_COLD_INSTALL_COMPATIBILITY=PASS
+HOST_SHAPED_FRESH_INSTALL_COMPATIBILITY=PASS
 NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN
 FULL_UI_LIFECYCLE=NOT_CLAIMED
 ```

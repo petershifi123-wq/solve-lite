@@ -98,15 +98,20 @@ The Hooks panel only loads when the app knows at least one project root
 `正在加载钩子… / Loading hooks…`. So:
 
 1. Codex Desktop → open an ordinary session in a **trusted** project first.
-2. Settings (设置) → Hooks (钩子). The Solve Lite hook shows up under
+2. Before the first ordinary session, confirm the package itself is usable:
+   `python3 tools/startup_check.py --json` must print `STARTUP_CHECK=PASS`
+   (bundled LITE core verified, healthcheck PASS without any asset root, native
+   decision really runs). The installer runs the same checker and prints the same
+   verdict as its last line.
+3. Settings (设置) → Hooks (钩子). The Solve Lite hook shows up under
    "From Plugins / 来自插件" as event `UserPromptSubmit` with a `新钩子 / New hook`
    badge.
-3. Click the **`信任 / Trust`** button in that hook row (next to the disabled toggle).
+4. Click the **`信任 / Trust`** button in that hook row (next to the disabled toggle).
    Only this visible click writes `hooks.state.<key>.trusted_hash`; the adapter
    never writes it.
-4. Restart Codex Desktop, open a fresh ordinary session, ask one bounded question and
+5. Restart Codex Desktop, open a fresh ordinary session, ask one bounded question and
    confirm the visible percentage line, token status and `+5` reward footer.
-5. `snapshot` before the session and re-run `doctor --ledger-baseline …`;
+6. `snapshot` before the session and re-run `doctor --ledger-baseline …`;
    `HOOK_TRUST`, `RESTART_PERSISTENCE`, `ORDINARY_SESSION` and `REAL_INVOKE`
    must all be `PASS` for a product PASS.
 

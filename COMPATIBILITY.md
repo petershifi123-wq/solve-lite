@@ -1,36 +1,43 @@
 # Compatibility Snapshot
 
-This snapshot reports only the capability proven by machine evidence. A clean-host public ABI PASS does not claim a native desktop UI hook, automatic installer lifecycle, or full host-product support.
+This snapshot reports only the capability proven by machine evidence. A fresh-install public ABI PASS does not claim a native desktop UI hook, automatic installer lifecycle, or full host-product support.
 
 | Surface | Version | Status |
 |---|---|---|
-| Solve Lite public plugin | 0.1.5 | OFFLINE_HARNESS_PASS |
-| Native Core | 0.1.3 | UNCHANGED_EXTERNAL_ASSET |
-| Codex | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
-| Hermes | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
-| Doubao | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
-| WorkBuddy | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
+| Solve Lite public plugin | 0.1.6 | FRESH_INSTALL_ACCEPTANCE_PASS |
+| LITE runtime (bundled, 8 native modules) | LITE build lot | PASS_VERIFIED_BUNDLED_RUNTIME |
+| Full-precision core manifest | v2 (historical) | HISTORICAL_REFERENCE_ONLY |
+| DLC components (review, topic, nli) | 0.1.5 packages | INSTALL_VERIFIED_OPT_IN_ACTIVATION |
+| Financial specialist DLC | not published | NOT_PUBLIC |
+| Doubao | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI |
+| WorkBuddy | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI |
+| Codex | prior scope | PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE |
+| Hermes | prior scope | PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE |
 | Cline | not rerun in this gate | PARTIAL_FROZEN |
 | Qwen | not rerun in this gate | PARTIAL_FROZEN |
 | Cursor | not run | NOT_RUN |
 | macOS | 27.0 arm64 | TESTED |
 | Python | 3.9.6 | TESTED |
 
-The four verified forks each passed public repository installation, sealed Owner runtime injection, runtime hash verification, host detection, and one real local invocation. Existing private host state participation, network attempts, credential reads, and Jev API calls were all zero.
+The two fresh isolated hosts each started from a clean copy of the public tree and passed: bundled-runtime healthcheck `PASS` with no asset root configured, one real offline native decision, clean `SPECIALIST_CAPABILITY_UNAVAILABLE` for a specialist case, verified installation of the three public DLC components, opt-in lazy activation left off, and byte-identical frozen kernel modules. Network attempts during runtime, credential reads, and Jev API calls were zero. Codex and Hermes were verified earlier under the owner-runtime scope and are not re-claimed here.
 
 Evidence identity:
 
-- Public commit under test: `08814674c0a07c7efc1f90fc48100d64a5e6d04d`
-- Native Core archive: `882dcfe4b0de0d08cf2511772e5e86ae530ccd568d240fde82e6c6eda5785c3e`
-- Owner runtime tree: `62326a7600b3cc568ba0bd1cb39121510c491a6522e10bd746bc239b782f84a0`
-- Four-host receipt: `64a94a211bb52cf463bd868eda5adda7efd82500921ddf0e0b14d4285eedeef8`
+- Public repository payload: `PUBLIC_REPO_MANIFEST.json` (`payload_tree_sha256`)
+- Bundled LITE runtime: `CORE_ASSET_MANIFEST.json` (8 module hashes)
+- Historical full-precision core manifest: `CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json`
+- Fresh-install receipts: `acceptance/runs/*.json` in the release evidence bundle
 
 Host evidence naming / 宿主证据命名:
 
 ```
-HOST_SHAPED_COLD_INSTALL_COMPATIBILITY=PASS
+HOST_SHAPED_FRESH_INSTALL_COMPATIBILITY=PASS
 NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN
 FULL_UI_LIFECYCLE=NOT_CLAIMED
 ```
 
-`PUBLIC_SELF_CONTAINED_DISTRIBUTION=FALSE` remains unchanged. Model assets are external and must be supplied by the user or Owner. Missing or mismatched assets fail closed.
+Distribution truth: `PUBLIC_SELF_CONTAINED_DISTRIBUTION=TRUE` for base Lite (bundled LITE runtime, no asset root required). Specialist model assets are `OPTIONAL_DLC_COMPONENTS`: the three public packs come only from this repository's Release, the financial pair is `NOT_PUBLIC`, nothing is auto-downloaded, and a missing pack is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE` - never as a core failure and never with a fallback computation.
+
+Round-3 execution truth: with the opt-in backend active (`SOLVE_LITE_INT4_DLC=1`), `nli` and `topic` execute real specialist decisions on an isolated install; at most one DLC model is resident at a time (load/unload swap, `DLCBusy` while a forward is in flight), and with the switch off an installed component still answers `SPECIALIST_CAPABILITY_UNAVAILABLE` (reason `INT4_BACKEND_NOT_ACTIVATED`).
+
+Known limitation (measured): the `review` component's route is admitted by the case-schema check but its sealed adapter then refuses with `adapter support dimension does not match public schema`. That route is refused cleanly (no fallback, no fabricated answer) pending a VV ruling on the intended review schema.

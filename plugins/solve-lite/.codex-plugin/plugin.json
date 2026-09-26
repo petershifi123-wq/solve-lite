@@ -1,7 +1,7 @@
 {
   "name": "solve-lite",
-  "version": "0.1.5",
-  "description": "Local-first bounded decision routing, calibrated percentages, token truth, and auditable rewards for ordinary Codex Desktop sessions.",
+  "version": "0.1.6",
+  "description": "Local-first bounded decision routing, calibrated percentages, token truth, and auditable rewards for ordinary Codex Desktop sessions. Fresh installs run on the bundled LITE runtime with no asset root; specialist capabilities install as optional DLC components.",
   "author": {
     "name": "Peter"
   },
@@ -15,10 +15,10 @@
   "interface": {
     "displayName": "Solve Lite",
     "shortDescription": "Local decisions, percentages, and rewards.",
-    "longDescription": "Automatically routes ordinary Codex Desktop prompts through the local Solve Lite parent router and exposes evidence-backed percentages, token status, and reward settlement.",
+    "longDescription": "Routes ordinary Codex Desktop prompts through the local Solve Lite parent router and exposes evidence-backed percentages, token status, and reward settlement. A plain clone is complete: the LITE runtime is bundled, no asset root is configured, and specialist capabilities install as optional DLC components from the release.",
     "developerName": "Peter",
     "category": "Productivity",
-    "capabilities": ["local-routing", "decision-percentages", "reward-ledger"],
+    "capabilities": ["local-routing", "decision-percentages", "reward-ledger", "lite-runtime", "optional-dlc"],
     "defaultPrompt": "Use Solve Lite automatically for this ordinary Codex session."
   }
 }

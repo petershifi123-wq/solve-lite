@@ -1,4 +1,12 @@
 {
-  "asset_root": "/authorized/local/solve-lite-runtime-assets",
-  "namespace": "codex-desktop"
+  "namespace": "codex-desktop",
+  "asset_root": null,
+  "specialist_fallback": "silent",
+  "notes": [
+    "Copied to .codex-runtime.json by the adapter/install step. All keys are optional.",
+    "asset_root: omit it (or leave it null) and the loader uses the bundled LITE runtime. Setting it is only needed to point at an extra/external asset root.",
+    "SOLVE_LITE_RUNTIME_ROOT overrides the runtime location; SOLVE_LITE_CORE_ASSET_ROOT is still accepted as a deprecated alias.",
+    "Specialist DLC components: install with `python3 tools/installer.py --install-dlc`, execute opt-in with SOLVE_LITE_INT4_DLC=1 (lazy, max one resident).",
+    "A missing specialist pack is reported as SPECIALIST_CAPABILITY_UNAVAILABLE; it is never a core/asset-root failure."
+  ]
 }
