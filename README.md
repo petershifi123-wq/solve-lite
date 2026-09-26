@@ -113,6 +113,44 @@ RUNTIME_MODEL_ASSETS=EXTERNAL_REQUIRED
 MODEL_ASSETS=BYO_OR_OWNER_SUPPLIED
 ```
 
+## Optional Specialist Add-ons / 可选专业能力扩展
+
+**You do not need any add-on to use Solve Lite Lite.**
+**无需安装任何扩展包，也可以直接使用 Solve Lite Lite。**
+
+The default Lite Runtime is about 4.6 MB and runs on an ordinary CPU, with no PyTorch, no Transformers and no model weights. Compact Specialist Add-ons are entirely optional extensions for advanced capabilities such as natural-language inference, financial sentiment, knowledge/topic routing and advanced sentiment judgement. Solve Lite never downloads any add-on automatically. When a task needs a specialist capability that is not installed, Solve Lite tells you which add-on is required, its download size and its expected memory usage. Whether to install it is your decision.
+
+默认 Lite Runtime 约 4.6 MB，可直接在普通 CPU 本地运行，无需 PyTorch、Transformers，也无需任何模型权重。Compact Specialist Add-ons 是完全可选的高级能力扩展，用于自然语言推理、金融情绪、知识/主题路由与高级情感判断等能力。Solve Lite 不会自动下载任何扩展包。当某个任务需要尚未安装的专业能力时，Solve Lite 会明确告诉你需要哪个扩展、下载大小与预计内存占用。是否安装，由你决定。
+
+| Add-on | Capability | Download | Required by Lite |
+|---|---|---:|---|
+| `solve-lite-review-compact` | Advanced sentiment analysis (review polarity) | 34.96 MB | No |
+| `solve-lite-topic-compact` | Knowledge / topic routing | 51.86 MB | No |
+| `solve-lite-nli-compact` | Natural-language inference | 94.98 MB | No |
+
+Compressed specialist packs use a mixed int4/int3 grouped quantization scheme (see each pack's `addon.json` / the release `addon-index.json`). They reduce download and runtime footprint substantially, but may change some specialist decisions relative to the frozen full-precision reference.
+
+量化版专业能力包采用 int4/int3 混合分组量化（见各包 `addon.json` 与 release 的 `addon-index.json`）。它显著降低下载与运行资源占用，但可能导致部分专业判断发生变化。
+
+**Decision agreement vs. the frozen full-precision specialist reference (1,500 frozen decisions per capability):**
+
+| Add-on | Decision agreement |
+|---|---:|
+| Review | 97.47% |
+| Topic | 99.13% |
+| NLI | 95.93% |
+
+Quantization reduces download and runtime footprint but may change some specialist decisions.
+
+相对于冻结的全精度专业能力参考版本，当前量化扩展的决策一致率：Review 97.47%、Topic 99.13%、NLI 95.93%。量化显著降低下载与运行资源占用，但可能导致部分专业判断发生变化。
+
+Financial sentiment specialist assets are **not** redistributed: their licence chain is unresolved, so they stay in an engineering-verification-only state and are excluded from all public packages and releases.
+
+金融情绪方向的专家资产**不再分发**：其许可链尚未澄清，因此仅保留工程验证状态，不进入任何公开包与 Release。
+
+Start small. Add only the intelligence you actually need.
+先用最小的版本，只安装你真正需要的智能。
+
 ## Install and compatibility / 安装与兼容性
 
 Run the read-only package doctor before any installation:

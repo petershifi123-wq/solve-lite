@@ -10,6 +10,11 @@
 - Keeps Native Core 0.1.3, external model ownership, fail-closed loading, `PUBLIC_SELF_CONTAINED_DISTRIBUTION=FALSE` and all protected product boundaries unchanged.
 - Does not modify math, thresholds, calibration, probability or markov implementations; no Core rebuild and no Core binary byte mutation.
 
+- Adds optional **Compact Specialist Add-ons** (review / topic / NLI) for advanced semantic capabilities: mixed int4/int3 grouped quantization, 34.96 / 51.86 / 94.98 MB, downloaded and loaded strictly on demand, one at a time, with idle unload; decision agreement vs the frozen full-precision reference 97.47% / 99.13% / 95.93%.
+- Records that the 2.33 GB full-precision specialist pack is no longer required for anything: Lite runs without it and add-ons are optional.
+- Keeps financial specialist assets out of all public packages and releases (licence chain unresolved; engineering-verification-only).
+- Adds `addon-index.json` and `INT4_DLC_VALIDATION_SUMMARY.json` release evidence; no case-level prompts or expected outputs are published.
+
 ## 0.1.4 — 2026-09-26
 
 - Records the one-time VV-approved four-host clean-fork closure for Codex, Hermes, Doubao, and WorkBuddy.
