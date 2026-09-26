@@ -52,6 +52,12 @@
       "sha256": "b4e9120175059f39ef56e3b5fd2a3c5e06eead42d5bf995411556990e84c2c95"
     },
     {
+      "bytes": 1511,
+      "mode": "0644",
+      "path": "SECURITY.md",
+      "sha256": "26829f9261a077d1e53cfb46c3608bafdd1d4a9da39c1bf621c2cbb157a8ec1a"
+    },
+    {
       "bytes": 936,
       "mode": "0644",
       "path": "plugins/solve-lite/.codex-plugin/plugin.json",
@@ -238,8 +244,8 @@
       "sha256": "4e34d69899bd101ab1a871c4515221922b2b1e23464087cb7da1b03c658f5852"
     }
   ],
-  "payload_file_count": 38,
-  "payload_tree_sha256": "f41fb41c5d4dfff1544baaa3eb0f30fd6a6f0ef3862a089a08881df0a44019cd",
+  "payload_file_count": 39,
+  "payload_tree_sha256": "d23bcbd77b223a4b388c492dd4d9f8fd3a6edab48fe7375750b69892b54b559f",
   "schema": "solve-lite.public-repo-manifest.v1",
   "source_authority_manifest_sha256": "f81821e9e76b9bee22aa373c1e33ed5dfc0df6ab013357d22de8f6ab59008507",
   "source_authority_tree_sha256": "d12ebbc7da56009701a036704d0f3e489d9817e0122405d6645c7d57fb765760",
