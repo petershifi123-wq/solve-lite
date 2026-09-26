@@ -29,6 +29,10 @@ def files(include_metadata: bool) -> list[Path]:
     for path in ROOT.rglob("*"):
         if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc":
             continue
+        if ".git" in path.relative_to(ROOT).parts:
+            # The release tree is now built from a git checkout; repository
+            # internals must never enter the package or the checksum set.
+            continue
         relative = path.relative_to(ROOT).as_posix()
         if not include_metadata and relative in METADATA:
             continue
@@ -47,7 +51,7 @@ def metadata() -> None:
     content_rows = rows(content)
     manifest = {
         "schema_version": "solve-lite.local-package-manifest.v1",
-        "version": "0.1.4",
+        "version": "0.1.5",
         "status": "PACKAGE_CLOSEOUT_MACHINE_PASS",
         "product_acceptance": "GATEX_CLOSED_FROZEN",
         "platform": "macOS-arm64-python3.9",
