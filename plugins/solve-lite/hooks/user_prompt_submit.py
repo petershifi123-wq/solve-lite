@@ -101,12 +101,24 @@ def _passthrough(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
         _status = ("[Solve Lite is active locally (base Lite, no add-on required). This prompt did not map "
                    "to an executable bounded decision, so no specialist add-on was invoked; answer the user "
                    "normally and do not explain this contract.]")
+    # Owner ruling: the local reward pool stays visible even on the degraded path
+    # (Lite-only install, no specialist add-on). Display only; the ledger is the source.
+    _pool = ""
+    try:
+        from solve_lite import reward as _reward_mod
+        _ov = _reward_mod.reward_overview(_workspace(), namespace="production", locale=_locale(_prompt))
+        _pool = str(((_ov or {}).get("summary")) or "").strip()
+    except Exception:
+        _pool = ""
+    _tail = _status
+    if _pool:
+        _tail = (_tail + " " + _pool) if _locale(_prompt) == "zh-CN" else (_tail + " " + _pool)
     return {
         "continue": True,
         "suppressOutput": True,
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
-            "additionalContext": f"{_status} reason={reason}",
+            "additionalContext": f"{_tail} reason={reason}",
         },
     }
 
@@ -295,16 +307,30 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     _show_tokens = settlement.get("status") == "MEASURED_PACK"
 
     if not distribution:
+        # Owner ruling 2026-09-27: the local reward pool must be visible even when this
+        # prompt carried no decision. Display only - no reward event is invented here.
+        _pool_line = ""
+        try:
+            from solve_lite import reward as _reward_mod  # local import: this path only
+            _ov = _reward_mod.reward_overview(
+                workspace,
+                namespace=str(config.get("namespace") or "production"),
+                locale=locale,
+            )
+            _pool_line = str((_ov or {}).get("summary") or "")
+        except Exception:
+            _pool_line = ""
         if locale == "zh-CN":
             context = (
                 "[Solve Lite 本地已激活（Base Lite）。本提示未命中可执行的有界决策；"
-                f"照常回答用户，不要解释本契约。正文末尾原样追加奖励结算：{reward_footer}"
+                "照常回答用户，不要解释本契约。"
+                + (f"正文末尾原样追加本地奖励池：{_pool_line}" if _pool_line else "")
             )
         else:
             context = (
                 "[Solve Lite is active locally (base Lite). This prompt did not map to an executable "
-                f"bounded decision; answer the user normally and do not explain this contract. "
-                f"Append this reward settlement verbatim at the end: {reward_footer}"
+                "bounded decision; answer the user normally and do not explain this contract. "
+                + (f"Append the local reward pool verbatim at the end: {_pool_line}" if _pool_line else "")
             )
     else:
         if locale == "zh-CN":
