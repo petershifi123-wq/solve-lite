@@ -59,7 +59,19 @@ class PublicPackageContractTest(unittest.TestCase):
         self.assertEqual(core["public_abi"]["status"], "AVAILABLE")
         self.assertEqual(core["public_abi"]["public_entry"], "route_prompt")
         self.assertEqual(core["public_abi"]["core_native_entry"], "route_session")
+        self.assertFalse(core["public_self_contained_distribution"])
+        runtime = core["runtime_model_assets"]
+        self.assertEqual(runtime["status"], "EXTERNAL_REQUIRED")
+        self.assertEqual(runtime["distribution"], "BYO_OR_OWNER_SUPPLIED")
+        self.assertFalse(runtime["included_in_public_repository"])
+        self.assertFalse(runtime["included_in_release"])
+        self.assertFalse(runtime["auto_download"])
+        self.assertFalse(runtime["fallback_computation"])
+        self.assertEqual(runtime["total_files"], 109)
+        self.assertEqual(runtime["total_bytes"], 2333776695)
+        self.assertEqual(len(runtime["required_directories"]), 5)
         self.assertFalse(list(ROOT.rglob("*.so")))
+        self.assertFalse(any(path.name == "OWNER_RUNTIME_ASSET_MANIFEST.json" for path in ROOT.rglob("*")))
         self.assertFalse((SCRIPTS / "solve_lite").exists())
 
     def test_registry_and_entrypoint_truth(self):
