@@ -1,0 +1,247 @@
+{
+  "cold_fork": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+  "core_assets": "CORE_ASSET_MANIFEST.json",
+  "excluded_counts": {
+    "closed_core_artifacts": 8,
+    "legacy_prerelease_files": 6,
+    "local_state_component": 1,
+    "private_acceptance_records": 9,
+    "unneeded_private_runtime_paths": 23
+  },
+  "files": [
+    {
+      "bytes": 318,
+      "mode": "0644",
+      "path": ".agents/plugins/marketplace.json",
+      "sha256": "a2c4742ad70ad9e4bbe8fcec6425f5cf927c4c40ad11db2cbba98613db33ef9d"
+    },
+    {
+      "bytes": 742,
+      "mode": "0644",
+      "path": "CHANGELOG.md",
+      "sha256": "6ae574e3497c010db14cc319140b85173328b8dd8a984bfc5408c7a13b9533d4"
+    },
+    {
+      "bytes": 696,
+      "mode": "0644",
+      "path": "COMPATIBILITY.md",
+      "sha256": "56b6e32e001f6e018ff216bf73c605bc340df238d2d35b83213b3f4cede0543d"
+    },
+    {
+      "bytes": 1800,
+      "mode": "0644",
+      "path": "CORE_ASSET_MANIFEST.json",
+      "sha256": "cd00d0cfc5ff0cec6ed76349dc320e7938395298baa8aefbf7c94f0620aaf95b"
+    },
+    {
+      "bytes": 1196,
+      "mode": "0644",
+      "path": "LICENSE",
+      "sha256": "ca15e033fbd3c72375b97fa9034911e67fe54c491c4a6059a25ee228233b1461"
+    },
+    {
+      "bytes": 304,
+      "mode": "0644",
+      "path": "NOTICE.md",
+      "sha256": "b9700551a013cd5b124ddaaeb84d0211a0586c256f19984cfcca03868f46e318"
+    },
+    {
+      "bytes": 697,
+      "mode": "0644",
+      "path": "README.md",
+      "sha256": "b4e9120175059f39ef56e3b5fd2a3c5e06eead42d5bf995411556990e84c2c95"
+    },
+    {
+      "bytes": 936,
+      "mode": "0644",
+      "path": "plugins/solve-lite/.codex-plugin/plugin.json",
+      "sha256": "6b7f272b34dabd33107a6a7588606776a246e08d25fff2de71bb12a2804e5ad0"
+    },
+    {
+      "bytes": 98,
+      "mode": "0644",
+      "path": "plugins/solve-lite/.codex-runtime.example.json",
+      "sha256": "32d60242790e433d63eaaec2dec5e44b0a6b285a2e5c3730028118d7e15a1a94"
+    },
+    {
+      "bytes": 233,
+      "mode": "0644",
+      "path": "plugins/solve-lite/hooks/hooks.json",
+      "sha256": "1d1691913d198e7e22f1a719b592707fa58895a80f2907f01a1ab869ae3a92ad"
+    },
+    {
+      "bytes": 9683,
+      "mode": "0755",
+      "path": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "sha256": "9bb91cacfad9e8640a8400f45f1fe665f0aac4470df2f52e7990d5e205948b4f"
+    },
+    {
+      "bytes": 6988,
+      "mode": "0644",
+      "path": "plugins/solve-lite/scripts/CODEX_DESKTOP_ADAPTER.md",
+      "sha256": "e59cbce015c8380b7762649472e6a5887fe4f2b78d9ae78a01bdf25bf3d8585a"
+    },
+    {
+      "bytes": 46316,
+      "mode": "0755",
+      "path": "plugins/solve-lite/scripts/codex_desktop_adapter.py",
+      "sha256": "6fa3565275fa25d6e29a15f594b900a02d6d4bc999895e01dce2cb68107fbbae"
+    },
+    {
+      "bytes": 10445,
+      "mode": "0644",
+      "path": "plugins/solve-lite/scripts/test_codex_desktop_adapter.py",
+      "sha256": "57590d58271172931ca95fc2bcc3a22f57d95c3ea99180ee465cc1221318bce9"
+    },
+    {
+      "bytes": 4653,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
+      "sha256": "e00e8b841b972aba11e1f761895589c6c1d10cd17ea456261d3b72cf364a9de2"
+    },
+    {
+      "bytes": 344,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/assets/public_demo/catalog.json",
+      "sha256": "0fe6ca8cf37d3eeb2b5d19d7a47b45b3bc6829bddc39657c36a406c91993c5fb"
+    },
+    {
+      "bytes": 502,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/assets/public_demo/docs/current.md",
+      "sha256": "a04d9cd4cc7df6cab110011da30370cb9fafc239c671fe204e3ac8050c3ed34c"
+    },
+    {
+      "bytes": 367,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/assets/public_demo/docs/guide.md",
+      "sha256": "fc335329df5dbac47ff32616657902a344be6eb95aa609ece96f8bce618d0677"
+    },
+    {
+      "bytes": 341,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/assets/public_demo/docs/history.md",
+      "sha256": "7de9ca980d72dbd646719a5d842cd86e5344efb7d8bde3579f5986bdf0ea8cd0"
+    },
+    {
+      "bytes": 291,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/assets/public_demo/scenario_chat.json",
+      "sha256": "e4e2fd7920376bfb383cfa07eabe545249fe6049da0ce612ba577116df1ae352"
+    },
+    {
+      "bytes": 1248,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/references/measurement.md",
+      "sha256": "7f01cb648b550dc450b6d95cbb1d6767c4d75ea46eb03a41a84124ea4a43fcae"
+    },
+    {
+      "bytes": 2279,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/references/probability.md",
+      "sha256": "bc9f61947290c1c31660820e5df0fd8e0ba54942707e21b7f9e7c88994911c23"
+    },
+    {
+      "bytes": 2605,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/references/protocol.md",
+      "sha256": "feb8128ae03891347f1212aea58578ab417a12e0109223234440def2e33debd5"
+    },
+    {
+      "bytes": 3570,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/references/rewards.md",
+      "sha256": "3bc0a77bff3c9a41c84da5808a2e3930ec4200500b0af59e4da3af2ee80d4406"
+    },
+    {
+      "bytes": 2232,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/references/scenarios.md",
+      "sha256": "969c63737524b22949650826f81c62d28a914cc22961cbf9718053587439ebe4"
+    },
+    {
+      "bytes": 16267,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/scripts/agent_auto.py",
+      "sha256": "7daa5396098af3e0da29fb94b1a9b84c7b5dff61f0769176986935ed0fcaaf58"
+    },
+    {
+      "bytes": 4933,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_abi.py",
+      "sha256": "24e5449e4d0b232b3e002862b5f2b36acd8aa14f6b0dc2d23f8ae19c06a090bd"
+    },
+    {
+      "bytes": 7554,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/scripts/test_agent_auto.py",
+      "sha256": "0323f50b2cad7567ee4d2e1fb330565d43a4fa99be9fc50fd39fd8e288d83e6c"
+    },
+    {
+      "bytes": 2358,
+      "mode": "0644",
+      "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
+      "sha256": "fa0983fdb8d573b36762bd003be5dac46dbb9f11fc00ae291e90cdfdcd1342ac"
+    },
+    {
+      "bytes": 3702,
+      "mode": "0644",
+      "path": "tests/test_package.py",
+      "sha256": "9028a6f18d334499386b8df392ff4c9964ddafcb81f77fd0066834f2ea42edfc"
+    },
+    {
+      "bytes": 954,
+      "mode": "0644",
+      "path": "tools/_dispatch.py",
+      "sha256": "d666747979a02acc9f06e7c57c4ea881b7a65999c34c1a109f38c946f79ec68e"
+    },
+    {
+      "bytes": 6404,
+      "mode": "0644",
+      "path": "tools/build_release.py",
+      "sha256": "54383ce810ce11004c34c603c4a0c7977db84468a9cfe583e6be2efd54fd276a"
+    },
+    {
+      "bytes": 3155,
+      "mode": "0644",
+      "path": "tools/count_loc.py",
+      "sha256": "03459860fc5e8b959f719a9f28bdf4df0ac0dede09dcf60b972f8d3b087b46de"
+    },
+    {
+      "bytes": 224,
+      "mode": "0644",
+      "path": "tools/doctor.py",
+      "sha256": "06f98af6fefadf706765da136f36f6aeb132bce42a04b25b790e9f90d0a9e22b"
+    },
+    {
+      "bytes": 226,
+      "mode": "0644",
+      "path": "tools/installer.py",
+      "sha256": "8d36656d3dae10eda2ef7450781243e01a7f7a3d9841975fd2f6a4d78c6b8e50"
+    },
+    {
+      "bytes": 2656,
+      "mode": "0644",
+      "path": "tools/offline_harness.py",
+      "sha256": "60de4cd12ad17bf06dbc6475bd9260dd510bdbcbc9565176c9b118750eb2b7f9"
+    },
+    {
+      "bytes": 211,
+      "mode": "0644",
+      "path": "tools/uninstall.py",
+      "sha256": "cee729f96cc065fa1a1b34ac4d09df9130395e2339ee086f829f74932c71b7d4"
+    },
+    {
+      "bytes": 1538,
+      "mode": "0644",
+      "path": "tools/verify_source_cache.py",
+      "sha256": "4e34d69899bd101ab1a871c4515221922b2b1e23464087cb7da1b03c658f5852"
+    }
+  ],
+  "payload_file_count": 38,
+  "payload_tree_sha256": "f41fb41c5d4dfff1544baaa3eb0f30fd6a6f0ef3862a089a08881df0a44019cd",
+  "schema": "solve-lite.public-repo-manifest.v1",
+  "source_authority_manifest_sha256": "f81821e9e76b9bee22aa373c1e33ed5dfc0df6ab013357d22de8f6ab59008507",
+  "source_authority_tree_sha256": "d12ebbc7da56009701a036704d0f3e489d9817e0122405d6645c7d57fb765760",
+  "version": "0.1.3-public"
+}

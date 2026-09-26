@@ -1,0 +1,132 @@
+{
+  "schema_version": "solve-lite.agent-registry.v1",
+  "public_abi_entrypoint": "solve_lite_abi:route_prompt",
+  "supported_modes_priority": [
+    "explicit_host_id",
+    "environment",
+    "executable",
+    "filesystem_marker"
+  ],
+  "cold_fork_test": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+  "hosts": [
+    {
+      "host_id": "hermes",
+      "aliases": ["hermes-desktop"],
+      "priority": 10,
+      "compatibility_status": "PASS_ACCEPTED",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "environment", "executable", "filesystem_marker"],
+      "capabilities": ["public_abi", "skill_plan"],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "detection": {
+        "environment_keys": ["HERMES_HOME"],
+        "executables": ["hermes"],
+        "filesystem_markers": [".hermes"]
+      }
+    },
+    {
+      "host_id": "codex",
+      "aliases": ["codex-desktop", "chatgpt"],
+      "priority": 20,
+      "compatibility_status": "PARTIAL_FROZEN",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "environment", "executable", "filesystem_marker"],
+      "capabilities": ["public_abi", "mcp_plan", "skill_plan", "public_adapter_apply"],
+      "public_adapter_entrypoint": "plugins/solve-lite/scripts/codex_desktop_adapter.py",
+      "mcp_config_key": "mcpServers",
+      "mcp_cwd": "${PLUGIN_ROOT}",
+      "detection": {
+        "environment_keys": ["CODEX_HOME"],
+        "executables": ["codex"],
+        "filesystem_markers": [".codex"]
+      }
+    },
+    {
+      "host_id": "workbuddy",
+      "aliases": ["workbuddy-desktop", "workbuddy-ai"],
+      "priority": 30,
+      "compatibility_status": "PARTIAL_FROZEN",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "executable", "filesystem_marker"],
+      "capabilities": ["public_abi", "skill_plan"],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "detection": {
+        "environment_keys": [],
+        "executables": ["workbuddy"],
+        "filesystem_markers": [".workbuddy-ai"]
+      }
+    },
+    {
+      "host_id": "cline",
+      "aliases": ["cline-nightly"],
+      "priority": 40,
+      "compatibility_status": "PARTIAL_FROZEN",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "filesystem_marker"],
+      "capabilities": ["public_abi", "skill_plan"],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "detection": {
+        "environment_keys": [],
+        "executables": [],
+        "filesystem_markers": [".vscode/extensions"]
+      }
+    },
+    {
+      "host_id": "qwen",
+      "aliases": ["qwen-code"],
+      "priority": 50,
+      "compatibility_status": "PARTIAL_FROZEN",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "environment", "executable", "filesystem_marker"],
+      "capabilities": ["public_abi", "skill_plan"],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "detection": {
+        "environment_keys": ["QWEN_HOME"],
+        "executables": ["qwen"],
+        "filesystem_markers": [".qwen"]
+      }
+    },
+    {
+      "host_id": "cursor",
+      "aliases": ["cursor-desktop"],
+      "priority": 60,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "executable", "filesystem_marker"],
+      "capabilities": ["public_abi"],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "detection": {
+        "environment_keys": [],
+        "executables": ["cursor"],
+        "filesystem_markers": [".cursor"]
+      }
+    },
+    {
+      "host_id": "doubao",
+      "aliases": ["doubaowork"],
+      "priority": 70,
+      "compatibility_status": "UNSUPPORTED",
+      "cold_fork_status": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+      "supported_modes": ["explicit_host_id", "executable", "filesystem_marker"],
+      "capabilities": ["public_abi"],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "detection": {
+        "environment_keys": [],
+        "executables": ["doubaowork"],
+        "filesystem_markers": ["Library/Application Support/DoubaoWork"]
+      }
+    }
+  ]
+}

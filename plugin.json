@@ -1,0 +1,24 @@
+{
+  "name": "solve-lite",
+  "version": "0.1.3",
+  "description": "Local-first bounded decision routing, calibrated percentages, token truth, and auditable rewards for ordinary Codex Desktop sessions.",
+  "author": {
+    "name": "Peter"
+  },
+  "hooks": "./hooks/hooks.json",
+  "skills": "./skills/",
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/hooks.json"
+    }
+  },
+  "interface": {
+    "displayName": "Solve Lite",
+    "shortDescription": "Local decisions, percentages, and rewards.",
+    "longDescription": "Automatically routes ordinary Codex Desktop prompts through the local Solve Lite parent router and exposes evidence-backed percentages, token status, and reward settlement.",
+    "developerName": "Peter",
+    "category": "Productivity",
+    "capabilities": ["local-routing", "decision-percentages", "reward-ledger"],
+    "defaultPrompt": "Use Solve Lite automatically for this ordinary Codex session."
+  }
+}
