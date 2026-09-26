@@ -76,10 +76,14 @@ class PublicPackageContractTest(unittest.TestCase):
 
     def test_registry_and_entrypoint_truth(self):
         registry = json.loads((SCRIPTS.parent / "assets" / "agent_registry.json").read_text(encoding="utf-8"))
-        expected = "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+        expected = "PASS_VERIFIED_FOUR_HOST_PUBLIC_ABI"
+        passed = "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+        pending = "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
         self.assertEqual(registry["public_abi_entrypoint"], "solve_lite_abi:route_prompt")
         self.assertEqual(registry["cold_fork_test"], expected)
-        self.assertTrue(all(host["cold_fork_status"] == expected for host in registry["hosts"]))
+        by_id = {host["host_id"]: host for host in registry["hosts"]}
+        self.assertTrue(all(by_id[name]["cold_fork_status"] == passed for name in ("codex", "hermes", "doubao", "workbuddy")))
+        self.assertTrue(all(by_id[name]["cold_fork_status"] == pending for name in ("cline", "qwen", "cursor")))
 
     def test_no_sensitive_paths_or_private_records(self):
         home_prefix = "/" + "Users" + "/"
