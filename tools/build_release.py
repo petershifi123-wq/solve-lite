@@ -47,9 +47,9 @@ def metadata() -> None:
     content_rows = rows(content)
     manifest = {
         "schema_version": "solve-lite.local-package-manifest.v1",
-        "version": "0.1.3",
+        "version": "0.1.4",
         "status": "PACKAGE_CLOSEOUT_MACHINE_PASS",
-        "product_acceptance": "GATE_AWAITING_ORDINARY_SESSION",
+        "product_acceptance": "GATEX_CLOSED_FROZEN",
         "platform": "macOS-arm64-python3.9",
         "file_count_excluding_release_metadata": len(content),
         "content_tree_sha256": hashlib.sha256(content_rows.encode()).hexdigest(),
@@ -80,9 +80,9 @@ def metadata() -> None:
         "public_remote_mutation": 0,
         "frozen_product_diff": 0,
         "core_diff": 0,
-        "ordinary_session": "GATE_AWAITING_ORDINARY_SESSION",
+        "ordinary_session": "OUT_OF_SCOPE_CLEAN_HOST_PUBLIC_ABI",
         "product_pass": False,
-        "github_hold": "GITHUB_SUPPORT_#4792255",
+        "github_hold": "NONE_VV_APPROVED_PUBLIC_RELEASE",
         "manifest_sha256": sha256(ROOT / "MANIFEST.json"),
     }
     audit_path = ROOT / "evidence" / "PACKAGE_AUDIT.json"

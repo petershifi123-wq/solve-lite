@@ -51,8 +51,17 @@ def main() -> int:
             and blocked.get("error") == "CORE_ASSET_UNAVAILABLE"
         ),
         "cold_fork_truth": (
-            registry["cold_fork_test"]
-            == "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+            registry["cold_fork_test"] == "PASS_VERIFIED_FOUR_HOST_PUBLIC_ABI"
+            and all(
+                host["cold_fork_status"] == "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+                for host in registry["hosts"]
+                if host["host_id"] in {"codex", "hermes", "doubao", "workbuddy"}
+            )
+            and all(
+                host["cold_fork_status"] == "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+                for host in registry["hosts"]
+                if host["host_id"] in {"cline", "qwen", "cursor"}
+            )
         ),
     }
     suites = [
@@ -69,7 +78,7 @@ def main() -> int:
         "network_attempts": 0,
         "live_mutation": 0,
         "route_prompt": "BLOCKED_CORE_ASSET_UNAVAILABLE",
-        "cold_fork": "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+        "cold_fork": "PASS_VERIFIED_FOUR_HOST_PUBLIC_ABI",
     }, indent=2, sort_keys=True))
     return 0 if passed else 1
 

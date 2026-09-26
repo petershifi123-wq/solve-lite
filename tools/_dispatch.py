@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dispatch a lifecycle command to the frozen 0.1.3 adapter."""
+"""Dispatch a lifecycle command to the frozen Solve Lite adapter."""
 
 from __future__ import annotations
 
