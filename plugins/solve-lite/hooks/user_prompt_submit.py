@@ -217,6 +217,30 @@ def render_token_line(settlement: dict[str, Any]) -> str:
     )
 
 
+# --- fast router: do not pay the specialist classifier on every prompt ---------
+# The 2.1s/prompt cost reported by WorkBuddy comes from building an NLI case and
+# loading the classifier for *every* host prompt. A bounded-decision prompt is a
+# minority, so we gate the classifier on a cheap local pattern check. This is a
+# routing/presentation decision, not decision math: no threshold, calibration or
+# probability logic is invented here. Hosts that want the old behaviour set
+# SOLVE_LITE_ALWAYS_CLASSIFY=1.
+_BOUNDED_ZH = ("选哪个", "该不该", "要不要", "是否", "排序", "打分", "评分", "概率", "哪个更",
+               "值得吗", "更划算", "蕴含", "推理", "判断", "评估", "比较一下", "帮我选")
+_BOUNDED_EN = ("which ", "should i", "rank", "score", "compare", "probab", "entail",
+               "whether", "choose", "is it worth", "better option", "decide")
+
+
+def _needs_specialist(prompt: str) -> bool:
+    if os.environ.get("SOLVE_LITE_ALWAYS_CLASSIFY") == "1":
+        return True
+    text = (prompt or "").strip().lower()
+    if not text:
+        return False
+    if any(k in text for k in _BOUNDED_ZH):
+        return True
+    return any(k in text for k in _BOUNDED_EN)
+
+
 def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     config = _config()
     healthcheck, route_prompt, capabilities = _load_abi()
@@ -231,6 +255,9 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
         return _passthrough(str(specialist.get("reason") or "SPECIALIST_CAPABILITY_UNAVAILABLE"), payload)
 
     prompt = str(payload.get("prompt") or "")
+    if not _needs_specialist(prompt):
+        # Fast path: no classifier, no model load. Status + reward pool only.
+        return _passthrough("NOT_A_BOUNDED_DECISION_FAST_PATH", payload)
     session_id = str(payload.get("session_id") or payload.get("conversation_id") or "ordinary-session")
     turn_id = uuid.uuid4().hex
     locale = _locale(prompt)

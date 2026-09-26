@@ -100,10 +100,10 @@
       "sha256": "1d1691913d198e7e22f1a719b592707fa58895a80f2907f01a1ab869ae3a92ad"
     },
     {
-      "bytes": 16507,
+      "bytes": 17918,
       "mode": "0644",
       "path": "plugins/solve-lite/hooks/user_prompt_submit.py",
-      "sha256": "8b3def227361c7509dc6ff90878b3f4dd911915fe1391969ef255b410ec402eb"
+      "sha256": "fa1dd54f0fbb84dd1755c7f0195afe09a66420409b496bef2701145202c79e15"
     },
     {
       "bytes": 7320,
@@ -597,7 +597,7 @@
   ],
   "payload_file_count": 95,
   "payload_tree_hash_algorithm": "sha256(path\\0sha256\\0bytes\\0mode\\n)",
-  "payload_tree_sha256": "1f6afa1ebb709b051a47e3690f5e5d8fc26d3b4d97afe9c705b362646eb87c56",
+  "payload_tree_sha256": "60781f270c3ba47a07a4f520690cacad9bec286bf2a84104d56319c6303c55de",
   "schema": "solve-lite.public-repo-manifest.v3",
   "version": "0.1.6-public"
 }
