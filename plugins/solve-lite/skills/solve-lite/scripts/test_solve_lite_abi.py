@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import solve_lite_abi
@@ -40,6 +41,93 @@ class PublicAbiLoaderTest(unittest.TestCase):
         self.assertEqual(actual["status"], "BLOCKED")
         self.assertEqual(actual["error"], "CORE_ASSET_UNAVAILABLE")
         self.assertEqual(actual["reason"], "ASSET_FILE_MISSING")
+
+    def test_loader_accepts_only_manifest_declared_route_session_capability(self):
+        manifest = {
+            "artifacts": [{"name": "unused", "sha256": "0", "bytes": 0}],
+            "public_abi": {
+                "status": "AVAILABLE",
+                "module": "solve_lite.abi",
+                "public_entry": "route_prompt",
+                "core_native_entry": "route_session",
+                "healthcheck": "healthcheck",
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            module_path = Path(temporary) / "solve_lite" / "abi.py"
+            module_path.parent.mkdir()
+            module_path.write_text("# test module path\n", encoding="utf-8")
+            core = SimpleNamespace(
+                __file__=str(module_path),
+                route_session=lambda *args, **kwargs: {},
+                healthcheck=lambda: {"status": "PASS"},
+            )
+            with (
+                patch.object(solve_lite_abi, "_manifest", return_value=manifest),
+                patch.object(solve_lite_abi, "_verify", return_value=None),
+                patch.object(solve_lite_abi.importlib, "import_module", return_value=core),
+            ):
+                self.assertIs(solve_lite_abi.load_core(temporary), core)
+
+    def test_route_prompt_is_a_lossless_route_session_name_bridge(self):
+        captured = {}
+        result = {
+            "status": "PASS",
+            "decision": "keep",
+            "probabilities": {"keep": 0.75, "drop": 0.25},
+            "presentation_locale": "zh-CN",
+            "reward": {"delta": 5, "ledger_total": 10},
+        }
+
+        class FrozenCore:
+            def route_session(self, workspace, case, session, **kwargs):
+                captured.update(
+                    workspace=workspace,
+                    case=case,
+                    session=session,
+                    kwargs=kwargs,
+                )
+                return result
+
+        case = {"case_id": "parity", "family": "choice"}
+        session = {"locale": "zh-CN"}
+        root = Path("/verified/core-asset")
+        with (
+            patch.object(solve_lite_abi, "locate_core", return_value=root),
+            patch.object(solve_lite_abi, "load_core", return_value=FrozenCore()),
+        ):
+            actual = solve_lite_abi.route_prompt(
+                "workspace",
+                case,
+                session,
+                asset_root="configured-root",
+                namespace="parity",
+                invocation_id="invoke-1",
+            )
+        self.assertIs(actual, result)
+        self.assertEqual(captured["workspace"], "workspace")
+        self.assertIs(captured["case"], case)
+        self.assertIs(captured["session"], session)
+        self.assertEqual(
+            captured["kwargs"],
+            {
+                "asset_root": root,
+                "namespace": "parity",
+                "invocation_id": "invoke-1",
+            },
+        )
+
+    def test_route_prompt_preserves_core_error_semantics(self):
+        class FrozenCore:
+            def route_session(self, *args, **kwargs):
+                raise ValueError("frozen-core-error")
+
+        with (
+            patch.object(solve_lite_abi, "locate_core", return_value=Path("/verified/core-asset")),
+            patch.object(solve_lite_abi, "load_core", return_value=FrozenCore()),
+        ):
+            with self.assertRaisesRegex(ValueError, "frozen-core-error"):
+                solve_lite_abi.route_prompt("workspace", {}, None)
 
     def test_loader_contains_no_decision_math_or_network_dependency(self):
         source = Path(solve_lite_abi.__file__).read_text(encoding="utf-8")
