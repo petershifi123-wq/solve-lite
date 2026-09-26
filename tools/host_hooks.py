@@ -114,10 +114,54 @@ def _hosts() -> Dict[str, HostSpec]:
                 "agent_mode/workspace/.user_skills/solve-lite"
             ),
         ),
+        "generic": HostSpec(
+            host_id="generic",
+            display="Any host that reads AGENTS/SKILL instructions (portable path)",
+            hook_api="none",
+            hook_api_evidence=(
+                "no host hook API assumed: the portable path relies on (a) the skill banner "
+                "carrying SOLVE_LITE_MANDATORY_FIRST_STEP and (b) tools/one_step_command, which "
+                "runs the pre-prompt Lite pass outside the host model"
+            ),
+            config_env=("SOLVE_LITE_HOST_CONFIG_DIR",),
+            config_candidates=(),
+            skill_dest=_home() / ".solve-lite" / "hosts" / "generic" / "skills" / "solve-lite",
+            skill_locator="~/.solve-lite/hosts/generic/skills/solve-lite",
+        ),
     }
 
 
+def resolve_auto(override: Optional[Path] = None) -> str:
+    """Pick a host id without the operator naming one.
+
+    Order: explicit env marker -> a known host's config dir that exists on disk ->
+    the portable ``generic`` path. This is what makes "any host that sees us"
+    work: hosts we have an adapter for get that adapter, everything else gets the
+    portable skill banner + one-step command.
+    """
+    for env_name, host_id in (("WORKBUDDY_CONFIG_DIR", "workbuddy"),
+                              ("CODEBUDDY_CONFIG_DIR", "workbuddy"),
+                              ("SOLVE_LITE_HOST", None)):
+        value = os.environ.get(env_name)
+        if value and host_id:
+            return host_id
+        if value and host_id is None:
+            wanted = value.strip().lower()
+            if wanted in _hosts():
+                return wanted
+            return "generic"
+    for host_id, spec in _hosts().items():
+        if host_id == "generic":
+            continue
+        for candidate in spec.config_candidates:
+            if Path(candidate).exists():
+                return host_id
+    return "generic"
+
+
 def host_spec(host_id: str) -> HostSpec:
+    if host_id == "auto":
+        host_id = resolve_auto()
     hosts = _hosts()
     if host_id not in hosts:
         raise SystemExit("unknown host: %s (known: %s)" % (host_id, ",".join(sorted(hosts))))
@@ -389,6 +433,16 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
         report["activation_model"] = "UNCONDITIONAL_HOST_HOOK"
         report["one_step_command"] = one_step_command(plugin_root)
         report["verification"] = "run tools/hook_selftest.py --host workbuddy"
+    elif host_id == "generic":
+        report["skill"] = install_skill(spec, plugin_root, dry_run=dry_run)
+        report["hook_registration"] = "PORTABLE_SKILL_BANNER"
+        report["activation_model"] = "OUT_OF_MODEL_PREPROMPT_STEP"
+        report["one_step_command"] = one_step_command(plugin_root)
+        report["portable_note"] = (
+            "any host that reads the installed skill gets SOLVE_LITE_MANDATORY_FIRST_STEP; "
+            "hosts with a settings.json hook API should be registered explicitly by id"
+        )
+        report["verification"] = "run tools/hook_selftest.py --host generic"
     else:
         report["skill"] = install_skill(spec, plugin_root, dry_run=dry_run)
         report["hook_registration"] = "UNAVAILABLE_NO_HOST_HOOK_API"

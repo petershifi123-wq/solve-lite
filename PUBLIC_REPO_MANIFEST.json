@@ -538,10 +538,10 @@
       "sha256": "3962d12156651fa01f0fad4d71dfce42940380fb71d763214ad16379928cec8b"
     },
     {
-      "bytes": 20397,
+      "bytes": 22940,
       "mode": "0644",
       "path": "tools/host_hooks.py",
-      "sha256": "14711ae0abb353e8ee7e0a69964622418715a47fc4ac52887ed5abefb6fd8be9"
+      "sha256": "db7eec71d3f5ec28c466f289a4b49d8d0d2db9734ef3d5cde23c21c044322db4"
     },
     {
       "bytes": 13895,
@@ -597,7 +597,7 @@
   ],
   "payload_file_count": 95,
   "payload_tree_hash_algorithm": "sha256(path\\0sha256\\0bytes\\0mode\\n)",
-  "payload_tree_sha256": "60781f270c3ba47a07a4f520690cacad9bec286bf2a84104d56319c6303c55de",
+  "payload_tree_sha256": "6361eef42b1099ba60c7ace496e86331cef9c71b60d94aea798c76bd57732d6d",
   "schema": "solve-lite.public-repo-manifest.v3",
   "version": "0.1.6-public"
 }
