@@ -11,6 +11,31 @@ questions ("which of these options", "how strongly", "is this entailed") and
 returns a structured decision plus a reward/token settlement, without calling a
 remote decision service.
 
+## MANDATORY CONTRACT / 强制契约（所有宿主，含没有 hook API 的宿主）
+
+<!-- SOLVE_LITE_MANDATORY_FIRST_STEP -->
+
+Every host — including hosts that expose no hook API — MUST satisfy this before answering:
+
+1. **Run one local Lite pass on every user prompt first.** The host model never decides
+   whether Solve Lite applies.
+   * host with a hook API -> the `UserPromptSubmit` hook does it automatically
+     (activation token: `UNCONDITIONAL_HOOK`).
+   * host without a hook API -> make it the fixed first step outside the model, or run the
+     one-step command: `python3 "<plugin>/hooks/user_prompt_submit.py" --clipboard`.
+   * verify any host: `python3 tools/hook_selftest.py --host auto`.
+
+2. **Presentation is mandatory (20 decision scenarios included).**
+   * Decision **percentages** — rendered from `raw_support` with `support_semantics`
+     labelled; a degenerate calibrated distribution is never presented as the conclusion.
+   * **Reward-pool settlement** — `+N Score | Total M · 🔒 Local` — must be shown.
+   * The **Token line** is shown only when the trace really packed context
+     (`status == MEASURED_PACK`); otherwise that single line is omitted.
+
+3. **Specialist capability is optional DLC.** Install it and it is available, but it is
+   loaded only when a specialist route actually applies: one DLC at a time, no preload at
+   startup, released when idle.
+
 ## What a fresh clone gives you (base Lite)
 
 A plain clone is complete and usable immediately:
