@@ -20,12 +20,19 @@ class AgentAutoTest(unittest.TestCase):
         self.assertEqual(len(self.hosts), 7)
         self.assertEqual([host.priority for host in self.hosts], sorted(host.priority for host in self.hosts))
         self.assertEqual(len({host.priority for host in self.hosts}), 7)
+        passed = {"codex", "hermes", "doubao", "workbuddy"}
         self.assertTrue(all(
-            host.cold_fork_status == "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
-            for host in self.hosts
+            self.by_id[host].cold_fork_status == "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+            for host in passed
         ))
-        self.assertEqual(self.by_id["hermes"].compatibility_status, "PASS_ACCEPTED")
-        self.assertEqual(self.by_id["doubao"].compatibility_status, "UNSUPPORTED")
+        self.assertTrue(all(
+            self.by_id[host].cold_fork_status == "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+            for host in {"cline", "qwen", "cursor"}
+        ))
+        self.assertTrue(all(
+            self.by_id[host].compatibility_status == "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+            for host in passed
+        ))
         self.assertEqual(self.by_id["cursor"].compatibility_status, "NOT_RUN")
 
     def test_deterministic_supported_mode_priority(self):
@@ -159,7 +166,7 @@ class AgentAutoTest(unittest.TestCase):
         payload = json.loads(text)
         self.assertEqual(
             payload["cold_fork_test"],
-            "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET",
+            "PASS_VERIFIED_FOUR_HOST_PUBLIC_ABI",
         )
         self.assertNotIn("/" + "Users" + "/", text)
         self.assertNotIn("PRIVATE" + "_AUDIT_DO_NOT_PUBLISH", text)

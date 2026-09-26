@@ -13,8 +13,11 @@ from solve_lite_abi import route_prompt as _route_prompt
 
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "assets" / "agent_registry.json"
-REGISTRY_SCHEMA = "solve-lite.agent-registry.v1"
-COLD_FORK_STATUS = "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+REGISTRY_SCHEMA = "solve-lite.agent-registry.v2"
+COLD_FORK_STATUS = "PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI"
+COLD_FORK_PENDING = "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET"
+COLD_FORK_SUMMARY = "PASS_VERIFIED_FOUR_HOST_PUBLIC_ABI"
+COLD_FORK_STATUSES = (COLD_FORK_STATUS, COLD_FORK_PENDING)
 SUPPORTED_MODES = (
     "explicit_host_id",
     "environment",
@@ -130,8 +133,8 @@ def load_registry(path: Path = REGISTRY_PATH) -> Tuple[Tuple[str, ...], Tuple[Ho
     modes = _string_tuple(payload.get("supported_modes_priority"), "supported_modes_priority")
     if not modes or len(modes) != len(set(modes)) or any(mode not in SUPPORTED_MODES for mode in modes):
         raise RegistryError("supported mode priority must be unique and known")
-    if payload.get("cold_fork_test") != COLD_FORK_STATUS:
-        raise RegistryError("cold fork status must remain blocked until a clean real host exists")
+    if payload.get("cold_fork_test") != COLD_FORK_SUMMARY:
+        raise RegistryError("cold fork summary does not match the frozen four-host evidence")
     raw_hosts = payload.get("hosts")
     if not isinstance(raw_hosts, list) or not raw_hosts:
         raise RegistryError("hosts must be a non-empty list")
@@ -181,8 +184,8 @@ def load_registry(path: Path = REGISTRY_PATH) -> Tuple[Tuple[str, ...], Tuple[Ho
             executables=_string_tuple(detection.get("executables"), "executables"),
             filesystem_markers=_string_tuple(detection.get("filesystem_markers"), "filesystem_markers"),
         )
-        if host.cold_fork_status != COLD_FORK_STATUS:
-            raise RegistryError("every host must retain the blocked cold fork truth")
+        if host.cold_fork_status not in COLD_FORK_STATUSES:
+            raise RegistryError("host cold fork status is not recognized")
         for marker in host.filesystem_markers:
             _safe_relative(marker)
         hosts.append(host)
@@ -368,6 +371,9 @@ __all__ = [
     "AmbiguousHostError",
     "ApplyNotAuthorizedError",
     "COLD_FORK_STATUS",
+    "COLD_FORK_PENDING",
+    "COLD_FORK_SUMMARY",
+    "COLD_FORK_STATUSES",
     "HostSpec",
     "InstallPlan",
     "RegistryError",
