@@ -96,9 +96,9 @@ Run the read-only package doctor before any installation:
 python3 tools/doctor.py --repo .
 ```
 
-The installer defaults to dry-run. Host support is reported only from machine evidence; `PARTIAL`, `NOT_RUN` and `UNSUPPORTED` are not presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md) for the current frozen compatibility snapshot.
+The installer defaults to dry-run. Clean-host public ABI routing is machine-verified for Codex, Hermes, Doubao, and WorkBuddy. This scoped PASS does not claim a native desktop UI hook or full automatic lifecycle support. `PARTIAL` and `NOT_RUN` are never presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
-安装器默认 dry-run。宿主支持状态只采用机器证据；`PARTIAL`、`NOT_RUN` 与 `UNSUPPORTED` 不会被包装成 PASS。当前冻结兼容状态见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
+安装器默认 dry-run。Codex、Hermes、豆包与 WorkBuddy 的 clean-host 公共 ABI 路由已通过机器验证；该范围内的 PASS 不代表桌面 UI 钩子或完整自动生命周期已经通过。`PARTIAL` 与 `NOT_RUN` 不会被包装成 PASS。详见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
 ## Independent implementation / 完全独立实现
 

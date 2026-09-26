@@ -1,13 +1,28 @@
 # Compatibility Snapshot
 
+This snapshot reports only the capability proven by machine evidence. A clean-host public ABI PASS does not claim a native desktop UI hook, automatic installer lifecycle, or full host-product support.
+
 | Surface | Version | Status |
 |---|---|---|
-| Solve Lite plugin | 0.1.3 | OFFLINE_HARNESS_PASS |
-| Codex Desktop | 26.917.71314 | PARTIAL_FROZEN |
-| Codex CLI | 0.155.0-alpha.16.4 | DISCOVERY_PASS |
+| Solve Lite public plugin | 0.1.4 | OFFLINE_HARNESS_PASS |
+| Native Core | 0.1.3 | UNCHANGED_EXTERNAL_ASSET |
+| Codex | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
+| Hermes | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
+| Doubao | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
+| WorkBuddy | clean-host fork | PASS_VERIFIED_CLEAN_HOST_PUBLIC_ABI |
+| Cline | not rerun in this gate | PARTIAL_FROZEN |
+| Qwen | not rerun in this gate | PARTIAL_FROZEN |
+| Cursor | not run | NOT_RUN |
 | macOS | 27.0 arm64 | TESTED |
 | Python | 3.9.6 | TESTED |
 
-Current read-only doctor result is `GATE_AWAITING_ORDINARY_SESSION`. Source/cache identity, host discovery, registration, trust, restart-persistence state, and legacy invocation presence pass, but a new 0.1.3 post-baseline ordinary-session advancement proof has not been run.
+The four verified forks each passed public repository installation, sealed Owner runtime injection, runtime hash verification, host detection, and one real local invocation. Existing private host state participation, network attempts, credential reads, and Jev API calls were all zero.
 
-No result in this package promotes that missing evidence to PASS. Other host adapters are outside this Codex Desktop 0.1.3 package.
+Evidence identity:
+
+- Public commit under test: `08814674c0a07c7efc1f90fc48100d64a5e6d04d`
+- Native Core archive: `882dcfe4b0de0d08cf2511772e5e86ae530ccd568d240fde82e6c6eda5785c3e`
+- Owner runtime tree: `62326a7600b3cc568ba0bd1cb39121510c491a6522e10bd746bc239b782f84a0`
+- Four-host receipt: `64a94a211bb52cf463bd868eda5adda7efd82500921ddf0e0b14d4285eedeef8`
+
+`PUBLIC_SELF_CONTAINED_DISTRIBUTION=FALSE` remains unchanged. Model assets are external and must be supplied by the user or Owner. Missing or mismatched assets fail closed.

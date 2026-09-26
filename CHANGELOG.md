@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4 — 2026-09-26
+
+- Records the one-time VV-approved four-host clean-fork closure for Codex, Hermes, Doubao, and WorkBuddy.
+- Promotes only the proven clean-host public ABI scope; it does not claim full desktop UI or automatic lifecycle support.
+- Keeps Cline and Qwen at `PARTIAL_FROZEN`, and Cursor at `NOT_RUN`.
+- Keeps Native Core 0.1.3, external model ownership, fail-closed loading, and all protected product boundaries unchanged.
+
 ## 0.1.3 — 2026-09-26
 
 - Declares one portable `UserPromptSubmit` hook at `hooks/hooks.json`.
