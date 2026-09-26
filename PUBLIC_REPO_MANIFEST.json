@@ -16,10 +16,10 @@
       "sha256": "a2c4742ad70ad9e4bbe8fcec6425f5cf927c4c40ad11db2cbba98613db33ef9d"
     },
     {
-      "bytes": 2466,
+      "bytes": 3212,
       "mode": "0644",
       "path": "CHANGELOG.md",
-      "sha256": "5361ca253ee72b25534c91a7f40749718d3b6e9574c4e8b7ed47737560c022a8"
+      "sha256": "d3f6779fb6bbedcb9fccf3c2b24611fd1b17efa39494e2732cac1194b677ee1e"
     },
     {
       "bytes": 1838,
@@ -46,10 +46,10 @@
       "sha256": "b9700551a013cd5b124ddaaeb84d0211a0586c256f19984cfcca03868f46e318"
     },
     {
-      "bytes": 10257,
+      "bytes": 13404,
       "mode": "0644",
       "path": "README.md",
-      "sha256": "44a11b50c1df5027ac7b0ab8fc997a86563a67b4cf930111a5ca84e3729b4a06"
+      "sha256": "6b9f27025e8a05004b12362881f9dff9be4defe3da55a6e88badb473f6c1de7e"
     },
     {
       "bytes": 1511,
@@ -252,7 +252,7 @@
   ],
   "payload_file_count": 40,
   "payload_tree_hash_algorithm": "sha256(path\\0sha256\\0bytes\\0mode\\n)",
-  "payload_tree_sha256": "265e8dcbc2b9ca648ca49ace6ed8016d67b044a525136fb1eb158a3f33eb43f5",
+  "payload_tree_sha256": "cb3b7403ee1b6f7215f62cda116820ce14e50b8bf7216d1597ebb48a64dee08e",
   "schema": "solve-lite.public-repo-manifest.v2",
   "source_authority_manifest_sha256": "f81821e9e76b9bee22aa373c1e33ed5dfc0df6ab013357d22de8f6ab59008507",
   "source_authority_tree_sha256": "d12ebbc7da56009701a036704d0f3e489d9817e0122405d6645c7d57fb765760",
