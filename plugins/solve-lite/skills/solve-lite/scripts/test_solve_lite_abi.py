@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import os
 import tempfile
 import unittest
@@ -42,6 +43,72 @@ class PublicAbiLoaderTest(unittest.TestCase):
         self.assertEqual(actual["error"], "CORE_ASSET_UNAVAILABLE")
         self.assertEqual(actual["reason"], "ASSET_FILE_MISSING")
 
+    def test_external_runtime_assets_are_required_and_fail_closed(self):
+        manifest = {
+            "runtime_model_assets": {
+                "status": "EXTERNAL_REQUIRED",
+                "distribution": "BYO_OR_OWNER_SUPPLIED",
+                "auto_download": False,
+                "fallback_computation": False,
+                "owner_manifest": "OWNER_RUNTIME_ASSET_MANIFEST.json",
+                "owner_manifest_schema": "solve-lite.owner-runtime-assets.v1",
+                "total_files": 1,
+                "total_bytes": 2,
+                "tree_sha256": "abc",
+                "required_directories": [
+                    {
+                        "relative_path": "model-cache/example",
+                        "files": 1,
+                        "bytes": 2,
+                        "tree_sha256": "def",
+                    }
+                ],
+            }
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            actual = solve_lite_abi._verify_runtime_assets(Path(temporary), manifest)
+        self.assertEqual(actual["status"], "BLOCKED")
+        self.assertEqual(actual["error"], "CORE_ASSET_UNAVAILABLE")
+        self.assertEqual(actual["reason"], "RUNTIME_MODEL_ASSET_MANIFEST_MISSING")
+
+    def test_external_runtime_asset_manifest_and_directories_are_accepted(self):
+        required = [
+            {
+                "relative_path": "model-cache/example",
+                "files": 1,
+                "bytes": 2,
+                "tree_sha256": "def",
+            }
+        ]
+        contract = {
+            "status": "EXTERNAL_REQUIRED",
+            "distribution": "BYO_OR_OWNER_SUPPLIED",
+            "auto_download": False,
+            "fallback_computation": False,
+            "owner_manifest": "OWNER_RUNTIME_ASSET_MANIFEST.json",
+            "owner_manifest_schema": "solve-lite.owner-runtime-assets.v1",
+            "total_files": 1,
+            "total_bytes": 2,
+            "tree_sha256": "abc",
+            "required_directories": required,
+        }
+        owner = {
+            "schema": "solve-lite.owner-runtime-assets.v1",
+            "total_files": 1,
+            "total_bytes": 2,
+            "tree_sha256": "abc",
+            "required_directories": required,
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "model-cache" / "example").mkdir(parents=True)
+            (root / "OWNER_RUNTIME_ASSET_MANIFEST.json").write_text(
+                json.dumps(owner), encoding="utf-8"
+            )
+            self.assertIsNone(
+                solve_lite_abi._verify_runtime_assets(root, {"runtime_model_assets": contract})
+            )
+
     def test_loader_accepts_only_manifest_declared_route_session_capability(self):
         manifest = {
             "artifacts": [{"name": "unused", "sha256": "0", "bytes": 0}],
@@ -65,6 +132,7 @@ class PublicAbiLoaderTest(unittest.TestCase):
             with (
                 patch.object(solve_lite_abi, "_manifest", return_value=manifest),
                 patch.object(solve_lite_abi, "_verify", return_value=None),
+                patch.object(solve_lite_abi, "_verify_runtime_assets", return_value=None),
                 patch.object(solve_lite_abi.importlib, "import_module", return_value=core),
             ):
                 self.assertIs(solve_lite_abi.load_core(temporary), core)

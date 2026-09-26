@@ -81,6 +81,60 @@ def _verify(root: Path, manifest: Mapping[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+def _verify_runtime_assets(root: Path, manifest: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Require the sealed external model pack without downloading or substituting it."""
+    root = root.resolve()
+    expected = manifest.get("runtime_model_assets")
+    if not isinstance(expected, Mapping) or expected.get("status") != "EXTERNAL_REQUIRED":
+        return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+    if expected.get("distribution") != "BYO_OR_OWNER_SUPPLIED":
+        return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+    if expected.get("auto_download") is not False or expected.get("fallback_computation") is not False:
+        return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+    manifest_name = str(expected.get("owner_manifest") or "")
+    if not manifest_name or Path(manifest_name).is_absolute() or ".." in Path(manifest_name).parts:
+        return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+    owner_manifest_path = (root / manifest_name).resolve()
+    try:
+        owner_manifest_path.relative_to(root)
+    except ValueError:
+        return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+    if not owner_manifest_path.is_file():
+        return _blocked("RUNTIME_MODEL_ASSET_MANIFEST_MISSING")
+    try:
+        owner = json.loads(owner_manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return _blocked("RUNTIME_MODEL_ASSET_MANIFEST_INVALID")
+    if not isinstance(owner, Mapping):
+        return _blocked("RUNTIME_MODEL_ASSET_MANIFEST_INVALID")
+    scalar_pairs = (
+        ("schema", "owner_manifest_schema"),
+        ("total_files", "total_files"),
+        ("total_bytes", "total_bytes"),
+        ("tree_sha256", "tree_sha256"),
+    )
+    if any(owner.get(actual) != expected.get(reference) for actual, reference in scalar_pairs):
+        return _blocked("RUNTIME_MODEL_ASSET_HASH_MISMATCH")
+    required = expected.get("required_directories")
+    owner_required = owner.get("required_directories")
+    if not isinstance(required, list) or not required or owner_required != required:
+        return _blocked("RUNTIME_MODEL_ASSET_HASH_MISMATCH")
+    for item in required:
+        if not isinstance(item, Mapping):
+            return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+        relative = str(item.get("relative_path") or "")
+        candidate = (root / relative).resolve()
+        if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
+            return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            return _blocked("RUNTIME_MODEL_ASSET_CONTRACT_INVALID")
+        if not candidate.is_dir():
+            return _blocked("RUNTIME_MODEL_ASSET_MISSING")
+    return None
+
+
 def load_core(asset_root: str | os.PathLike[str] | None = None) -> ModuleType | dict[str, Any]:
     """Verify and load only the manifest-declared Architecture A Core ABI."""
     manifest = _manifest()
@@ -90,6 +144,9 @@ def load_core(asset_root: str | os.PathLike[str] | None = None) -> ModuleType | 
     if root is None:
         return _blocked("ASSET_ROOT_MISSING")
     failure = _verify(root, manifest)
+    if failure:
+        return failure
+    failure = _verify_runtime_assets(root, manifest)
     if failure:
         return failure
     public_abi = manifest.get("public_abi")
