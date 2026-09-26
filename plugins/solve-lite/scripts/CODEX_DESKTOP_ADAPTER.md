@@ -22,9 +22,9 @@ the exact key and hash a human has to approve.
 /usr/bin/python3 scripts/codex_desktop_adapter.py doctor --cwd "$PWD" --no-dispatch-probe
 
 # record the reward-ledger baseline, then prove the ordinary Desktop session
-/usr/bin/python3 scripts/codex_desktop_adapter.py snapshot --out /tmp/solve-lite-ledger-baseline.json
+/usr/bin/python3 scripts/codex_desktop_adapter.py snapshot --out solve-lite-ledger-baseline.json
 /usr/bin/python3 scripts/codex_desktop_adapter.py doctor --cwd "$PWD" \
-    --ledger-baseline /tmp/solve-lite-ledger-baseline.json
+    --ledger-baseline solve-lite-ledger-baseline.json
 
 # extract the visible contract from one session rollout (raw ordinary-session evidence)
 /usr/bin/python3 scripts/codex_desktop_adapter.py rollout-check --session <SESSION_ID>

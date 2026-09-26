@@ -95,7 +95,6 @@
  "distribution": "self-contained-public-repository",
  "historical_full_precision_reference": "CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json",
  "install_default": "LITE",
- "legacy_core_asset_root_env": "SOLVE_LITE_CORE_ASSET_ROOT",
  "legacy_core_asset_root_env_required": false,
  "legacy_core_asset_root_env_status": "DEPRECATED_ACCEPTED_IF_SET",
  "pack_manifest": true,

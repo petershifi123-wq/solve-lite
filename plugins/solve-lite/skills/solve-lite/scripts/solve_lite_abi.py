@@ -55,7 +55,6 @@ DLC_RUNTIME_DIRNAME = "dlc_runtime"
 ACTIVATION_ROOT_ENV = "SOLVE_LITE_INT4_DLC_ROOT"
 _BACKEND_STATE: dict[str, Any] = {}
 #: honoured for backward compatibility only - never required on a fresh install
-ENV_LEGACY_ASSET_ROOT = "SOLVE_LITE_CORE_ASSET_ROOT"
 
 KERNEL_DIRNAME = "_kernel_native"
 MODULE_SUFFIX = ".so"
@@ -123,7 +122,6 @@ def _runtime_root_candidates(asset_root: str | Path | None) -> list[tuple[Path, 
         candidates.append((Path(asset_root).expanduser(), "explicit_argument"))
     for env_name, origin in (
         (ENV_RUNTIME_ROOT, "env_SOLVE_LITE_RUNTIME_ROOT"),
-        (ENV_LEGACY_ASSET_ROOT, "env_SOLVE_LITE_CORE_ASSET_ROOT_DEPRECATED"),
     ):
         import os
 

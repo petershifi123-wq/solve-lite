@@ -21,8 +21,7 @@
     "install_path": "python3 tools/installer.py --install-dlc (GitHub release assets only)",
     "in_repo_harness": "tools/offline_harness.py",
     "acceptance_receipts": [
-      "acceptance/runs/doubao-fresh-1.json (delivered with the patch handoff bundle)",
-      "acceptance/runs/workbuddy-fresh-1.json (delivered with the patch handoff bundle)"
+      "host-shaped acceptance receipts are retained by the maintainer and are not part of the public tree"
     ],
     "prior_scope_note": "codex and hermes were verified earlier against the sealed owner runtime; that scope is not re-claimed here",
     "bundled_runtime_asset_root_required": false,

@@ -82,7 +82,7 @@ class PublicPackageContractTest(unittest.TestCase):
         self.assertEqual(core["runtime_root_env_required"], False)
         self.assertEqual(core["legacy_core_asset_root_env_required"], False)
         self.assertEqual(core["runtime_root_env"], "SOLVE_LITE_RUNTIME_ROOT")
-        self.assertEqual(core["legacy_core_asset_root_env"], "SOLVE_LITE_CORE_ASSET_ROOT")
+        self.assertNotIn("legacy_core_asset_root_env", core)
         assets = core["runtime_model_assets"]
         self.assertEqual(assets["status"], "OPTIONAL_DLC_COMPONENTS")
         self.assertEqual(assets["auto_download"], False)
@@ -101,7 +101,7 @@ class PublicPackageContractTest(unittest.TestCase):
 
     def test_healthcheck_works_without_any_asset_root(self):
         environment = dict(os.environ)
-        for name in ("SOLVE_LITE_RUNTIME_ROOT", "SOLVE_LITE_CORE_ASSET_ROOT"):
+        for name in ("SOLVE_LITE_RUNTIME_ROOT",):
             environment.pop(name, None)
         script = (
             "import json,sys;"

@@ -22,10 +22,10 @@
       "sha256": "9198b112edec3016880042d95886f75cff35bdfaec306d9813ea771e2c27b7cb"
     },
     {
-      "bytes": 8678,
+      "bytes": 8617,
       "mode": "0644",
       "path": "CORE_ASSET_MANIFEST.json",
-      "sha256": "99fc4aad3b0326d26a5ed66f7f4c9cf3beddaa29373575e06adf8e7cf5b10a69"
+      "sha256": "d00609666aaa647ef3ad990b30fde588cb827ab01c451ca342f718391fdbc174"
     },
     {
       "bytes": 4934,
@@ -73,7 +73,7 @@
       "bytes": 770,
       "mode": "0644",
       "path": "plugins/solve-lite/.codex-runtime.example.json",
-      "sha256": "3c22c42f41c0cd569b80675ac3d8867cee04d39b89c7f6342c55089c80aedf91"
+      "sha256": "e1fab67a71206f59c97ca0ae3c6558a8efa18d00783076ea593f378c5c696620"
     },
     {
       "bytes": 233,
@@ -82,16 +82,16 @@
       "sha256": "1d1691913d198e7e22f1a719b592707fa58895a80f2907f01a1ab869ae3a92ad"
     },
     {
-      "bytes": 12201,
+      "bytes": 16507,
       "mode": "0644",
       "path": "plugins/solve-lite/hooks/user_prompt_submit.py",
-      "sha256": "684a9db5f5584aaa7475908fee28b207f13f3c0c4287c0e2894bfbbbd75ec6e6"
+      "sha256": "8b3def227361c7509dc6ff90878b3f4dd911915fe1391969ef255b410ec402eb"
     },
     {
-      "bytes": 7330,
+      "bytes": 7320,
       "mode": "0644",
       "path": "plugins/solve-lite/scripts/CODEX_DESKTOP_ADAPTER.md",
-      "sha256": "38f1aff63b0accce6b2f32e3bf67ddfac1ac089cea000fed98de4b7c633318b0"
+      "sha256": "4e68b16be43873aef3fb5845aea06421bca241943506f99f53b8290e355fc733"
     },
     {
       "bytes": 46705,
@@ -112,10 +112,10 @@
       "sha256": "a5fe1017f7e1d3d11b443592cb7730df6ecc919a87201a819c28ba0a8d58e2ba"
     },
     {
-      "bytes": 6382,
+      "bytes": 6312,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
-      "sha256": "76624eb37582a7dc844e5ae832ef0f6f5d506e8f84b0caa76317eb4cfadecb2b"
+      "sha256": "bab084a71b342c8e8e950c3b533767c8ebd2b6e022d3a86e3dc844e4e1989c33"
     },
     {
       "bytes": 344,
@@ -178,10 +178,10 @@
       "sha256": "969c63737524b22949650826f81c62d28a914cc22961cbf9718053587439ebe4"
     },
     {
-      "bytes": 8978,
+      "bytes": 8917,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/runtime/CORE_ASSET_MANIFEST_LITE.json",
-      "sha256": "e1dbc1dc314b0a85ac7abeededffebfdb31ea160500d2408d18d8d8c7c92622f"
+      "sha256": "57546c3152891eb1601f98a84655313c2782804e47cd9bcee85f1609f620e5b1"
     },
     {
       "bytes": 4204,
@@ -430,10 +430,10 @@
       "sha256": "1acac206ca71035523cc3c710b5f9094d49e88b3e883de874cc025954ecfe666"
     },
     {
-      "bytes": 26166,
+      "bytes": 26035,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_abi.py",
-      "sha256": "4ee86df611e04d0cd0d698cbaaddfd0a20a8b2541443e377c90c4c65fa2752b7"
+      "sha256": "36ec067a1dd6d20a6a7c6b3e2de1757c9cb239cd904c3f576f6197c05c7cc31a"
     },
     {
       "bytes": 41062,
@@ -448,10 +448,10 @@
       "sha256": "0c19402fdd7786506de673e6b0e948259c744974cc92f57b25899ff90ae21919"
     },
     {
-      "bytes": 6457,
+      "bytes": 6399,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-      "sha256": "93eeca73b636587cfa417ec259b46563e1aaafdbd79136c838db12db2d3fb28e"
+      "sha256": "dfa1b1ccd157713fb59d30dfc6dcbc2bdc118c6db469a6808468a3568d4566d0"
     },
     {
       "bytes": 11579,
@@ -472,10 +472,10 @@
       "sha256": "fa2ee71cf0cf6b1da85be99f74c27490ceacd709840d2c282ac6bce4e4226d82"
     },
     {
-      "bytes": 8816,
+      "bytes": 8757,
       "mode": "0644",
       "path": "tests/test_package.py",
-      "sha256": "45b98ef7af01e090570721d851069c5ceb647071d43cfb5d9c12fd02e011db01"
+      "sha256": "f29d2601177f8f64e26729b69a1b85f3e56bf9c3ea426de80b2822a6075a4b92"
     },
     {
       "bytes": 959,
@@ -561,7 +561,7 @@
   ],
   "payload_file_count": 89,
   "payload_tree_hash_algorithm": "sha256(path\\0sha256\\0bytes\\0mode\\n)",
-  "payload_tree_sha256": "75bc289fde742ff94df0d72e690daaa54614263d17047ae4a593ea9b11f5cc4a",
+  "payload_tree_sha256": "703468f9087794f3e7d006eaaa02bb0c68e4232fd5255d85e8c380d667be082e",
   "schema": "solve-lite.public-repo-manifest.v3",
   "version": "0.1.6-public"
 }

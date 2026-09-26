@@ -18,7 +18,7 @@ import solve_lite_abi as abi  # noqa: E402
 
 class PublicLiteAbi(unittest.TestCase):
     def setUp(self):
-        for name in ("SOLVE_LITE_RUNTIME_ROOT", "SOLVE_LITE_CORE_ASSET_ROOT"):
+        for name in ("SOLVE_LITE_RUNTIME_ROOT",):
             os.environ.pop(name, None)
 
     def test_healthcheck_passes_without_any_configured_asset_root(self):
@@ -87,7 +87,7 @@ class PublicLiteAbi(unittest.TestCase):
         and assert the retired string cannot appear - neither in the returned
         payloads nor in the loader source.
         """
-        for name in ("SOLVE_LITE_RUNTIME_ROOT", "SOLVE_LITE_CORE_ASSET_ROOT"):
+        for name in ("SOLVE_LITE_RUNTIME_ROOT",):
             os.environ.pop(name, None)
         health = abi.healthcheck()
         caps = abi.capabilities()
