@@ -15,6 +15,8 @@ from typing import Any, Mapping
 
 ERROR = "CORE_ASSET_UNAVAILABLE"
 ENTRYPOINT = "solve_lite_abi:route_prompt"
+CORE_ENTRYPOINT = "route_session"
+CORE_HEALTHCHECK = "healthcheck"
 _MODULE_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
 
 
@@ -80,7 +82,7 @@ def _verify(root: Path, manifest: Mapping[str, Any]) -> dict[str, Any] | None:
 
 
 def load_core(asset_root: str | os.PathLike[str] | None = None) -> ModuleType | dict[str, Any]:
-    """Verify and load only the manifest-declared stable public Core entrypoint."""
+    """Verify and load only the manifest-declared Architecture A Core ABI."""
     manifest = _manifest()
     root = locate_core(asset_root)
     if manifest is None:
@@ -94,14 +96,32 @@ def load_core(asset_root: str | os.PathLike[str] | None = None) -> ModuleType | 
     if not isinstance(public_abi, Mapping) or public_abi.get("status") != "AVAILABLE":
         return _blocked("PUBLIC_CORE_ENTRYPOINT_MISSING")
     module_name = str(public_abi.get("module") or "")
-    artifact = str(public_abi.get("artifact") or "")
-    declared = {str(item.get("relative_path") or item.get("name") or "") for item in manifest["artifacts"]}
-    if not _MODULE_NAME.fullmatch(module_name) or artifact not in declared:
+    public_entry = str(public_abi.get("public_entry") or "")
+    core_entry = str(public_abi.get("core_native_entry") or "")
+    health_entry = str(public_abi.get("healthcheck") or "")
+    if (
+        not _MODULE_NAME.fullmatch(module_name)
+        or public_entry != "route_prompt"
+        or core_entry != CORE_ENTRYPOINT
+        or health_entry != CORE_HEALTHCHECK
+    ):
         return _blocked("PUBLIC_CORE_ENTRYPOINT_INVALID")
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
-    module = importlib.import_module(module_name)
-    if not callable(getattr(module, "route_prompt", None)) or not callable(getattr(module, "healthcheck", None)):
+    try:
+        module = importlib.import_module(module_name)
+    except (ImportError, OSError):
+        return _blocked("PUBLIC_CORE_IMPORT_FAILED")
+    module_file = getattr(module, "__file__", None)
+    if not module_file:
+        return _blocked("PUBLIC_CORE_MODULE_OUTSIDE_ASSET")
+    try:
+        Path(module_file).resolve().relative_to(root)
+    except ValueError:
+        return _blocked("PUBLIC_CORE_MODULE_OUTSIDE_ASSET")
+    if not callable(getattr(module, CORE_ENTRYPOINT, None)) or not callable(
+        getattr(module, CORE_HEALTHCHECK, None)
+    ):
         return _blocked("PUBLIC_CORE_CALLABLE_MISSING")
     return module
 
@@ -123,13 +143,15 @@ def route_prompt(
     namespace: str = "production",
     invocation_id: str | None = None,
 ) -> dict[str, Any]:
-    core = load_core(asset_root)
+    resolved_root = locate_core(asset_root)
+    core = load_core(resolved_root)
     if isinstance(core, dict):
         return core
-    result = core.route_prompt(
+    result = core.route_session(
         workspace,
         case,
         session,
+        asset_root=resolved_root,
         namespace=namespace,
         invocation_id=invocation_id,
     )
