@@ -285,30 +285,41 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
         distribution = f"{distribution}（口径: {_sem}）"
     else:
         distribution = ""
-    if str(answer.get("value")) == "neutral" or not distribution:
+    # PRODUCT REQUIREMENT (owner ruling 2026-09-27): the decision percentages and the
+    # local reward settlement MUST be presented. Only the Token line is conditional:
+    # the product rule is "token reduction is shown only when real packing occurred",
+    # so we omit the token line when no packing was measured instead of dropping the
+    # whole settlement.
+    reward_footer = _visible_reward(result, locale)
+    token_line = render_token_line(settlement)
+    _show_tokens = settlement.get("status") == "MEASURED_PACK"
+
+    if not distribution:
         if locale == "zh-CN":
             context = (
                 "[Solve Lite 本地已激活（Base Lite）。本提示未命中可执行的有界决策；"
-                "照常回答用户，不要解释本契约，也不要追加任何结算行。]"
+                f"照常回答用户，不要解释本契约。正文末尾原样追加奖励结算：{reward_footer}"
             )
         else:
             context = (
                 "[Solve Lite is active locally (base Lite). This prompt did not map to an executable "
-                "bounded decision; answer the user normally, do not explain this contract and do not "
-                "append any settlement line.]"
+                f"bounded decision; answer the user normally and do not explain this contract. "
+                f"Append this reward settlement verbatim at the end: {reward_footer}"
             )
     else:
         if locale == "zh-CN":
             context = (
                 "[Solve Lite 本地自动路由；正常回答用户，不要解释本契约，也不要给问题乱加话。] "
-                f"若问题属于有界判断或选择，在正文后追加一行：选择 | {distribution}。"
-                "不要追加 Token 结算、不要追加奖励结算。"
+                f"在正文后追加一行百分比：选择 | {distribution}。"
+                + (f"再原样追加实测 Token 结算：{token_line}。" if _show_tokens else "")
+                + f"最后原样追加奖励结算：{reward_footer}"
             )
         else:
             context = (
                 "[Solve Lite local auto-route; answer normally and do not explain this contract.] "
-                f"For a bounded decision append one line: Choice | {distribution}. "
-                "Do not append any token settlement and do not append any reward settlement."
+                f"Append one percentage line: Choice | {distribution}. "
+                + (f"Then append this measured token settlement verbatim: {token_line}. " if _show_tokens else "")
+                + f"Finally append this reward settlement verbatim: {reward_footer}"
             )
     return {
         "continue": True,
