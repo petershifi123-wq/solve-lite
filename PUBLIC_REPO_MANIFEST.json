@@ -28,10 +28,10 @@
       "sha256": "56b6e32e001f6e018ff216bf73c605bc340df238d2d35b83213b3f4cede0543d"
     },
     {
-      "bytes": 1800,
+      "bytes": 2718,
       "mode": "0644",
       "path": "CORE_ASSET_MANIFEST.json",
-      "sha256": "cd00d0cfc5ff0cec6ed76349dc320e7938395298baa8aefbf7c94f0620aaf95b"
+      "sha256": "8fddb6272b931de3244c932c24cd6411910c0b3f08daed5c24275f3a9ac7dba8"
     },
     {
       "bytes": 1196,
@@ -172,10 +172,10 @@
       "sha256": "7daa5396098af3e0da29fb94b1a9b84c7b5dff61f0769176986935ed0fcaaf58"
     },
     {
-      "bytes": 4933,
+      "bytes": 5616,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_abi.py",
-      "sha256": "24e5449e4d0b232b3e002862b5f2b36acd8aa14f6b0dc2d23f8ae19c06a090bd"
+      "sha256": "4b236693bf22e0857a16345d30ddf675b90dd45f42dd54df8616d047912b33f9"
     },
     {
       "bytes": 7554,
@@ -184,16 +184,16 @@
       "sha256": "0323f50b2cad7567ee4d2e1fb330565d43a4fa99be9fc50fd39fd8e288d83e6c"
     },
     {
-      "bytes": 2358,
+      "bytes": 5882,
       "mode": "0644",
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-      "sha256": "fa0983fdb8d573b36762bd003be5dac46dbb9f11fc00ae291e90cdfdcd1342ac"
+      "sha256": "1248d0d371a51bf590fe0699a72810768a1bb0c54eba6b60bc569bc18288aecb"
     },
     {
-      "bytes": 3702,
+      "bytes": 4012,
       "mode": "0644",
       "path": "tests/test_package.py",
-      "sha256": "9028a6f18d334499386b8df392ff4c9964ddafcb81f77fd0066834f2ea42edfc"
+      "sha256": "c09f7e68788a42e6dafe2039ff2099895d58d4f3c81fafe8e208d1038ca47bd4"
     },
     {
       "bytes": 954,
@@ -245,7 +245,7 @@
     }
   ],
   "payload_file_count": 39,
-  "payload_tree_sha256": "d23bcbd77b223a4b388c492dd4d9f8fd3a6edab48fe7375750b69892b54b559f",
+  "payload_tree_sha256": "c028dd66d8afda97ee961f5c71dc654587fa40798b0c65394cc89811315f8072",
   "schema": "solve-lite.public-repo-manifest.v1",
   "source_authority_manifest_sha256": "f81821e9e76b9bee22aa373c1e33ed5dfc0df6ab013357d22de8f6ab59008507",
   "source_authority_tree_sha256": "d12ebbc7da56009701a036704d0f3e489d9817e0122405d6645c7d57fb765760",
