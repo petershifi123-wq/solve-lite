@@ -89,7 +89,26 @@ def _passthrough(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
     decision that was never computed.
     """
     _note(reason, payload)
-    return {"continue": True, "suppressOutput": True}
+    # P0 FIX (VV/Peter): never stay silent on the ordinary path. A Lite-only install
+    # must still make itself visible, otherwise hosts report "Solve Lite was not
+    # activated" even though the hook ran. We only inject a short status line here -
+    # no decision contract is fabricated (result was never computed).
+    _prompt = str((payload or {}).get("prompt") or "")
+    if _locale(_prompt) == "zh-CN":
+        _status = ("[Solve Lite 本地已激活（Base Lite，无需任何扩展包）。本提示未命中可执行的有界决策，"
+                   "因此没有调用专家扩展；请照常回答用户，不要解释本契约。]")
+    else:
+        _status = ("[Solve Lite is active locally (base Lite, no add-on required). This prompt did not map "
+                   "to an executable bounded decision, so no specialist add-on was invoked; answer the user "
+                   "normally and do not explain this contract.]")
+    return {
+        "continue": True,
+        "suppressOutput": True,
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": f"{_status} reason={reason}",
+        },
+    }
 
 
 def _locale(prompt: str) -> str:
