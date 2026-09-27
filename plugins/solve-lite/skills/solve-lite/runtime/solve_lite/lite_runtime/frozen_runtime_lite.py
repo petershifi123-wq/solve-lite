@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
-import os
 import sys
 import time
 import uuid
@@ -20,7 +19,6 @@ from .capability import (
     CORE_ASSET_UNAVAILABLE,
     AVAILABLE,
     SPECIALIST_CAPABILITY_UNAVAILABLE,
-    SPECIALIST_MODEL_DIRS,
     SPECIALIST_ROUTES,
     capability_report,
     native_core_status,
@@ -43,33 +41,10 @@ def _skill_root() -> Path:
 
 
 def _optional_asset_root(value: str | Path | None) -> tuple[Path, bool]:
-    """LITE: the specialist model pack is OPTIONAL.
-
-    The Full core raised its global asset gate when the five model
-    directories were absent, which turned "no specialist pack" into "no Core at
-    all".  The LITE line never raises here: it reports whether the optional pack
-    is present and falls back to the skill root so that native routes can run.
-    """
-    candidates = []
+    """Resolve only the explicitly supplied current shared-CoreML asset root."""
     if value:
-        candidates.append(Path(value))
-    if os.environ.get("SOLVE_LITE_ASSET_ROOT"):
-        candidates.append(Path(os.environ["SOLVE_LITE_ASSET_ROOT"]))
-    if os.environ.get("SOLVE_LITE_INT4_DLC_ROOT"):
-        candidates.append(Path(os.environ["SOLVE_LITE_INT4_DLC_ROOT"]))
-    candidates.extend(
-        (
-            _skill_root() / "assets" / "gatex7a-runtime",
-            _skill_root().parent / "solve-lite-runtime-assets" / "gatex7a-runtime",
-        )
-    )
-    for candidate in candidates:
-        resolved = candidate.expanduser()
-        if any((resolved / item).is_dir() for item in SPECIALIST_MODEL_DIRS):
-            # a partial pack is a usable pack: per-route availability decides later
-            return resolved.resolve(), all(
-                (resolved / item).is_dir() for item in SPECIALIST_MODEL_DIRS
-            )
+        resolved = Path(value).expanduser().resolve()
+        return resolved, resolved.is_dir()
     return _skill_root(), False
 
 
@@ -134,11 +109,10 @@ class FrozenKernelLite:
             raise RuntimeError(
                 f"{CORE_ASSET_UNAVAILABLE}: {self.native_core['reason']}: {self.native_core['detail']}"
             )
-        self.asset_root, self.specialist_pack_present = _optional_asset_root(asset_root)
+        self.asset_root, self.shared_asset_present = _optional_asset_root(asset_root)
         self.generator, self.calibration, frozen_params = _load_kernel_modules()
-        self.generator.PRIOR_ROOT = self.asset_root
-        self.generator.MODELS = self.asset_root / "model-cache"
-        # startup gate #2: capability registry.  A missing pack is NOT a Core fault.
+        # Current specialist routing is handled by the shared CoreML wrapper.
+        # This native kernel owns the Markov route only.
         self.capabilities = capability_report(self.native_core, self.asset_root)
         self.specialist_available = self.capabilities["specialist"]["status"] == AVAILABLE
         if require_specialist and not self.specialist_available:
@@ -285,16 +259,12 @@ class FrozenKernelLite:
             if missing:
                 raise ValueError(f"case missing fields: {missing}")
             groups[self.generator.route_case(case)].append(case)
-        # --- LITE delta (runtime): no global 5-model gate. Per-route capability only.
-        # A case whose route needs a pack that is absent (or a backend that is not
-        # active) is answered with SPECIALIST_CAPABILITY_UNAVAILABLE; it is NEVER
-        # silently answered by a substitute or a hand-computed value.
-        route_details = (self.capabilities.get("specialist") or {}).get("route_details") or {}
+        # Specialist cases never enter the historical native processors.  The
+        # public wrapper routes them through the one shared CoreML runtime.
         specialist_missing = [
             route
             for route in SPECIALIST_SUBSET
             if groups.get(route)
-            and (route_details.get(route) or {}).get("status") != AVAILABLE
         ]
         raw_rows: dict[str, dict[str, Any]] = {}
         route_hashes: dict[str, dict[str, str]] = {}
@@ -350,6 +320,9 @@ class FrozenKernelLite:
         """Structured refusal.  No arithmetic, no fallback, no fabricated support."""
         specialist = self.capabilities["specialist"]
         detail = (specialist.get("route_details") or {}).get(route) or {}
+        reason = detail.get("reason") or specialist["reason"]
+        if reason == "SHARED_COREML_READY":
+            reason = "SHARED_RUNTIME_ROUTER_REQUIRED"
         return {
             "schema_version": LITE_CASE_RESULT_SCHEMA,
             "status": SPECIALIST_CAPABILITY_UNAVAILABLE,
@@ -358,15 +331,13 @@ class FrozenKernelLite:
             "answers": {},
             "adapter_route": route,
             "requested_capability": "specialist",
-            "capability_status": specialist["status"],
-            "capability_reason": detail.get("reason") or specialist["reason"],
-            "missing_model_directories": list(
-                detail.get("missing_model_directories") or specialist["missing_model_directories"]
+            "capability_status": "UNAVAILABLE",
+            "capability_reason": reason,
+            "missing_shared_asset_paths": list(
+                detail.get("missing_shared_asset_paths")
+                or specialist.get("missing_shared_asset_paths")
+                or []
             ),
-            "missing_python_modules": list(
-                detail.get("missing_python_modules") or specialist["missing_python_modules"]
-            ),
-            "int4_backend_activated": bool(detail.get("int4_backend_activated")),
             "native_alternative": {
                 "available": False,
                 "reason": "NO_NATIVE_ROUTE_FOR_FAMILY",
@@ -391,16 +362,16 @@ class FrozenKernelLite:
 
 def _capability_settlement(result: dict[str, Any], locale: str) -> str:
     """User-visible settlement for a capability refusal (never a fake answer)."""
-    reason = result.get("capability_reason", "MODEL_PACK_MISSING")
+    reason = result.get("capability_reason", "SHARED_RUNTIME_MISSING")
     if str(locale).lower().startswith("zh"):
         return (
-            "本机缺少 specialist 模型包，相关能力当前不可用"
-            f"（{reason}）。native 路由可用，已零下载、零联网。"
+            "本机共享 CoreML 运行时不可用，相关能力当前不可用"
+            f"（{reason}）。native 路由仍可用，未下载或联网。"
         )
     return (
-        "Specialist model pack is not installed on this host, so this route is "
-        f"unavailable ({reason}). Native routes remain available; nothing was "
-        "downloaded and no network call was made."
+        "The shared CoreML runtime is unavailable on this host, so this route is "
+        f"unavailable ({reason}). Native routes remain available; no download or "
+        "network call was made."
     )
 
 

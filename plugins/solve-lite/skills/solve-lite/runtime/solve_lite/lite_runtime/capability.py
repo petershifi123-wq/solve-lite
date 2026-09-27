@@ -1,23 +1,14 @@
-"""LITE capability registry: native vs specialist (VV ruling A3, PHASE 2B item 5).
+"""Current LITE capability registry for the native and shared-CoreML paths.
 
-The LITE runtime is *capability partitioned*.  Native routes are served by the
-bundled native kernel with zero ML dependencies.  Summit / specialist routes need
-an externally supplied model pack plus torch + transformers, which the LITE startup
-path must never require, never probe by import, and never download.
-
-Semantic discipline (task §三):
-
-  native .so missing | hash mismatch | ABI root missing -> CORE_ASSET_UNAVAILABLE
-  model pack missing                                   -> SPECIALIST_CAPABILITY_UNAVAILABLE
-
-A missing model pack must never again masquerade as "the whole Core is missing".
+The bundled native kernel serves Markov locally.  The four specialist routes are
+served by one installed shared CoreML asset.  Capability discovery only validates
+that current layout; it never probes historical runtimes or downloads anything.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -32,36 +23,17 @@ SPECIALIST_CAPABILITY = "specialist"
 
 #: routes answerable by the bundled native kernel alone (stdlib only, no ML)
 NATIVE_ROUTES: tuple[str, ...] = ("markov",)
-#: routes that need the optional specialist model pack
+#: routes served by the installed shared CoreML runtime
 SPECIALIST_ROUTES: tuple[str, ...] = ("financial", "topic", "review", "nli")
-
-#: optional specialist pack contents (same list the Full core hard-required)
-SPECIALIST_MODEL_DIRS: tuple[str, ...] = (
-    "model-cache/ProsusAI--finbert",
-    "model-cache/fabriceyhc--bert-base-uncased-dbpedia_14",
-    "model-cache/distilbert--distilbert-base-uncased-finetuned-sst-2-english",
-    "model-cache/cross-encoder--nli-deberta-v3-base",
-    "model-cache-public-trained/financial_sentiment",
+SHARED_ASSET_REQUIRED_PATHS: tuple[str, ...] = (
+    "METADATA.json",
+    "heads/heads.json",
+    "model/shared-encoder.mlpackage/Manifest.json",
+    "model/shared-encoder.mlpackage/Data/com.apple.CoreML/model.mlmodel",
+    "model/shared-encoder.mlpackage/Data/com.apple.CoreML/weights/weight.bin",
+    "tokenizer/config.json",
+    "tokenizer/vocab.txt",
 )
-SPECIALIST_PYTHON_MODULES: tuple[str, ...] = ("torch", "transformers")
-
-#: which model directories each specialist route needs, so that a partial pack
-#: (for example the three public DLC components without the financial pair) can
-#: serve the routes it does have instead of failing as a whole
-SPECIALIST_ROUTE_DIRS: dict[str, tuple[str, ...]] = {
-    "nli": ("model-cache/cross-encoder--nli-deberta-v3-base",),
-    "topic": ("model-cache/fabriceyhc--bert-base-uncased-dbpedia_14",),
-    "review": ("model-cache/distilbert--distilbert-base-uncased-finetuned-sst-2-english",),
-    "financial": (
-        "model-cache/ProsusAI--finbert",
-        "model-cache-public-trained/financial_sentiment",
-    ),
-}
-#: container names: a plain transformers layout can be used by the kernel itself,
-#: an int4 container needs the opt-in DLC backend loaded
-NATIVE_CONTAINER_NAMES: tuple[str, ...] = ("model.safetensors", "pytorch_model.bin")
-INT4_CONTAINER_NAME = "model.slint4.safetensors"
-INT4_BACKEND_ENV = "SOLVE_LITE_INT4_DLC"
 
 AVAILABLE = "AVAILABLE"
 UNAVAILABLE = "UNAVAILABLE"
@@ -91,7 +63,7 @@ def native_core_status(manifest: dict[str, Any] | None = None) -> dict[str, Any]
     """Verify the bundled native core WITHOUT importing it and WITHOUT any ML.
 
     This is the only startup gate the LITE runtime has.  It never looks at the
-    specialist model pack, never imports torch and never touches the network.
+    shared specialist asset and never touches the network.
     """
     try:
         document = manifest if manifest is not None else lite_manifest()
@@ -141,99 +113,38 @@ def native_core_status(manifest: dict[str, Any] | None = None) -> dict[str, Any]
         "routes": [route for route in NATIVE_ROUTES],
         "modules": modules,
         "model_directories_checked": [],
-        "torch_imported": False,
         "network_used": False,
     }
 
 
-def _module_present(name: str) -> bool:
-    """Filesystem-only presence test: never enters the import machinery.
-
-    Deliberately NOT importlib.util.find_spec: the LITE startup/capability path
-    must produce zero import-machinery events for torch/transformers so that
-    TORCH_IMPORT_ATTEMPTS stays a meaningful, exactly-zero measurement.
-    """
-    import sys
-
-    for entry in list(sys.path):
-        if not entry:
-            continue
-        base = Path(entry)
-        try:
-            if (base / f"{name}.py").is_file() or (base / name / "__init__.py").is_file():
-                return True
-            if any(base.glob(f"{name}-*.dist-info")) or any(base.glob(f"{name}-*.egg-info")):
-                return True
-        except OSError:
-            continue
-    return False
-
-
-def _env_flag(name: str) -> bool:
-    return str(os.environ.get(name, "")).strip().lower() in {"1", "true", "yes", "on"}
+def _shared_asset_status(asset_root: str | Path | None) -> tuple[Path | None, list[str], str]:
+    root = Path(asset_root).expanduser() if asset_root else None
+    if root is None or not root.is_dir():
+        return root, list(SHARED_ASSET_REQUIRED_PATHS), "SHARED_RUNTIME_MISSING"
+    missing = [relative for relative in SHARED_ASSET_REQUIRED_PATHS if not (root / relative).is_file()]
+    return root, missing, "SHARED_ASSET_INVALID" if missing else "SHARED_COREML_READY"
 
 
 def specialist_route_status(asset_root: str | Path | None, route: str) -> dict[str, Any]:
-    """Per-route specialist availability (VV A3: per-route, not one global gate).
-
-    A route is servable when its own model directories are present, the ML
-    dependencies are present, and the model can actually be loaded: either the
-    opt-in INT4 backend is active, or the directory ships a plain transformers
-    container.  Nothing is imported and nothing is downloaded here.
-    """
-    root = Path(asset_root).expanduser() if asset_root else None
-    directories = SPECIALIST_ROUTE_DIRS.get(route, ())
-    if root is None or not root.is_dir():
-        missing = list(directories)
-    else:
-        missing = [item for item in directories if not (root / item).is_dir()]
-    missing_modules = [name for name in SPECIALIST_PYTHON_MODULES if not _module_present(name)]
-    int4_active = _env_flag(INT4_BACKEND_ENV)
-    native_container = False
-    if not missing and root is not None:
-        for item in directories:
-            directory = root / item
-            if any((directory / name).is_file() for name in NATIVE_CONTAINER_NAMES):
-                native_container = True
-    if missing:
-        status, reason = UNAVAILABLE, "MODEL_PACK_MISSING"
-    elif missing_modules:
-        status, reason = UNAVAILABLE, "PYTHON_DEPENDENCIES_MISSING"
-    elif int4_active or native_container:
-        status = AVAILABLE
-        reason = "INT4_BACKEND_ACTIVE" if int4_active else "NATIVE_CONTAINER_PRESENT"
-    else:
-        status, reason = UNAVAILABLE, "INT4_BACKEND_NOT_ACTIVATED"
+    """Describe whether the current shared CoreML asset can serve one route."""
+    root, missing, reason = _shared_asset_status(asset_root)
+    supported = route in SPECIALIST_ROUTES
+    status = AVAILABLE if supported and not missing else UNAVAILABLE
+    if not supported:
+        reason = "SHARED_ROUTE_UNSUPPORTED"
     return {
         "route": route,
         "status": status,
         "reason": reason,
-        "model_directories": list(directories),
-        "missing_model_directories": missing,
-        "missing_python_modules": missing_modules,
-        "int4_backend_activated": int4_active,
-        "native_container_present": native_container,
+        "asset_root": str(root) if root else None,
+        "missing_shared_asset_paths": missing,
     }
 
 
 def specialist_status(asset_root: str | Path | None) -> dict[str, Any]:
-    """Describe the OPTIONAL specialist pack.  Never raises, never imports, never downloads."""
-    root = Path(asset_root).expanduser() if asset_root else None
-    missing_dirs: list[str] = []
-    if root is None or not root.is_dir():
-        missing_dirs = list(SPECIALIST_MODEL_DIRS)
-    else:
-        missing_dirs = [item for item in SPECIALIST_MODEL_DIRS if not (root / item).is_dir()]
-    missing_modules = [name for name in SPECIALIST_PYTHON_MODULES if not _module_present(name)]
-    if missing_dirs and missing_modules:
-        reason = "MODEL_PACK_AND_PYTHON_DEPENDENCIES_MISSING"
-    elif missing_dirs:
-        reason = "MODEL_PACK_MISSING"
-    elif missing_modules:
-        reason = "PYTHON_DEPENDENCIES_MISSING"
-    else:
-        reason = "SPECIALIST_PACK_PRESENT"
-    available = not missing_dirs and not missing_modules
+    """Describe the current shared CoreML asset without loading or downloading it."""
+    root, missing, reason = _shared_asset_status(asset_root)
+    available = not missing
     route_details = {route: specialist_route_status(root, route) for route in SPECIALIST_ROUTES}
     return {
         "capability": SPECIALIST_CAPABILITY,
@@ -245,9 +156,7 @@ def specialist_status(asset_root: str | Path | None) -> dict[str, Any]:
             route for route, detail in route_details.items() if detail["status"] == AVAILABLE
         ],
         "asset_root": str(root) if root else None,
-        "missing_model_directories": missing_dirs,
-        "missing_python_modules": missing_modules,
-        "required_python_modules": list(SPECIALIST_PYTHON_MODULES),
+        "missing_shared_asset_paths": missing,
         "requires_network_download": False,
         "fallback_computation": False,
     }
@@ -282,11 +191,8 @@ __all__ = [
     "SCHEMA",
     "SPECIALIST_CAPABILITY",
     "SPECIALIST_CAPABILITY_UNAVAILABLE",
-    "SPECIALIST_MODEL_DIRS",
-    "SPECIALIST_PYTHON_MODULES",
-    "SPECIALIST_ROUTE_DIRS",
     "SPECIALIST_ROUTES",
-    "INT4_BACKEND_ENV",
+    "SHARED_ASSET_REQUIRED_PATHS",
     "UNAVAILABLE",
     "capability_report",
     "specialist_route_status",
