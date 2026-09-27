@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Fresh-copy acceptance for the self-contained public specialist runtime.
 
-This harness mutates only a temporary repository copy. It proves that an
+This harness mutates only a temporary repository copy and a temporary shared
+runtime root. It proves that an
 isolated Python with no ambient Torch/Transformers can install the pinned local
 runtime, leave the invoking interpreter's packages unchanged, keep Lite startup
 specialist-free, and execute one real Review, Topic and NLI decision.
@@ -93,9 +94,8 @@ def _decision_cases() -> list[dict[str, Any]]:
     ]
 
 
-def _run_decisions(repo: Path, python: str) -> dict[str, Any]:
+def _run_decisions(repo: Path, python: str, runtime: Path) -> dict[str, Any]:
     scripts = repo / "plugins" / "solve-lite" / "skills" / "solve-lite" / "scripts"
-    runtime = scripts.parent / "runtime"
     program = (
         "import json,pathlib,sys,tempfile;"
         f"sys.path.insert(0,{str(scripts)!r});import solve_lite_abi as A;"
@@ -115,9 +115,8 @@ def _run_decisions(repo: Path, python: str) -> dict[str, Any]:
     return {"returncode": result.returncode, "rows": rows, "stderr": result.stderr[-500:]}
 
 
-def _lite_startup_probe(repo: Path, python: str) -> dict[str, Any]:
+def _lite_startup_probe(repo: Path, python: str, runtime: Path) -> dict[str, Any]:
     scripts = repo / "plugins" / "solve-lite" / "skills" / "solve-lite" / "scripts"
-    runtime = scripts.parent / "runtime"
     program = (
         "import json,sys;"
         f"sys.path.insert(0,{str(scripts)!r});import solve_lite_abi as A;"
@@ -140,12 +139,16 @@ def main() -> int:
 
     temp = Path(tempfile.mkdtemp(prefix="solve-lite-specialist-clean-"))
     repo = temp / "repo"
+    shared_runtime = temp / "shared-runtime" / "v0.1.8"
     _copy_public_tree(repo)
     environment = dict(os.environ)
     environment["PYTHONNOUSERSITE"] = "1"
     before_probe = _clean_probe(args.python, repo)
     before_freeze = _freeze(args.python, repo)
-    command = [args.python, "tools/installer.py", "--package-dir", str(args.package_dir.resolve()), "--host", "none", "--json"]
+    command = [
+        args.python, "tools/installer.py", "--package-dir", str(args.package_dir.resolve()),
+        "--shared-runtime-root", str(shared_runtime), "--host", "none", "--json",
+    ]
     if args.wheel_dir:
         command += ["--specialist-wheel-dir", str(args.wheel_dir.resolve())]
     install = _run(command, cwd=repo, env=environment)
@@ -154,13 +157,17 @@ def main() -> int:
     except ValueError:
         install_payload = {"status": "FAIL", "stderr": install.stderr[-1000:], "stdout": install.stdout[-1000:]}
     after_freeze = _freeze(args.python, repo)
-    startup = _lite_startup_probe(repo, args.python)
-    decisions = _run_decisions(repo, args.python) if install_payload.get("status") == "PASS" else {"rows": []}
+    startup = _lite_startup_probe(repo, args.python, shared_runtime)
+    decisions = _run_decisions(repo, args.python, shared_runtime) if install_payload.get("status") == "PASS" else {"rows": []}
     routes = {row.get("route"): row for row in decisions.get("rows", [])}
     checks = {
         "CLEAN_HOST_WITHOUT_TORCH": before_probe.get("torch") is False,
         "CLEAN_HOST_WITHOUT_TRANSFORMERS": before_probe.get("transformers") is False,
-        "INSTALLER_CREATES_LOCAL_ENV": (repo / "plugins/solve-lite/skills/solve-lite/runtime/specialist-env/bin/python3").is_file(),
+        "INSTALLER_CREATES_SHARED_ENV": (shared_runtime / "specialist-env/bin/python3").is_file(),
+        "REPO_HEAVY_RUNTIME_COPY_ZERO": not any(
+            (repo / "plugins/solve-lite/skills/solve-lite/runtime" / name).exists()
+            for name in ("specialist-env", "specialist-python", "addons")
+        ),
         "PINNED_DEPENDENCIES": bool((install_payload.get("required_checks") or {}).get("specialist_runtime")),
         "SYSTEM_PYTHON_UNCHANGED": before_freeze == after_freeze,
         "GLOBAL_SITE_PACKAGES_UNCHANGED": before_freeze == after_freeze,

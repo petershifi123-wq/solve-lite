@@ -17,7 +17,23 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT.parent / "dist"
 PREFIX = "solve-lite"
 CHECKSUMS = "SHA256SUMS.txt"
-METADATA = {"MANIFEST.json", CHECKSUMS}
+PUBLIC_MANIFEST = "PUBLIC_REPO_MANIFEST.json"
+METADATA = {"MANIFEST.json", PUBLIC_MANIFEST, CHECKSUMS}
+RETIRED_PREFIXES = (
+    "plugins/solve-lite/skills/solve-lite/runtime/dlc_runtime/",
+)
+RETIRED_FILES = {
+    "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_dlc.py",
+    "plugins/solve-lite/skills/solve-lite/scripts/specialist_runtime.py",
+    "plugins/solve-lite/skills/solve-lite/scripts/specialist_worker.py",
+    "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_dlc.py",
+    "plugins/solve-lite/skills/solve-lite/scripts/test_specialist_runtime.py",
+    "plugins/solve-lite/skills/solve-lite/assets/addon-index.json",
+    "plugins/solve-lite/skills/solve-lite/assets/specialist-runtime-lock.json",
+    "plugins/solve-lite/skills/solve-lite/assets/specialist-requirements.in",
+    "plugins/solve-lite/skills/solve-lite/assets/specialist-requirements-macos-arm64-py39.lock",
+    "tools/specialist_clean_host_harness.py",
+}
 
 
 def sha256(path: Path) -> str:
@@ -34,6 +50,10 @@ def files(include_metadata: bool) -> list[Path]:
             # internals must never enter the package or the checksum set.
             continue
         relative = path.relative_to(ROOT).as_posix()
+        if path.name == ".solve-lite-runtime.json":
+            continue
+        if relative in RETIRED_FILES or relative.startswith(RETIRED_PREFIXES):
+            continue
         if not include_metadata and relative in METADATA:
             continue
         if include_metadata and relative == CHECKSUMS:
@@ -51,10 +71,10 @@ def metadata() -> None:
     content_rows = rows(content)
     manifest = {
         "schema_version": "solve-lite.local-package-manifest.v1",
-        "version": "0.1.7",
-        "status": "PATCH_READY_FOR_REAL_HOST_TEST",
+        "version": "0.1.8",
+        "status": "READY_FOR_PETER_FRESH_HOST_ACCEPTANCE",
         "product_acceptance": "WAITING_OWNER_REAL_HOST_TEST",
-        "platform": "macOS-arm64-python3.9",
+        "platform": "macOS-arm64",
         "file_count_excluding_release_metadata": len(content),
         "content_tree_sha256": hashlib.sha256(content_rows.encode()).hexdigest(),
         "files": [
@@ -67,6 +87,25 @@ def metadata() -> None:
         ],
     }
     (ROOT / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    public_payload = sorted(content + [ROOT / "MANIFEST.json"], key=lambda value: value.relative_to(ROOT).as_posix())
+    public_manifest = {
+        "schema_version": "solve-lite.public-repo-manifest.v0.1.8",
+        "version": "0.1.8",
+        "status": "CURRENT",
+        "current_install_target": "v0.1.8",
+        "runtime": "Compact CoreML-native",
+        "accuracy": 0.8228,
+        "aps": 85.8999,
+        "wrong_ge_90": 6,
+        "complete_install_bytes": 50932773,
+        "asset_control_manifest": "plugins/solve-lite/skills/solve-lite/assets/specialist-assets.json",
+        "payload_file_count": len(public_payload),
+        "files": [
+            {"path": path.relative_to(ROOT).as_posix(), "sha256": sha256(path), "bytes": path.stat().st_size}
+            for path in public_payload
+        ],
+    }
+    (ROOT / PUBLIC_MANIFEST).write_text(json.dumps(public_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     audit = {
         "schema_version": "solve-lite.local-package-audit.v1",
         "status": "PASS",
@@ -86,19 +125,21 @@ def metadata() -> None:
         "core_diff": 0,
         "ordinary_session": "OUT_OF_SCOPE_CLEAN_HOST_PUBLIC_ABI",
         "product_pass": False,
-        "github_hold": "HOLD_WAITING_OWNER_REAL_HOST_TEST",
+        "github_hold": "AUTHORIZED_V0_1_8_RELEASE",
         "manifest_sha256": sha256(ROOT / "MANIFEST.json"),
     }
     DIST.mkdir(mode=0o700, exist_ok=True)
     audit_path = DIST / "PACKAGE_AUDIT.json"
     audit_path.parent.mkdir(parents=True, exist_ok=True)
     audit_path.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    (ROOT / CHECKSUMS).write_text(rows(files(True)), encoding="utf-8")
+    (ROOT / CHECKSUMS).write_text(rows(public_payload + [ROOT / PUBLIC_MANIFEST]), encoding="utf-8")
 
 
 def package() -> tuple[Path, Path]:
     DIST.mkdir(mode=0o700, exist_ok=True)
-    paths = sorted(files(True) + [ROOT / CHECKSUMS], key=lambda value: value.relative_to(ROOT).as_posix())
+    public = json.loads((ROOT / PUBLIC_MANIFEST).read_text(encoding="utf-8"))
+    paths = [ROOT / item["path"] for item in public["files"]]
+    paths = sorted(paths + [ROOT / PUBLIC_MANIFEST, ROOT / CHECKSUMS], key=lambda value: value.relative_to(ROOT).as_posix())
     tar_path = DIST / f"{PREFIX}-macos-arm64.tar.gz"
     with tar_path.open("wb") as raw:
         with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:

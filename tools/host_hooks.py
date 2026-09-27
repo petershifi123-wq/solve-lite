@@ -1,31 +1,5 @@
 #!/usr/bin/env python3
-"""Host-side hook registration for Solve Lite (P1: no model discretion).
-
-Two real hosts are handled:
-
-``workbuddy``
-    WorkBuddy AI desktop ships the CodeBuddy CLI (``@genie/agent-cli``).  Its
-    agent loop loads both settings hooks and plugin hooks.  Solve Lite therefore
-    uses exactly one authoritative plugin-layer ``UserPromptSubmit`` hook and
-    removes its own legacy settings-layer duplicate.  The copied plugin resolves
-    its root from WorkBuddy's real ``CODEBUDDY_PLUGIN_ROOT`` /
-    ``CLAUDE_PLUGIN_ROOT`` environment, never from the unsupported generic
-    ``PLUGIN_ROOT`` variable.
-
-``doubao``
-    Doubao Work (``DoubaoWork.app``) runs a cloud agent with a local skill
-    workspace.  It exposes **no hook API** - the app bundle contains no
-    ``UserPromptSubmit`` / ``hookSpecificOutput`` / hook config reader at all -
-    so a hook cannot be registered into it.  What *is* host-writable is the
-    agent skill workspace (``.user_skills/<name>``); the installer copies the
-    plugin there and reports the honest status plus a copy-paste one-step
-    command that performs the same pre-prompt Lite run without any hook, so
-    activation never depends on the host model choosing to invoke a skill.
-
-Nothing here writes outside the user's own host config directories, and every
-write is backed up first.  ``--config-dir`` redirects the whole operation to a
-sandbox copy, which is how the host-shaped tests exercise it.
-"""
+"""Install thin Solve Lite adapters that point to one shared v0.1.8 runtime."""
 
 from __future__ import annotations
 
@@ -45,6 +19,25 @@ HOOK_SCRIPT_REL = "hooks/user_prompt_submit.py"
 SKILL_REL = "skills/solve-lite"
 REGISTRY_REL = "skills/solve-lite/assets/agent_registry.json"
 PYTHON = "/usr/bin/python3"
+
+
+def _shared_runtime_module(plugin_root: Path):
+    root = Path(plugin_root)
+    nested = root / "skills" / "solve-lite" / "scripts"
+    scripts = nested if nested.is_dir() else root / "scripts"
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
+    import shared_runtime  # noqa: PLC0415
+
+    return shared_runtime
+
+
+def _thin_copy_ignore(path: str, names: List[str]) -> set[str]:
+    """Never duplicate the user-level CoreML asset into a host adapter."""
+    current = Path(path)
+    if current.name == "runtime" and current.parent.name == "solve-lite":
+        return {name for name in names if name in {"shared-encoder-runtime", "dlc_runtime"}}
+    return set()
 
 
 def _home() -> Path:
@@ -121,6 +114,24 @@ def _hosts() -> Dict[str, HostSpec]:
                 "~/Library/Application Support/DoubaoWork/Default/.doubaowork/"
                 "agent_mode/workspace/.user_skills/solve-lite"
             ),
+        ),
+        "codex": HostSpec(
+            host_id="codex",
+            display="Codex",
+            hook_api="plugin_manifest",
+            hook_api_evidence="Codex plugin manifest plus a shared-runtime pointer",
+            config_env=("CODEX_HOME",),
+            skill_dest=_home() / ".codex" / "skills" / "solve-lite",
+            skill_locator="~/.codex/skills/solve-lite",
+        ),
+        "hermes": HostSpec(
+            host_id="hermes",
+            display="Hermes",
+            hook_api="portable_skill",
+            hook_api_evidence="Hermes skill directory plus a shared-runtime pointer",
+            config_env=("HERMES_HOME",),
+            skill_dest=_home() / ".hermes" / "skills" / "solve-lite",
+            skill_locator="~/.hermes/skills/solve-lite",
         ),
         "generic": HostSpec(
             host_id="generic",
@@ -199,8 +210,8 @@ def plugin_hook_command(plugin_root: Path, host_id: str) -> str:
     for name in reversed(envs):
         expression = "${%s:-%s}" % (name, expression)
     return (
-        "sh -c 'D=%s; F=\"$D/%s\"; P=\"$D/skills/solve-lite/runtime/specialist-env/bin/python3\"; "
-        "if [ -n \"$D\" ] && [ -f \"$F\" ]; then [ -x \"$P\" ] || P=%s; exec \"$P\" \"$F\"; fi; exit 0'"
+        "sh -c 'D=%s; F=\"$D/%s\"; "
+        "if [ -n \"$D\" ] && [ -f \"$F\" ]; then exec %s \"$F\"; fi; exit 0'"
         % (expression, HOOK_SCRIPT_REL, PYTHON)
     )
 
@@ -223,10 +234,7 @@ def one_step_command(plugin_root: Path) -> str:
     activation instead of relying on the host model choosing a skill.
     """
     root = Path(plugin_root).expanduser()
-    nested_python = root / "skills" / "solve-lite" / "runtime" / "specialist-env" / "bin" / "python3"
-    flat_python = root / "runtime" / "specialist-env" / "bin" / "python3"
-    python = next((path for path in (nested_python, flat_python) if path.is_file() and os.access(path, os.X_OK)), Path(PYTHON))
-    return '"%s" "%s" --clipboard' % (python.as_posix(), (root / HOOK_SCRIPT_REL).as_posix())
+    return '"%s" "%s" --clipboard' % (PYTHON, (root / HOOK_SCRIPT_REL).as_posix())
 
 
 # --------------------------------------------------------------------------- #
@@ -337,7 +345,8 @@ def _marketplace_dir(config_dir: Path) -> Path:
 
 
 def register_plugin_layer(config_dir: Path, plugin_root: Path, *, host_id: str = "workbuddy",
-                          dry_run: bool = False) -> Dict[str, Any]:
+                          dry_run: bool = False,
+                          shared_runtime_root: Optional[Path] = None) -> Dict[str, Any]:
     """Directory marketplaces are a first-class host feature (`workbuddy-builtin`)."""
     marketplace_root = _marketplace_dir(config_dir)
     plugin_copy = marketplace_root / "plugins" / "solve-lite"
@@ -385,29 +394,10 @@ def register_plugin_layer(config_dir: Path, plugin_root: Path, *, host_id: str =
     # Preserve venv and model-view symlinks. Dereferencing a macOS framework
     # Python symlink copies only its tiny launcher binary; the copied plugin then
     # fails at runtime because @executable_path/../Python3 is absent.
-    shutil.copytree(plugin_root, plugin_copy, symlinks=True)
-    source_runtime_raw = plugin_root / "skills" / "solve-lite" / "runtime"
-    source_runtime = source_runtime_raw.resolve()
-    copied_runtime = (plugin_copy / "skills" / "solve-lite" / "runtime").resolve()
-    pyvenv = copied_runtime / "specialist-env" / "pyvenv.cfg"
-    if pyvenv.is_file():
-        text = pyvenv.read_text(encoding="utf-8", errors="replace")
-        text = text.replace(str(source_runtime_raw), str(copied_runtime))
-        text = text.replace(str(source_runtime), str(copied_runtime))
-        pyvenv.write_text(text, encoding="utf-8")
-    for name in ("python", "python3", "python3.9"):
-        source_link = source_runtime / "specialist-env" / "bin" / name
-        copied_link = copied_runtime / "specialist-env" / "bin" / name
-        if not source_link.is_symlink() or not copied_link.is_symlink():
-            continue
-        resolved = source_link.resolve()
-        try:
-            relative = resolved.relative_to(source_runtime)
-        except ValueError:
-            continue  # external system Python: the preserved absolute link is valid
-        copied_link.unlink()
-        target = copied_runtime / relative
-        copied_link.symlink_to(os.path.relpath(target, copied_link.parent))
+    shutil.copytree(plugin_root, plugin_copy, symlinks=True, ignore=_thin_copy_ignore)
+    shared = _shared_runtime_module(plugin_root)
+    runtime_root = Path(shared_runtime_root or shared.default_runtime_root()).expanduser().resolve()
+    pointer = shared.write_pointer(plugin_copy, runtime_root)
     (plugin_copy / "hooks" / "hooks.json").write_text(
         json.dumps(_hook_document(command), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     manifest_dir.mkdir(parents=True, exist_ok=True)
@@ -424,6 +414,9 @@ def register_plugin_layer(config_dir: Path, plugin_root: Path, *, host_id: str =
         "enabled_plugins_key": plugin_id,
         "hook_command": command,
         "hook_state": "HOOK_ACTIVE",
+        "shared_runtime_root": str(runtime_root),
+        "runtime_pointer": str(pointer),
+        "heavy_runtime_copy": bool(shared.adapter_heavy_paths(plugin_copy)),
         "host_load_observed": False,
         "note": "config written; whether the desktop UI loads it is not observable offline",
     }
@@ -435,49 +428,9 @@ def register_plugin_layer(config_dir: Path, plugin_root: Path, *, host_id: str =
 SKILL_FIRST_STEP_MARKER = "SOLVE_LITE_MANDATORY_FIRST_STEP"
 
 
-def _relocate_skill_runtime(source_runtime: Path, copied_runtime: Path) -> None:
-    """Make a copied self-contained skill refer only to its installed paths."""
-    source_runtime_raw = source_runtime
-    source_runtime_resolved = source_runtime.resolve()
-    copied_runtime_resolved = copied_runtime.resolve()
-    replacements = (
-        (str(source_runtime_raw), str(copied_runtime_resolved)),
-        (str(source_runtime_resolved), str(copied_runtime_resolved)),
-    )
-    pyvenv = copied_runtime / "specialist-env" / "pyvenv.cfg"
-    if pyvenv.is_file():
-        text = pyvenv.read_text(encoding="utf-8", errors="replace")
-        for old, new in replacements:
-            text = text.replace(old, new)
-        pyvenv.write_text(text, encoding="utf-8")
-    for name in ("python", "python3", "python3.9"):
-        source_link = source_runtime / "specialist-env" / "bin" / name
-        copied_link = copied_runtime / "specialist-env" / "bin" / name
-        if not source_link.is_symlink() or not copied_link.is_symlink():
-            continue
-        resolved = source_link.resolve()
-        try:
-            relative = resolved.relative_to(source_runtime_resolved)
-        except ValueError:
-            continue
-        copied_link.unlink()
-        target = copied_runtime_resolved / relative
-        copied_link.symlink_to(os.path.relpath(target, copied_link.parent))
-    for relative in (
-        Path("specialist-env") / "solve-lite-specialist-runtime.json",
-        Path("addons") / "solve-lite-int4-dlc" / "dlc-registry.json",
-    ):
-        path = copied_runtime / relative
-        if not path.is_file():
-            continue
-        text = path.read_text(encoding="utf-8", errors="replace")
-        for old, new in replacements:
-            text = text.replace(old, new)
-        path.write_text(text, encoding="utf-8")
-
-
 def install_skill(spec: HostSpec, plugin_root: Path, *, override: Optional[Path] = None,
-                  dry_run: bool = False) -> Dict[str, Any]:
+                  dry_run: bool = False,
+                  shared_runtime_root: Optional[Path] = None) -> Dict[str, Any]:
     if spec.skill_dest is None:
         return {"status": "NO_SKILL_LOCATION"}
     dest = Path(override).expanduser() if override is not None else Path(spec.skill_dest)
@@ -494,12 +447,14 @@ def install_skill(spec: HostSpec, plugin_root: Path, *, override: Optional[Path]
         shutil.move(str(dest), backup)
     dest.parent.mkdir(parents=True, exist_ok=True)
     source = plugin_root / SKILL_REL
-    shutil.copytree(source, dest, symlinks=True)
+    shutil.copytree(source, dest, symlinks=True, ignore=_thin_copy_ignore)
     hook_source = plugin_root / HOOK_SCRIPT_REL
     hook_dest = dest / HOOK_SCRIPT_REL
     hook_dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(hook_source, hook_dest)
-    _relocate_skill_runtime(source / "runtime", dest / "runtime")
+    shared = _shared_runtime_module(plugin_root)
+    runtime_root = Path(shared_runtime_root or shared.default_runtime_root()).expanduser().resolve()
+    pointer = shared.write_pointer(dest, runtime_root)
     skill_md = dest / "SKILL.md"
     text = skill_md.read_text(encoding="utf-8") if skill_md.is_file() else ""
     destination_command = one_step_command(dest)
@@ -528,7 +483,10 @@ def install_skill(spec: HostSpec, plugin_root: Path, *, override: Optional[Path]
         skill_md.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     report.update({"status": "INSTALLED", "backup": backup,
                    "mandatory_first_step_banner": True,
-                   "one_step_command": destination_command})
+                   "one_step_command": destination_command,
+                   "shared_runtime_root": str(runtime_root),
+                   "runtime_pointer": str(pointer),
+                   "heavy_runtime_copy": bool(shared.adapter_heavy_paths(dest))})
     return report
 
 
@@ -568,6 +526,9 @@ def detect(host_id: str, override: Optional[Path] = None) -> Dict[str, Any]:
             plugin_active = int(plugin_enabled and len(plugin_commands) == 1)
             active_sources = settings_count + plugin_active
             script_exists = (plugin_copy / HOOK_SCRIPT_REL).is_file()
+            shared = _shared_runtime_module(plugin_copy) if plugin_copy.is_dir() else None
+            pointer = shared.load_pointer(plugin_copy) if shared else {"status": "MISSING"}
+            heavy = shared.adapter_heavy_paths(plugin_copy) if shared else []
             if active_sources > 1 or len(plugin_commands) > 1:
                 hook_state = "HOOK_ERROR"
             elif active_sources == 1 and (settings_count or script_exists):
@@ -586,6 +547,9 @@ def detect(host_id: str, override: Optional[Path] = None) -> Dict[str, Any]:
                 "settings_solve_lite_entries": settings_count,
                 "plugin_hook_commands": plugin_commands,
                 "plugin_script_exists": script_exists,
+                "shared_runtime_pointer": pointer,
+                "heavy_runtime_copies": heavy,
+                "heavy_runtime_copy_zero": not heavy,
                 "user_prompt_submit_entries": len(entries),
                 "enabled_plugins": sorted(enabled.keys()) if isinstance(enabled, dict) else [],
             })
@@ -599,11 +563,17 @@ def detect(host_id: str, override: Optional[Path] = None) -> Dict[str, Any]:
             and SKILL_FIRST_STEP_MARKER
             in (Path(destination) / "SKILL.md").read_text(encoding="utf-8", errors="replace")
         )
+        if destination and Path(destination).is_dir():
+            shared = _shared_runtime_module(Path(destination))
+            report["shared_runtime_pointer"] = shared.load_pointer(Path(destination))
+            report["heavy_runtime_copies"] = shared.adapter_heavy_paths(Path(destination))
+            report["heavy_runtime_copy_zero"] = not report["heavy_runtime_copies"]
     return report
 
 
 def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None,
-             dry_run: bool = False, install_plugin_layer: bool = True) -> Dict[str, Any]:
+             dry_run: bool = False, install_plugin_layer: bool = True,
+             shared_runtime_root: Optional[Path] = None) -> Dict[str, Any]:
     spec = host_spec(host_id)
     report: Dict[str, Any] = {
         "schema_version": SCHEMA,
@@ -622,7 +592,8 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
                 entry = {"config_dir": str(config_dir)}
                 entry["settings_dedup"] = remove_settings_hook(config_dir, dry_run=dry_run)
                 entry["plugin_layer"] = register_plugin_layer(
-                    config_dir, plugin_root, host_id=host_id, dry_run=dry_run)
+                    config_dir, plugin_root, host_id=host_id, dry_run=dry_run,
+                    shared_runtime_root=shared_runtime_root)
             else:
                 entry = register_settings_hook(config_dir, plugin_root, dry_run=dry_run)
             results.append(entry)
@@ -633,7 +604,9 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
         report["one_step_command"] = one_step_command(plugin_root)
         report["verification"] = "run tools/hook_selftest.py --host workbuddy"
     elif host_id == "generic":
-        report["skill"] = install_skill(spec, plugin_root, override=override, dry_run=dry_run)
+        report["skill"] = install_skill(
+            spec, plugin_root, override=override, dry_run=dry_run,
+            shared_runtime_root=shared_runtime_root)
         report["hook_registration"] = "PORTABLE_SKILL_BANNER"
         report["activation_model"] = "OUT_OF_MODEL_PREPROMPT_STEP"
         report["one_step_command"] = one_step_command(plugin_root)
@@ -643,10 +616,12 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
         )
         report["verification"] = "run tools/hook_selftest.py --host generic"
     else:
-        report["skill"] = install_skill(spec, plugin_root, override=override, dry_run=dry_run)
+        report["skill"] = install_skill(
+            spec, plugin_root, override=override, dry_run=dry_run,
+            shared_runtime_root=shared_runtime_root)
         report["hook_registration"] = "UNAVAILABLE_NO_HOST_HOOK_API"
+        report["status"] = "PASS" if (report["skill"] or {}).get("status") in {"INSTALLED", "DRY_RUN"} else "FAIL"
         if host_id == "doubao":
-            report["status"] = "UNAVAILABLE_EXPECTED"
             report["native_hook_api"] = "UNAVAILABLE_EXPECTED"
         report["activation_model"] = "OUT_OF_MODEL_PREPROMPT_STEP"
         destination = Path((report.get("skill") or {}).get("destination") or plugin_root)
