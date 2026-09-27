@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/hooks/user_prompt_submit.py\""
+            "command": "sh -c 'D=${PLUGIN_ROOT:-$PWD}; F=$D/hooks/user_prompt_submit.py; [ -f \"$F\" ] || F=$PWD/hooks/user_prompt_submit.py; if [ -f \"$F\" ]; then exec /usr/bin/python3 \"$F\"; fi; exit 0'"
           }
         ]
       }

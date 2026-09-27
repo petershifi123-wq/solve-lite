@@ -94,10 +94,10 @@
       "sha256": "e1fab67a71206f59c97ca0ae3c6558a8efa18d00783076ea593f378c5c696620"
     },
     {
-      "bytes": 233,
+      "bytes": 361,
       "mode": "0644",
       "path": "plugins/solve-lite/hooks/hooks.json",
-      "sha256": "1d1691913d198e7e22f1a719b592707fa58895a80f2907f01a1ab869ae3a92ad"
+      "sha256": "f2c94fffc6a8e1124323fb4684998d9affa853c5ef321dd6e841e2c78373c048"
     },
     {
       "bytes": 17918,
@@ -597,7 +597,7 @@
   ],
   "payload_file_count": 95,
   "payload_tree_hash_algorithm": "sha256(path\\0sha256\\0bytes\\0mode\\n)",
-  "payload_tree_sha256": "0d51122a8482fcd549bf6dedccb23936a69ee603ecde224bdc2453d3e6a66843",
+  "payload_tree_sha256": "b668737481a659294b33af3e57d9ae3d06f2b8467ab95f809e2ae59ebff20b73",
   "schema": "solve-lite.public-repo-manifest.v3",
   "version": "0.1.6-public"
 }
