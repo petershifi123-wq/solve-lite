@@ -99,7 +99,7 @@
  "legacy_core_asset_root_env_status": "DEPRECATED_ACCEPTED_IF_SET",
  "pack_manifest": true,
  "pack_manifest_note": "the internal kernel manifest solve_lite/lite_runtime/LITE_CORE_ASSET_MANIFEST.json remains the sealed build-lot record for the 8 native modules",
- "product_version": "0.1.6-public",
+ "product_version": "0.1.7-public",
  "public_abi": {
   "capabilities": "capabilities",
   "compatibility_bridge": "solve_lite_abi_lite:route_prompt",
@@ -132,7 +132,7 @@
     "package_bytes": 29172762,
     "package_sha256": "264a7bbd905426ac9c2c67bbc2fc813d0bca60967ec329a955e8e2e7c0573a34",
     "public": true,
-    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.5/solve-lite-review-compact.tar.gz",
+    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.7/solve-lite-review-compact.tar.gz",
     "route": "review",
     "unit_id": "review-sst2-distilbert-int4-g64"
    },
@@ -148,7 +148,7 @@
     "package_bytes": 44319676,
     "package_sha256": "ad2933cbe828441b6b3196b1230b094e81e4726eeac258d119373802b94a9e08",
     "public": true,
-    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.5/solve-lite-topic-compact.tar.gz",
+    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.7/solve-lite-topic-compact.tar.gz",
     "route": "topic",
     "unit_id": "topic-dbpedia14-bert-int4-g64"
    },
@@ -164,7 +164,7 @@
     "package_bytes": 76350116,
     "package_sha256": "4deddd7e5c5e9457af6746d0b28f1343223721a445142b7a91fcc626c956df00",
     "public": true,
-    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.5/solve-lite-nli-compact.tar.gz",
+    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.7/solve-lite-nli-compact.tar.gz",
     "route": "nli",
     "unit_id": "nli-deberta-v3-base-int4-g64"
    },
@@ -189,7 +189,7 @@
   "fallback_computation": false,
   "included_in_public_repository": false,
   "included_in_release": false,
-  "install_command": "python3 tools/installer.py --install-dlc",
+  "install_command": "python3 tools/installer.py",
   "max_resident_dlc": 1,
   "missing_pack_status": "SPECIALIST_CAPABILITY_UNAVAILABLE",
   "native_startup_requires_network": false,
@@ -205,9 +205,11 @@
    }
   ],
   "preload_at_startup": false,
-  "requested_by": "explicit_install_only",
+  "requested_by": "normal_public_install",
   "specialist_model_assets_required_at_startup": false,
-  "status": "OPTIONAL_DLC_COMPONENTS"
+  "status": "PUBLIC_DLC_COMPONENTS",
+  "normal_public_install": true,
+  "runtime_activation": "CAPABILITY_ROUTED_LAZY"
  },
  "runtime_root": "plugins/solve-lite/skills/solve-lite/runtime",
  "runtime_root_env": "SOLVE_LITE_RUNTIME_ROOT",
