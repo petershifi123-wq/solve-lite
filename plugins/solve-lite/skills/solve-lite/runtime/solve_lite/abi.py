@@ -1,14 +1,12 @@
 """Language-neutral, session-routed public ABI — LITE build line.
 
-Same public surface as the frozen Full core (`solve_lite.abi:route_session` plus
-`healthcheck`) so a host cannot tell the two apart at the entrypoint level.  The
-difference is contractual, not cosmetic: the LITE ABI reports a capability
-registry and never requires the optional specialist model pack at import or
-startup.
+Stable public surface for the bundled native kernel and installed shared CoreML
+runtime.  The LITE ABI reports current capability state without downloading or
+loading specialist assets during startup.
 
 Refusal semantics (PHASE 2B §三):
   native Core missing / hash mismatch  -> CORE_ASSET_UNAVAILABLE
-  specialist model pack missing        -> SPECIALIST_CAPABILITY_UNAVAILABLE
+  shared CoreML runtime unavailable    -> SPECIALIST_CAPABILITY_UNAVAILABLE
 """
 
 from __future__ import annotations
@@ -39,7 +37,7 @@ def route_session(
 ) -> dict[str, Any]:
     """Route one ordinary host session without a user language selector.
 
-    Never downloads, never requires the specialist pack, and never substitutes a
+    Never downloads during routing, and never substitutes a
     computation for a missing capability.
     """
     locale = detect_session_locale(session)
@@ -56,7 +54,7 @@ def route_session(
 
 
 def capabilities(asset_root: str | Path | None = None) -> dict[str, Any]:
-    """Capability registry snapshot: no model load, no torch, no network."""
+    """Capability registry snapshot with no model load or network access."""
     native = native_core_status()
     report = capability_report(native, asset_root)
     report["abi_schema"] = ABI_SCHEMA
@@ -74,8 +72,7 @@ def healthcheck() -> dict[str, Any]:
         "runtime_schema": LITE_RUNTIME_SCHEMA,
         "native_capabilities": list(LITE_NATIVE_CAPABILITIES),
         "native_core": native,
-        "specialist_pack_required": False,
-        "torch_imported": False,
+        "shared_coreml_required_for_specialist_routes": True,
         "offline": True,
         "telemetry": False,
         "network_used": False,
