@@ -97,7 +97,7 @@
  "install_default": "LITE",
  "pack_manifest": true,
  "pack_manifest_note": "the internal kernel manifest solve_lite/lite_runtime/LITE_CORE_ASSET_MANIFEST.json remains the sealed build-lot record for the 8 native modules",
- "product_version": "0.1.9",
+ "product_version": "0.1.10",
  "public_abi": {
   "capabilities": "capabilities",
   "compatibility_bridge": "solve_lite_abi_lite:route_prompt",
@@ -117,7 +117,7 @@
   "asset_manifest": "../assets/specialist-assets.json",
   "asset_store": "Hugging Face",
   "control_plane": "GitHub",
-  "current_install_target": "v0.1.9",
+  "current_install_target": "v0.1.10",
   "status": "CURRENT_SHARED_COREML_RUNTIME",
   "shared_runtime_single_copy": true,
   "backend": "CoreML-native",
