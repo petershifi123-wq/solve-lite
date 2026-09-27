@@ -265,7 +265,7 @@ def base_runtime_mb(root: Path) -> float:
         if not p.is_file() or "__pycache__" in p.parts:
             continue
         relative = p.relative_to(rt).as_posix()
-        if relative.startswith("addons/") or relative.startswith("dlc_runtime/"):
+        if relative.startswith(("addons/", "dlc_runtime/", "specialist-env/", "specialist-python/")):
             continue
         total += p.stat().st_size
     for p in (root / "plugins" / "solve-lite" / "skills" / "solve-lite" / "scripts").rglob("*.py"):
@@ -291,6 +291,24 @@ def dlc_size_report(root: Path) -> dict:
         "backend_mb": measure(backend),
         "staged_packages_mb": measure((addon / "staged") if addon else None),
         "note": "DLC components are separate from the base runtime and are never counted in it",
+    }
+
+
+def specialist_runtime_size_report(root: Path) -> dict:
+    rt = runtime_root(root)
+    venv = (rt / "specialist-env") if rt else None
+    bootstrap = (rt / "specialist-python") if rt else None
+
+    def measure(path: Path | None) -> float:
+        if path is None or not path.is_dir():
+            return 0.0
+        total = sum(p.stat().st_size for p in path.rglob("*") if p.is_file() and "__pycache__" not in p.parts)
+        return round(total / 1_000_000, 1)
+
+    return {
+        "venv_mb": measure(venv),
+        "fallback_python_mb": measure(bootstrap),
+        "separate_from_base_lite": True,
     }
 
 
@@ -324,7 +342,8 @@ def main() -> int:
         "detail": {"core": core, "legacy": legacy, "healthcheck": hc, "registry": reg},
         "disclosure": {
             "base_runtime_mb": base_runtime_mb(root),
-            "base_runtime_scope": "LITE core only (excludes runtime/addons/** and runtime/dlc_runtime/**)",
+            "base_runtime_scope": "LITE core only (excludes DLC, specialist env, and fallback Python)",
+            "specialist_runtime": specialist_runtime_size_report(root),
             "dlc": dlc_size_report(root),
             "installed_dlc": reg.get("installed_dlc") or [],
             "activation_state": reg.get("activation_state"),

@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "plugins" / "solve-lite" / "skills" / "solve-lite" / "scripts"
+AGENT_REGISTRY = SCRIPTS.parent / "assets" / "agent_registry.json"
 
 
 def _load():
@@ -26,6 +27,22 @@ def _load():
     import solve_lite_dlc
 
     return solve_lite_abi, solve_lite_dlc
+
+
+def _host_registry_view() -> dict:
+    payload = json.loads(AGENT_REGISTRY.read_text(encoding="utf-8"))
+    hosts = {}
+    for entry in payload.get("hosts", []):
+        integration = entry.get("integration") or {}
+        identity = integration.get("plugin_identity") or {}
+        hosts[str(entry.get("host_id"))] = {
+            "canonical_plugin_id": identity.get("canonical"),
+            "accepted_aliases": identity.get("aliases") or [],
+            "plugin_root_env": integration.get("plugin_root_env") or [],
+            "hook_mode": integration.get("hook_mode"),
+            "skill_dir": integration.get("skill_dir"),
+        }
+    return {"schema_version": payload.get("schema_version"), "hosts": hosts}
 
 
 def main() -> int:
@@ -47,6 +64,7 @@ def main() -> int:
         "capabilities": caps,
         "routes": routes,
         "dlc": dlc_state,
+        "host_registry": _host_registry_view(),
         "network_used": False,
     }
     if args.case:
@@ -67,6 +85,7 @@ def main() -> int:
     print(f"specialist       {routes.get('specialist_status')} / {routes.get('specialist_reason')}")
     print(f"dlc installed    {', '.join(dlc_state.get('installed_units') or []) or 'none'}")
     print(f"dlc execution    {dlc_state.get('specialist_execution_status')} ({dlc_state.get('specialist_execution_reason')})")
+    print(f"host registry    {report['host_registry'].get('schema_version')}")
     print(f"asset root env   required={health.get('asset_root_required')} legacy_required={health.get('legacy_core_asset_root_required')}")
     if "case_route" in report:
         print(f"case route       {report['case_route'].get('status')}")

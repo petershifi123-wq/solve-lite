@@ -5,13 +5,12 @@ Two real hosts are handled:
 
 ``workbuddy``
     WorkBuddy AI desktop ships the CodeBuddy CLI (``@genie/agent-cli``).  Its
-    agent loop reads hooks from the *settings file* (``settingsManager.get(
-    "hooks")`` -> ``hooks[event]``) and from installed plugins, so a
-    ``UserPromptSubmit`` entry written into the host's own ``settings.json`` is
-    fired by the host on every prompt.  The config directory is resolved by the
-    host as ``$WORKBUDDY_CONFIG_DIR`` or ``~/.workbuddy`` (the desktop app home
-    on this machine is ``~/.workbuddy-ai``); ``$CODEBUDDY_CONFIG_DIR`` /
-    ``~/.codebuddy`` is the same product's legacy home.
+    agent loop loads both settings hooks and plugin hooks.  Solve Lite therefore
+    uses exactly one authoritative plugin-layer ``UserPromptSubmit`` hook and
+    removes its own legacy settings-layer duplicate.  The copied plugin resolves
+    its root from WorkBuddy's real ``CODEBUDDY_PLUGIN_ROOT`` /
+    ``CLAUDE_PLUGIN_ROOT`` environment, never from the unsupported generic
+    ``PLUGIN_ROOT`` variable.
 
 ``doubao``
     Doubao Work (``DoubaoWork.app``) runs a cloud agent with a local skill
@@ -44,11 +43,20 @@ SCHEMA = "solve-lite.host-hook-registration.v1"
 MARKER = "solve-lite"
 HOOK_SCRIPT_REL = "hooks/user_prompt_submit.py"
 SKILL_REL = "skills/solve-lite"
+REGISTRY_REL = "skills/solve-lite/assets/agent_registry.json"
 PYTHON = "/usr/bin/python3"
 
 
 def _home() -> Path:
     return Path.home()
+
+
+def _integration(plugin_root: Path, host_id: str) -> Dict[str, Any]:
+    registry = json.loads((Path(plugin_root) / REGISTRY_REL).read_text(encoding="utf-8"))
+    host = next((item for item in registry.get("hosts", []) if item.get("host_id") == host_id), None)
+    if not host or not isinstance(host.get("integration"), dict):
+        raise RuntimeError("host integration missing from agent_registry.json: %s" % host_id)
+    return host["integration"]
 
 
 @dataclass(frozen=True)
@@ -182,6 +190,31 @@ def hook_command(plugin_root: Path) -> str:
     return 'PLUGIN_ROOT="%s" %s "%s"' % (root, PYTHON, script)
 
 
+def plugin_hook_command(plugin_root: Path, host_id: str) -> str:
+    """Fail-open command for a plugin-layer hook using the host's real root env."""
+    envs = list(_integration(plugin_root, host_id).get("plugin_root_env") or [])
+    if not envs:
+        raise RuntimeError("plugin_root_env missing for host: %s" % host_id)
+    expression = ""
+    for name in reversed(envs):
+        expression = "${%s:-%s}" % (name, expression)
+    return (
+        "sh -c 'D=%s; F=\"$D/%s\"; P=\"$D/skills/solve-lite/runtime/specialist-env/bin/python3\"; "
+        "if [ -n \"$D\" ] && [ -f \"$F\" ]; then [ -x \"$P\" ] || P=%s; exec \"$P\" \"$F\"; fi; exit 0'"
+        % (expression, HOOK_SCRIPT_REL, PYTHON)
+    )
+
+
+def _hook_document(command: str) -> Dict[str, Any]:
+    return {
+        "hooks": {
+            "UserPromptSubmit": [
+                {"hooks": [{"type": "command", "command": command}]}
+            ]
+        }
+    }
+
+
 def one_step_command(plugin_root: Path) -> str:
     """Copy-paste command that runs the very same pre-prompt step with no hook.
 
@@ -189,7 +222,11 @@ def one_step_command(plugin_root: Path) -> str:
     copied back, so a host without any hook API can still get a mechanism-level
     activation instead of relying on the host model choosing a skill.
     """
-    return '%s "%s" --clipboard' % (PYTHON, (plugin_root / HOOK_SCRIPT_REL).as_posix())
+    root = Path(plugin_root).expanduser()
+    nested_python = root / "skills" / "solve-lite" / "runtime" / "specialist-env" / "bin" / "python3"
+    flat_python = root / "runtime" / "specialist-env" / "bin" / "python3"
+    python = next((path for path in (nested_python, flat_python) if path.is_file() and os.access(path, os.X_OK)), Path(PYTHON))
+    return '"%s" "%s" --clipboard' % (python.as_posix(), (root / HOOK_SCRIPT_REL).as_posix())
 
 
 # --------------------------------------------------------------------------- #
@@ -274,11 +311,33 @@ def register_settings_hook(config_dir: Path, plugin_root: Path, *, dry_run: bool
     }
 
 
+def remove_settings_hook(config_dir: Path, *, dry_run: bool = False) -> Dict[str, Any]:
+    """Remove only Solve Lite's settings-layer hook so plugin loading stays single-shot."""
+    settings_path = config_dir / "settings.json"
+    document = _read_json(settings_path)
+    hooks = document.get("hooks") if isinstance(document.get("hooks"), dict) else {}
+    existing = hooks.get("UserPromptSubmit")
+    entries = [e for e in existing if isinstance(e, dict)] if isinstance(existing, list) else []
+    kept = [e for e in entries if not _is_ours(e)]
+    removed = len(entries) - len(kept)
+    if removed:
+        hooks["UserPromptSubmit"] = kept
+        document["hooks"] = hooks
+        if not dry_run:
+            _write_json_atomic(settings_path, document, time.strftime("%Y%m%d%H%M%S", time.localtime()))
+    return {
+        "settings_path": str(settings_path),
+        "removed_solve_lite_entries": removed,
+        "remaining_user_prompt_submit_entries": len(kept),
+    }
+
+
 def _marketplace_dir(config_dir: Path) -> Path:
     return config_dir / "plugins" / "marketplaces" / "solve-lite-local"
 
 
-def register_plugin_layer(config_dir: Path, plugin_root: Path, *, dry_run: bool = False) -> Dict[str, Any]:
+def register_plugin_layer(config_dir: Path, plugin_root: Path, *, host_id: str = "workbuddy",
+                          dry_run: bool = False) -> Dict[str, Any]:
     """Directory marketplaces are a first-class host feature (`workbuddy-builtin`)."""
     marketplace_root = _marketplace_dir(config_dir)
     plugin_copy = marketplace_root / "plugins" / "solve-lite"
@@ -309,16 +368,48 @@ def register_plugin_layer(config_dir: Path, plugin_root: Path, *, dry_run: bool 
     enabled = settings.get("enabledPlugins")
     if not isinstance(enabled, dict):
         enabled = {}
-    enabled["solve-lite@solve-lite-local"] = True
+    integration = _integration(plugin_root, host_id)
+    plugin_id = str((integration.get("plugin_identity") or {}).get("canonical") or "")
+    if not plugin_id:
+        raise RuntimeError("plugin_identity.canonical missing for host: %s" % host_id)
+    enabled[plugin_id] = True
     settings["enabledPlugins"] = enabled
     stamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    command = plugin_hook_command(plugin_root, host_id)
     if dry_run:
         return {"marketplace_root": str(marketplace_root), "plugin_copy": str(plugin_copy),
-                "written": False, "manifest": manifest}
+                "written": False, "manifest": manifest, "hook_command": command}
     if plugin_copy.exists():
         shutil.rmtree(plugin_copy)
     plugin_copy.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(plugin_root, plugin_copy)
+    # Preserve venv and model-view symlinks. Dereferencing a macOS framework
+    # Python symlink copies only its tiny launcher binary; the copied plugin then
+    # fails at runtime because @executable_path/../Python3 is absent.
+    shutil.copytree(plugin_root, plugin_copy, symlinks=True)
+    source_runtime_raw = plugin_root / "skills" / "solve-lite" / "runtime"
+    source_runtime = source_runtime_raw.resolve()
+    copied_runtime = (plugin_copy / "skills" / "solve-lite" / "runtime").resolve()
+    pyvenv = copied_runtime / "specialist-env" / "pyvenv.cfg"
+    if pyvenv.is_file():
+        text = pyvenv.read_text(encoding="utf-8", errors="replace")
+        text = text.replace(str(source_runtime_raw), str(copied_runtime))
+        text = text.replace(str(source_runtime), str(copied_runtime))
+        pyvenv.write_text(text, encoding="utf-8")
+    for name in ("python", "python3", "python3.9"):
+        source_link = source_runtime / "specialist-env" / "bin" / name
+        copied_link = copied_runtime / "specialist-env" / "bin" / name
+        if not source_link.is_symlink() or not copied_link.is_symlink():
+            continue
+        resolved = source_link.resolve()
+        try:
+            relative = resolved.relative_to(source_runtime)
+        except ValueError:
+            continue  # external system Python: the preserved absolute link is valid
+        copied_link.unlink()
+        target = copied_runtime / relative
+        copied_link.symlink_to(os.path.relpath(target, copied_link.parent))
+    (plugin_copy / "hooks" / "hooks.json").write_text(
+        json.dumps(_hook_document(command), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     manifest_dir.mkdir(parents=True, exist_ok=True)
     (manifest_dir / "marketplace.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -330,7 +421,9 @@ def register_plugin_layer(config_dir: Path, plugin_root: Path, *, dry_run: bool 
         "written": True,
         "known_marketplaces_backup": known_backup,
         "settings_backup": settings_backup,
-        "enabled_plugins_key": "solve-lite@solve-lite-local",
+        "enabled_plugins_key": plugin_id,
+        "hook_command": command,
+        "hook_state": "HOOK_ACTIVE",
         "host_load_observed": False,
         "note": "config written; whether the desktop UI loads it is not observable offline",
     }
@@ -342,10 +435,52 @@ def register_plugin_layer(config_dir: Path, plugin_root: Path, *, dry_run: bool 
 SKILL_FIRST_STEP_MARKER = "SOLVE_LITE_MANDATORY_FIRST_STEP"
 
 
-def install_skill(spec: HostSpec, plugin_root: Path, *, dry_run: bool = False) -> Dict[str, Any]:
+def _relocate_skill_runtime(source_runtime: Path, copied_runtime: Path) -> None:
+    """Make a copied self-contained skill refer only to its installed paths."""
+    source_runtime_raw = source_runtime
+    source_runtime_resolved = source_runtime.resolve()
+    copied_runtime_resolved = copied_runtime.resolve()
+    replacements = (
+        (str(source_runtime_raw), str(copied_runtime_resolved)),
+        (str(source_runtime_resolved), str(copied_runtime_resolved)),
+    )
+    pyvenv = copied_runtime / "specialist-env" / "pyvenv.cfg"
+    if pyvenv.is_file():
+        text = pyvenv.read_text(encoding="utf-8", errors="replace")
+        for old, new in replacements:
+            text = text.replace(old, new)
+        pyvenv.write_text(text, encoding="utf-8")
+    for name in ("python", "python3", "python3.9"):
+        source_link = source_runtime / "specialist-env" / "bin" / name
+        copied_link = copied_runtime / "specialist-env" / "bin" / name
+        if not source_link.is_symlink() or not copied_link.is_symlink():
+            continue
+        resolved = source_link.resolve()
+        try:
+            relative = resolved.relative_to(source_runtime_resolved)
+        except ValueError:
+            continue
+        copied_link.unlink()
+        target = copied_runtime_resolved / relative
+        copied_link.symlink_to(os.path.relpath(target, copied_link.parent))
+    for relative in (
+        Path("specialist-env") / "solve-lite-specialist-runtime.json",
+        Path("addons") / "solve-lite-int4-dlc" / "dlc-registry.json",
+    ):
+        path = copied_runtime / relative
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for old, new in replacements:
+            text = text.replace(old, new)
+        path.write_text(text, encoding="utf-8")
+
+
+def install_skill(spec: HostSpec, plugin_root: Path, *, override: Optional[Path] = None,
+                  dry_run: bool = False) -> Dict[str, Any]:
     if spec.skill_dest is None:
         return {"status": "NO_SKILL_LOCATION"}
-    dest = Path(spec.skill_dest)
+    dest = Path(override).expanduser() if override is not None else Path(spec.skill_dest)
     report: Dict[str, Any] = {"destination": str(dest), "locator": spec.skill_locator}
     if dry_run:
         report.update({"status": "DRY_RUN", "exists": dest.exists()})
@@ -359,9 +494,15 @@ def install_skill(spec: HostSpec, plugin_root: Path, *, dry_run: bool = False) -
         shutil.move(str(dest), backup)
     dest.parent.mkdir(parents=True, exist_ok=True)
     source = plugin_root / SKILL_REL
-    shutil.copytree(source, dest)
+    shutil.copytree(source, dest, symlinks=True)
+    hook_source = plugin_root / HOOK_SCRIPT_REL
+    hook_dest = dest / HOOK_SCRIPT_REL
+    hook_dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(hook_source, hook_dest)
+    _relocate_skill_runtime(source / "runtime", dest / "runtime")
     skill_md = dest / "SKILL.md"
     text = skill_md.read_text(encoding="utf-8") if skill_md.is_file() else ""
+    destination_command = one_step_command(dest)
     banner = (
         "\n\n<!-- %s -->\n## 设备级无条件第一步（勿跳过）\n\n"
         "本宿主机没有 hook 接口，因此 Solve Lite 不能靠宿主事件强制触发。"
@@ -369,12 +510,25 @@ def install_skill(spec: HostSpec, plugin_root: Path, *, dry_run: bool = False) -
         "```\n%s\n```\n\n"
         "并把它的结构化输出（激活回执 / 本地路由结论 / Token 与奖励结算）原样并入回答。"
         "若该命令报告 `NO_LOCAL_DECISION`，就如实说明本轮本地没有可注入结论，不要编造选择概率、Token 或奖励数字。\n"
-        % (SKILL_FIRST_STEP_MARKER, one_step_command(plugin_root))
+        % (SKILL_FIRST_STEP_MARKER, destination_command)
     )
     if SKILL_FIRST_STEP_MARKER not in text:
         skill_md.write_text(text.rstrip() + banner, encoding="utf-8")
+    else:
+        lines = []
+        for line in text.splitlines():
+            if HOOK_SCRIPT_REL in line and ("python3" in line or PYTHON in line):
+                prefix = line[:len(line) - len(line.lstrip())]
+                if line.lstrip().startswith("*"):
+                    lines.append(prefix + "* one-step command: `" + destination_command + "`.")
+                else:
+                    lines.append(prefix + destination_command)
+            else:
+                lines.append(line)
+        skill_md.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     report.update({"status": "INSTALLED", "backup": backup,
-                   "mandatory_first_step_banner": True})
+                   "mandatory_first_step_banner": True,
+                   "one_step_command": destination_command})
     return report
 
 
@@ -390,6 +544,8 @@ def detect(host_id: str, override: Optional[Path] = None) -> Dict[str, Any]:
         "hook_api_evidence": spec.hook_api_evidence,
     }
     if host_id == "workbuddy":
+        plugin_root = Path(__file__).resolve().parents[1] / "plugins" / "solve-lite"
+        plugin_id = str((_integration(plugin_root, host_id).get("plugin_identity") or {}).get("canonical") or "")
         dirs = resolve_config_dirs(spec, override)
         report["config_dirs"] = []
         for config_dir in dirs:
@@ -397,25 +553,51 @@ def detect(host_id: str, override: Optional[Path] = None) -> Dict[str, Any]:
             document = _read_json(settings_path)
             hooks = document.get("hooks") if isinstance(document.get("hooks"), dict) else {}
             entries = hooks.get("UserPromptSubmit") if isinstance(hooks.get("UserPromptSubmit"), list) else []
+            settings_count = sum(1 for entry in entries if _is_ours(entry))
+            plugin_copy = _marketplace_dir(config_dir) / "plugins" / "solve-lite"
+            plugin_hooks = _read_json(plugin_copy / "hooks" / "hooks.json").get("hooks", {})
+            plugin_entries = plugin_hooks.get("UserPromptSubmit") if isinstance(plugin_hooks, dict) else []
+            plugin_commands = [
+                str(hook.get("command") or "")
+                for group in plugin_entries if isinstance(group, dict)
+                for hook in group.get("hooks", []) if isinstance(hook, dict)
+                and hook.get("type") == "command"
+            ] if isinstance(plugin_entries, list) else []
+            enabled = document.get("enabledPlugins") or {}
+            plugin_enabled = bool(isinstance(enabled, dict) and enabled.get(plugin_id))
+            plugin_active = int(plugin_enabled and len(plugin_commands) == 1)
+            active_sources = settings_count + plugin_active
+            script_exists = (plugin_copy / HOOK_SCRIPT_REL).is_file()
+            if active_sources > 1 or len(plugin_commands) > 1:
+                hook_state = "HOOK_ERROR"
+            elif active_sources == 1 and (settings_count or script_exists):
+                hook_state = "HOOK_ACTIVE"
+            else:
+                hook_state = "HOOK_MISSING"
             report["config_dirs"].append({
                 "config_dir": str(config_dir),
                 "exists": config_dir.is_dir(),
                 "settings_path": str(settings_path),
                 "settings_exists": settings_path.is_file(),
                 "writable": os.access(settings_path.parent, os.W_OK) if settings_path.parent.exists() else False,
-                "registered": any(_is_ours(e) for e in entries),
+                "registered": hook_state == "HOOK_ACTIVE",
+                "hook_state": hook_state,
+                "active_solve_lite_sources": active_sources,
+                "settings_solve_lite_entries": settings_count,
+                "plugin_hook_commands": plugin_commands,
+                "plugin_script_exists": script_exists,
                 "user_prompt_submit_entries": len(entries),
-                "enabled_plugins": sorted((document.get("enabledPlugins") or {}).keys())
-                if isinstance(document.get("enabledPlugins"), dict) else [],
+                "enabled_plugins": sorted(enabled.keys()) if isinstance(enabled, dict) else [],
             })
     else:
-        report["skill_destination"] = str(spec.skill_dest) if spec.skill_dest else None
-        report["skill_installed"] = bool(spec.skill_dest and Path(spec.skill_dest).is_dir())
+        destination = Path(override).expanduser() if override is not None else spec.skill_dest
+        report["skill_destination"] = str(destination) if destination else None
+        report["skill_installed"] = bool(destination and Path(destination).is_dir())
         report["mandatory_first_step_present"] = bool(
-            spec.skill_dest
-            and (Path(spec.skill_dest) / "SKILL.md").is_file()
+            destination
+            and (Path(destination) / "SKILL.md").is_file()
             and SKILL_FIRST_STEP_MARKER
-            in (Path(spec.skill_dest) / "SKILL.md").read_text(encoding="utf-8", errors="replace")
+            in (Path(destination) / "SKILL.md").read_text(encoding="utf-8", errors="replace")
         )
     return report
 
@@ -433,18 +615,25 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
     if host_id == "workbuddy":
         results = []
         for config_dir in resolve_config_dirs(spec, override):
-            entry = register_settings_hook(config_dir, plugin_root, dry_run=dry_run)
-            if install_plugin_layer and config_dir.name in (".workbuddy-ai", ".workbuddy") or (
-                    install_plugin_layer and override is not None):
-                entry["plugin_layer"] = register_plugin_layer(config_dir, plugin_root, dry_run=dry_run)
+            use_plugin_layer = install_plugin_layer and (
+                config_dir.name in (".workbuddy-ai", ".workbuddy") or override is not None
+            )
+            if use_plugin_layer:
+                entry = {"config_dir": str(config_dir)}
+                entry["settings_dedup"] = remove_settings_hook(config_dir, dry_run=dry_run)
+                entry["plugin_layer"] = register_plugin_layer(
+                    config_dir, plugin_root, host_id=host_id, dry_run=dry_run)
+            else:
+                entry = register_settings_hook(config_dir, plugin_root, dry_run=dry_run)
             results.append(entry)
         report["registrations"] = results
         report["hook_registration"] = "REGISTERED" if not dry_run else "DRY_RUN"
+        report["status"] = "PASS"
         report["activation_model"] = "UNCONDITIONAL_HOST_HOOK"
         report["one_step_command"] = one_step_command(plugin_root)
         report["verification"] = "run tools/hook_selftest.py --host workbuddy"
     elif host_id == "generic":
-        report["skill"] = install_skill(spec, plugin_root, dry_run=dry_run)
+        report["skill"] = install_skill(spec, plugin_root, override=override, dry_run=dry_run)
         report["hook_registration"] = "PORTABLE_SKILL_BANNER"
         report["activation_model"] = "OUT_OF_MODEL_PREPROMPT_STEP"
         report["one_step_command"] = one_step_command(plugin_root)
@@ -454,10 +643,14 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
         )
         report["verification"] = "run tools/hook_selftest.py --host generic"
     else:
-        report["skill"] = install_skill(spec, plugin_root, dry_run=dry_run)
+        report["skill"] = install_skill(spec, plugin_root, override=override, dry_run=dry_run)
         report["hook_registration"] = "UNAVAILABLE_NO_HOST_HOOK_API"
+        if host_id == "doubao":
+            report["status"] = "UNAVAILABLE_EXPECTED"
+            report["native_hook_api"] = "UNAVAILABLE_EXPECTED"
         report["activation_model"] = "OUT_OF_MODEL_PREPROMPT_STEP"
-        report["one_step_command"] = one_step_command(plugin_root)
+        destination = Path((report.get("skill") or {}).get("destination") or plugin_root)
+        report["one_step_command"] = one_step_command(destination)
         report["fallback_strength"] = (
             "the one-step command performs the pre-prompt Lite run outside the host "
             "model; the skill banner additionally makes it a mandatory first step"
@@ -471,6 +664,7 @@ def unregister(host_id: str, plugin_root: Path, *, override: Optional[Path] = No
     if host_id != "workbuddy":
         return {"host_id": host_id, "status": "NOTHING_TO_UNREGISTER"}
     removed = []
+    plugin_id = str((_integration(plugin_root, host_id).get("plugin_identity") or {}).get("canonical") or "")
     for config_dir in resolve_config_dirs(spec, override):
         settings_path = config_dir / "settings.json"
         document = _read_json(settings_path)
@@ -485,8 +679,8 @@ def unregister(host_id: str, plugin_root: Path, *, override: Optional[Path] = No
             _write_json_atomic(settings_path, document, stamp)
             removed.append(str(settings_path))
         enabled = document.get("enabledPlugins")
-        if isinstance(enabled, dict) and "solve-lite@solve-lite-local" in enabled:
-            enabled.pop("solve-lite@solve-lite-local")
+        if isinstance(enabled, dict) and plugin_id in enabled:
+            enabled.pop(plugin_id)
             _write_json_atomic(settings_path, document, time.strftime("%Y%m%d%H%M%S", time.localtime()))
     return {"host_id": host_id, "settings_restored": removed}
 
