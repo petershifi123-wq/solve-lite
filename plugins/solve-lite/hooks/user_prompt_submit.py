@@ -24,19 +24,22 @@ def _config() -> dict[str, Any]:
     loader finds the bundled runtime by itself.
     """
     value: dict[str, Any] = {}
-    path = _plugin_root() / ".codex-runtime.json"
-    if path.is_file():
+    root = _plugin_root()
+    for path in (root / ".codex-runtime.json", root / ".solve-lite-runtime.json"):
+        if not path.is_file():
+            continue
         try:
             loaded = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             loaded = {}
         if isinstance(loaded, dict):
-            value = loaded
+            value.update(loaded)
     asset_root = value.get("asset_root")
     if not isinstance(asset_root, str) or not asset_root.strip():
         asset_root = None
     return {
         "asset_root": asset_root,
+        "runtime_root": str(value.get("runtime_root") or "").strip() or None,
         "namespace": str(value.get("namespace") or "codex-desktop"),
         "specialist_fallback": str(value.get("specialist_fallback") or "silent"),
     }
@@ -56,6 +59,9 @@ def _workspace() -> Path:
 
 def _load_abi():
     root = _plugin_root()
+    configured = _config().get("runtime_root")
+    if configured:
+        os.environ["SOLVE_LITE_RUNTIME_ROOT"] = str(configured)
     nested = root / "skills" / "solve-lite" / "scripts"
     scripts = str(nested if nested.is_dir() else root / "scripts")
     if scripts not in sys.path:
