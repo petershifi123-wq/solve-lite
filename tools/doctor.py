@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""Fresh-install doctor: is this clone usable, and what is it capable of?
-
-Read-only and offline unless --network-check is passed.  Never mutates the
-install and never downloads anything.
-
-  python3 tools/doctor.py            # human summary
-  python3 tools/doctor.py --json     # machine readable
-"""
+"""Read-only health report for the current shared CoreML runtime."""
 
 from __future__ import annotations
 
@@ -16,80 +9,72 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "plugins" / "solve-lite" / "skills" / "solve-lite" / "scripts"
-AGENT_REGISTRY = SCRIPTS.parent / "assets" / "agent_registry.json"
+SKILL = ROOT / "plugins" / "solve-lite" / "skills" / "solve-lite"
+SCRIPTS = SKILL / "scripts"
+AGENT_REGISTRY = SKILL / "assets" / "agent_registry.json"
 
 
 def _load():
     if str(SCRIPTS) not in sys.path:
         sys.path.insert(0, str(SCRIPTS))
+    import compact_runtime
+    import shared_runtime
     import solve_lite_abi
-    import solve_lite_dlc
 
-    return solve_lite_abi, solve_lite_dlc
+    return solve_lite_abi, compact_runtime, shared_runtime
 
 
 def _host_registry_view() -> dict:
     payload = json.loads(AGENT_REGISTRY.read_text(encoding="utf-8"))
-    hosts = {}
-    for entry in payload.get("hosts", []):
-        integration = entry.get("integration") or {}
-        identity = integration.get("plugin_identity") or {}
-        hosts[str(entry.get("host_id"))] = {
-            "canonical_plugin_id": identity.get("canonical"),
-            "accepted_aliases": identity.get("aliases") or [],
-            "plugin_root_env": integration.get("plugin_root_env") or [],
-            "hook_mode": integration.get("hook_mode"),
-            "skill_dir": integration.get("skill_dir"),
-        }
-    return {"schema_version": payload.get("schema_version"), "hosts": hosts}
+    return {
+        "schema_version": payload.get("schema_version"),
+        "current_install_target": payload.get("current_install_target"),
+        "hosts": [entry.get("host_id") for entry in payload.get("hosts", [])],
+    }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
-    parser.add_argument("--asset-root", default=None, help="override the runtime/asset root")
-    parser.add_argument("--case", type=Path, default=None, help="also route this case file through the core")
+    parser.add_argument("--runtime-root", type=Path, default=None)
+    parser.add_argument("--case", type=Path, default=None)
     parser.add_argument("--workspace", type=Path, default=None)
     args = parser.parse_args()
 
-    abi, dlc = _load()
-    health = abi.healthcheck(args.asset_root)
-    caps = abi.capabilities(args.asset_root)
-    routes = abi.available_routes(args.asset_root)
-    dlc_state = dlc.capability_view(dlc.default_runtime_root())
+    abi, compact, shared = _load()
+    runtime = Path(args.runtime_root or shared.resolve(SKILL)).expanduser().resolve()
+    health = abi.healthcheck(runtime)
+    caps = abi.capabilities(runtime)
+    routes = abi.available_routes(runtime)
+    asset = compact.status(runtime)
     report = {
-        "status": health.get("status"),
+        "status": "PASS" if health.get("status") == "PASS" and asset.get("status") == "PASS" else "FAIL",
+        "version": "v0.1.9",
+        "runtime_root": str(runtime),
         "healthcheck": health,
         "capabilities": caps,
         "routes": routes,
-        "dlc": dlc_state,
+        "compact_runtime": asset,
         "host_registry": _host_registry_view(),
         "network_used": False,
+        "torch_runtime": False,
+        "transformers_runtime": False,
     }
     if args.case:
         workspace = args.workspace or (ROOT / ".solve-lite-workspace")
         workspace.mkdir(parents=True, exist_ok=True)
         case = json.loads(args.case.read_text(encoding="utf-8"))
-        report["case_route"] = abi.route_prompt(workspace, case, session={"metadata": {"locale": "en-US"}})
+        report["case_route"] = abi.route_prompt(workspace, case, session={"metadata": {"locale": "en-US"}}, asset_root=runtime)
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False))
-        return 0 if report["status"] == "PASS" else 2
-    print(f"healthcheck      {health.get('status')}  ({health.get('runtime_root_origin')})")
-    if health.get("status") != "PASS":
-        print(f"  why            {health.get('error')}: {health.get('reason')}")
-        return 2
-    print(f"runtime root     {health.get('runtime_root')}")
-    print(f"native core      {health.get('native_core_status')} ({health.get('native_modules_verified')} modules verified)")
-    print(f"native routes    {', '.join(routes.get('native_routes') or [])}")
-    print(f"specialist       {routes.get('specialist_status')} / {routes.get('specialist_reason')}")
-    print(f"dlc installed    {', '.join(dlc_state.get('installed_units') or []) or 'none'}")
-    print(f"dlc execution    {dlc_state.get('specialist_execution_status')} ({dlc_state.get('specialist_execution_reason')})")
-    print(f"host registry    {report['host_registry'].get('schema_version')}")
-    print(f"asset root env   required={health.get('asset_root_required')} legacy_required={health.get('legacy_core_asset_root_required')}")
-    if "case_route" in report:
-        print(f"case route       {report['case_route'].get('status')}")
-    return 0
+    else:
+        print(f"status           {report['status']}")
+        print(f"runtime root     {runtime}")
+        print(f"native core      {health.get('native_core_status')}")
+        print(f"shared CoreML    {asset.get('status')}")
+        print(f"routes           {', '.join(routes.get('installed_routes') or [])}")
+        print(f"host registry    {report['host_registry'].get('schema_version')}")
+    return 0 if report["status"] == "PASS" else 2
 
 
 if __name__ == "__main__":

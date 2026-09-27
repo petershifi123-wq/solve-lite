@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install thin Solve Lite adapters that point to one shared v0.1.8 runtime."""
+"""Install thin Solve Lite adapters that point to one shared v0.1.9 runtime."""
 
 from __future__ import annotations
 
@@ -121,6 +121,9 @@ def _hosts() -> Dict[str, HostSpec]:
             hook_api="plugin_manifest",
             hook_api_evidence="Codex plugin manifest plus a shared-runtime pointer",
             config_env=("CODEX_HOME",),
+            config_candidates=(
+                _home() / ".codex",
+            ),
             skill_dest=_home() / ".codex" / "skills" / "solve-lite",
             skill_locator="~/.codex/skills/solve-lite",
         ),
@@ -130,6 +133,9 @@ def _hosts() -> Dict[str, HostSpec]:
             hook_api="portable_skill",
             hook_api_evidence="Hermes skill directory plus a shared-runtime pointer",
             config_env=("HERMES_HOME",),
+            config_candidates=(
+                _home() / ".hermes",
+            ),
             skill_dest=_home() / ".hermes" / "skills" / "solve-lite",
             skill_locator="~/.hermes/skills/solve-lite",
         ),
@@ -663,7 +669,11 @@ def unregister(host_id: str, plugin_root: Path, *, override: Optional[Path] = No
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Solve Lite host hook registration")
     parser.add_argument("action", choices=("detect", "register", "unregister", "one-step"))
-    parser.add_argument("--host", default="auto", help="workbuddy|doubao|auto")
+    parser.add_argument(
+        "--host",
+        default="auto",
+        help="codex|hermes|workbuddy|doubao|generic|auto",
+    )
     parser.add_argument("--plugin-root", type=Path, default=Path(__file__).resolve().parents[1] / "plugins" / "solve-lite")
     parser.add_argument("--config-dir", type=Path, default=None, help="sandbox override for the host config dir")
     parser.add_argument("--dry-run", action="store_true")
