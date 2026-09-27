@@ -1,4 +1,4 @@
-# Solve Lite v0.1.9
+# Solve Lite v0.1.10
 
 Local decision runtime for AI agents on macOS arm64.
 
@@ -19,7 +19,7 @@ If the user asks you to install Solve Lite from this repository:
 3. Install automatically:
 
 ```bash
-git clone --depth 1 --branch v0.1.9 https://github.com/petershifi123-wq/solve-lite.git
+git clone --depth 1 --branch v0.1.10 https://github.com/petershifi123-wq/solve-lite.git
 cd solve-lite
 /usr/bin/python3 tools/installer.py --host auto
 ```
@@ -36,7 +36,7 @@ cd solve-lite
 
 ## Install
 
-Download the `v0.1.9` release archive, verify it with the release `SHA256SUMS.txt`, extract it, then run:
+Download the `v0.1.10` release archive, verify it with the release `SHA256SUMS.txt`, extract it, then run:
 
 ```bash
 python3 tools/installer.py --host auto
@@ -89,7 +89,7 @@ Every adapter stores only code and a pointer receipt. The model and native helpe
 
 ## Release status
 
-`v0.1.9` is the current public install target. Earlier releases remain historical records and are marked superseded; do not install them.
+`v0.1.10` is the current public install target. Earlier releases remain historical records and are marked superseded; do not install them.
 
 Peter fresh-host acceptance remains a human gate and is not substituted by automated tests.
 
@@ -103,7 +103,7 @@ Peter fresh-host acceptance remains a human gate and is not substituted by autom
 
 这是唯一当前安装目标，也是推荐档。四个宿主 Doubao、WorkBuddy、Codex、Hermes 都只安装轻量适配器，并共同指向一份版本化共享运行时。运行时不需要 PyTorch、Transformers、ONNX，也不会联网。
 
-安装 `v0.1.9` 后运行：
+安装 `v0.1.10` 后运行：
 
 ```bash
 python3 tools/installer.py --host auto

@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.9 — Current
+## 0.1.10 — Current
+
+- Removed the retired INT4 DLC/Torch source tree and its obsolete specialist runtime helpers.
+- Removed release-builder exclusion rules that had hidden those legacy files from packages.
+- Kept the accepted Compact CoreML model, Hugging Face revision and scorecard unchanged.
+
+## 0.1.9 — Superseded; do not install
 
 - Added an AI Agent quick-install contract and root `AGENTS.md`.
 - Made `--host auto` discover Codex from `~/.codex` and Hermes from `~/.hermes` while retaining WorkBuddy and Doubao detection.
@@ -30,4 +36,4 @@ Preserved as Git and release history. It is not a current install target.
 
 ## Earlier versions
 
-Historical only. Use `v0.1.9` for current installation.
+Historical only. Use `v0.1.10` for current installation.

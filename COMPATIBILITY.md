@@ -1,8 +1,8 @@
 # Compatibility
 
-Current target: Solve Lite `v0.1.9` on macOS arm64.
+Current target: Solve Lite `v0.1.10` on macOS arm64.
 
-| Surface | v0.1.9 contract |
+| Surface | v0.1.10 contract |
 |---|---|
 | Native decisions | Bundled, hash-verified Lite kernel |
 | Specialist decisions | One shared CoreML encoder and four tiny heads |

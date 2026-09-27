@@ -1,6 +1,6 @@
 # Host Integration Notes / 宿主接入须知
 
-This file describes the current `v0.1.9` host contract only.
+This file describes the current `v0.1.10` host contract only.
 
 ## One shared runtime
 

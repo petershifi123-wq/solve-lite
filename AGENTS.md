@@ -7,7 +7,7 @@ environments or ML dependencies.
 Use only the current release:
 
 ```bash
-git clone --depth 1 --branch v0.1.9 https://github.com/petershifi123-wq/solve-lite.git
+git clone --depth 1 --branch v0.1.10 https://github.com/petershifi123-wq/solve-lite.git
 cd solve-lite
 /usr/bin/python3 tools/installer.py --host auto
 /usr/bin/python3 tools/installer.py --check --json
