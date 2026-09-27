@@ -1,6 +1,6 @@
 {
   "name": "solve-lite",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Local-first bounded decision routing for ordinary Codex sessions through one shared, CoreML-native runtime with four tiny heads. Installation is automatic and requires no model path or ML environment.",
   "author": {
     "name": "Peter"
