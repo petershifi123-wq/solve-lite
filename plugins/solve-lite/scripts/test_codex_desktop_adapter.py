@@ -119,6 +119,27 @@ class VisibleObligations(unittest.TestCase):
         self.assertEqual(2, obligations["reward_lines"])
 
 
+class PluginIdentityResolver(unittest.TestCase):
+    @staticmethod
+    def _marketplaces(*plugins: dict) -> list[dict]:
+        return [{"name": "fixture", "plugins": list(plugins)}]
+
+    def test_canonical_public_identity_is_preferred(self) -> None:
+        canonical = {"id": "solve-lite@github-solve-lite", "installed": True, "enabled": True}
+        legacy = {"id": "solve-lite@personal", "installed": True, "enabled": True}
+        result = ADAPTER._select_plugin_state(self._marketplaces(legacy, canonical))
+        self.assertEqual(canonical, result)
+
+    def test_active_legacy_identity_is_recognized_without_duplication(self) -> None:
+        legacy = {"id": "solve-lite@personal", "installed": True, "enabled": True}
+        result = ADAPTER._select_plugin_state(self._marketplaces(legacy))
+        self.assertEqual(legacy, result)
+
+    def test_unrelated_plugin_is_not_recognized(self) -> None:
+        other = {"id": "solve-lite@unknown", "installed": True, "enabled": True}
+        self.assertEqual({}, ADAPTER._select_plugin_state(self._marketplaces(other)))
+
+
 class RolloutEvidence(unittest.TestCase):
     def test_developer_injection_is_not_visible(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
