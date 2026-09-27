@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+plugins/solve-lite/skills/solve-lite/runtime/addons/
+plugins/solve-lite/skills/solve-lite/runtime/specialist-env/
+plugins/solve-lite/skills/solve-lite/runtime/specialist-python/

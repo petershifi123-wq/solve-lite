@@ -20,14 +20,15 @@ Solve Lite 是面向 AI Agent 的 CPU 优先本地决策运行时。它通过一
 
 **Lite Runtime** — ~4.6MB · CPU-only · ~24MB idle RAM · No PyTorch · No model weights · Offline native decision runtime.
 
-**Specialist Runtime** — Optional semantic capabilities using external model packs and ML dependencies.
+**Specialist Runtime** — Semantic capabilities in an installer-managed, repository-local Python environment. No global PyTorch/Transformers install is required.
 
 **Lite 默认运行时**：约 4.6MB，普通 CPU 运行，空闲内存约 24MB，无需 PyTorch、无需模型权重、完全本地运行原生决策能力。
 
-**Specialist 专家运行时** — 可选的语义扩展能力，使用外部模型包与 ML 依赖。
+**Specialist 专家运行时** — 由安装器管理的仓库内隔离 Python 环境；用户无需预装全局 PyTorch/Transformers。
 
 ```
 BASE LITE (this repository)      = ~4.6MB runtime / native subset / zero model weights / offline
+SHARED SPECIALIST RUNTIME        = repo-local pinned Python 3.9 venv / separate size class
 DLC COMPONENTS (optional)        = review 29.17MB + topic 44.32MB + nli 76.35MB download
                                  = 149.84MB extra download on top of the ~5.7MB clone
 financial specialist DLC         = NOT_PUBLIC (licence chain unresolved, not distributed)
@@ -100,7 +101,8 @@ Public repository
   -> host adapter (or hooks/user_prompt_submit.py)
   -> public route_prompt ABI
   -> bundled LITE native Core (hash-verified by CORE_ASSET_MANIFEST.json)
-  -> optional DLC components, installed on request from this repository's Release
+  -> public DLC components, installed by default from this repository's Release
+     and loaded only when the capability router selects them
 ```
 
 Therefore / 因此：
@@ -108,28 +110,30 @@ Therefore / 因此：
 ```text
 PUBLIC_SELF_CONTAINED_DISTRIBUTION=TRUE            # base Lite: native decisions, offline
 CORE_ASSET_ROOT_REQUIRED=FALSE                     # no SOLVE_LITE_CORE_ASSET_ROOT needed
-RUNTIME_MODEL_ASSETS=OPTIONAL_DLC_COMPONENTS       # 3 public packs; financial NOT_PUBLIC
+RUNTIME_MODEL_ASSETS=SEPARATE_PUBLIC_DLC_LAYER     # 3 default-installed packs; financial NOT_PUBLIC
 SPECIALIST_PACK_REQUIRED_AT_STARTUP=FALSE
 ```
 
-## Optional Specialist Add-ons / 可选专业能力扩展
+## Specialist DLC layer / 专业能力 DLC 层
 
-**You do not need any add-on to use Solve Lite Lite.**
-**无需安装任何扩展包，也可以直接使用 Solve Lite Lite。**
+**Core remains a separate ~4.6 MB layer; a normal public install also installs Review, Topic and NLI.**
+**Core 仍是独立的约 4.6 MB 基座；普通公开安装会同时安装 Review、Topic 和 NLI。**
 
-The default Lite Runtime is about 4.6 MB and runs on an ordinary CPU, with no PyTorch, no Transformers and no model weights. Compact Specialist Add-ons are entirely optional extensions for advanced capabilities such as natural-language inference, financial sentiment, knowledge/topic routing and advanced sentiment judgement. Solve Lite never downloads any add-on automatically. When a task needs a specialist capability that is not installed, Solve Lite tells you which add-on is required, its download size and its expected memory usage. Whether to install it is your decision.
+The Lite Core is about 4.6 MB and runs on an ordinary CPU, with no PyTorch, no Transformers and no model weights. Normal installation creates a repository-local Python 3.9 virtual environment, installs a hash-locked specialist dependency set there, and downloads the three public specialist packages. It never runs system/global `pip`. If no compatible Python 3.9 exists, the installer fetches one pinned arm64 macOS build and verifies its SHA-256 before use. Specialist code remains dormant at Lite startup. The existing capability router starts the isolated worker only for the selected capability, loads only that DLC, and keeps at most one model resident. Financial assets remain `NOT_PUBLIC`. If a required runtime or pack is absent or damaged, Solve Lite fails closed and identifies it; there is no fabricated fallback.
 
-默认 Lite Runtime 约 4.6 MB，可直接在普通 CPU 本地运行，无需 PyTorch、Transformers，也无需任何模型权重。Compact Specialist Add-ons 是完全可选的高级能力扩展，用于自然语言推理、金融情绪、知识/主题路由与高级情感判断等能力。Solve Lite 不会自动下载任何扩展包。当某个任务需要尚未安装的专业能力时，Solve Lite 会明确告诉你需要哪个扩展、下载大小与预计内存占用。是否安装，由你决定。
+基础 Lite Core 约 4.6 MB，可在普通 CPU 本地运行，无需 PyTorch、Transformers 或模型权重。普通安装会在仓库内创建隔离的 Python 3.9 venv，按哈希锁文件安装专业依赖，并下载三个公开专业包；不会调用系统或全局 `pip`。如果机器没有兼容的 Python 3.9，安装器会下载固定版本的 macOS arm64 Python 并先校验 SHA-256。Lite 启动不会拉起专家环境；只有 capability router 命中时才启动隔离 worker、加载对应 DLC，且最多常驻一个。金融资产继续为 `NOT_PUBLIC`。必需运行时或模型包缺失、损坏时会明确失败，不会伪造回退答案。
 
-| Add-on (DLC component) | Capability | Download | Installed | Required by Lite |
+| Add-on (DLC component) | Capability | Download | Installed | Normal install |
 |---|---|---:|---:|---|
-| `solve-lite-review-compact` | Advanced sentiment analysis (review polarity) | 29.17 MB | 29.17 MB | No |
-| `solve-lite-topic-compact` | Knowledge / topic routing | 44.32 MB | 44.32 MB | No |
-| `solve-lite-nli-compact` | Natural-language inference | 76.35 MB | 158.86 MB | No |
+| `solve-lite-review-compact` | Advanced sentiment analysis (review polarity) | 29.17 MB | 29.17 MB | Included |
+| `solve-lite-topic-compact` | Knowledge / topic routing | 44.32 MB | 44.32 MB | Included |
+| `solve-lite-nli-compact` | Natural-language inference | 76.35 MB | 158.86 MB | Included |
 
-Download sizes are the measured `.tar.gz` sizes in the Release; "installed" is the uncompressed on-disk size. The three public DLC components total **149.84 MB of download**, and installing them together with the base Lite clone lands at roughly **155.6 MB on disk** — the base Lite clone alone is **~5.7 MB**. Base Lite is never described as if it included the DLC components.
+Download sizes are the measured `.tar.gz` sizes in the Release; "installed" is the uncompressed on-disk size. The three public DLC archives total **149.84 MB of download**. The verified default complete installed copy — Base Lite, isolated specialist Python environment and all three DLC components — is **678.67 MB logical on disk (647.23 MiB)**; the base Lite clone alone is **~5.7 MB**. Base Lite is never described as if it included the DLC components.
 
-Compressed specialist packs use a mixed int4/int3 grouped quantization scheme (see each pack's `addon.json` / the release `addon-index.json`). They reduce download and runtime footprint substantially, but may change some specialist decisions relative to the frozen full-precision reference. Installing a DLC component never executes it: activation is opt-in (`SOLVE_LITE_INT4_DLC=1`), lazy, and keeps at most one model resident.
+三个公开 DLC 压缩包合计下载 **149.84 MB**；包含 Base Lite、隔离专家 Python 环境和三个 DLC 的默认完整安装副本，实测逻辑占用为 **678.67 MB（647.23 MiB）**。约 **5.7 MB** 只代表 Base Lite 仓库本体。
+
+Compressed specialist packs use a mixed int4/int3 grouped quantization scheme (see each pack's `addon.json` / the release `addon-index.json`). They reduce download and runtime footprint substantially, but may change some specialist decisions relative to the frozen full-precision reference. Installation does not preload them: the capability router activates the required component lazily and keeps at most one model resident.
 
 量化版专业能力包采用 int4/int3 混合分组量化（见各包 `addon.json` 与 release 的 `addon-index.json`）。它显著降低下载与运行资源占用，但可能导致部分专业判断发生变化。
 
@@ -149,8 +153,8 @@ Financial sentiment specialist assets are **not** redistributed: their licence c
 
 金融情绪方向的专家资产**不再分发**：其许可链尚未澄清，因此仅保留工程验证状态，不进入任何公开包与 Release。
 
-Start small. Add only the intelligence you actually need.
-先用最小的版本，只安装你真正需要的智能。
+Install once; load only the intelligence the current task needs.
+一次安装，运行时只加载当前任务需要的能力。
 
 ## Install and compatibility / 安装与兼容性
 
@@ -158,22 +162,33 @@ Start small. Add only the intelligence you actually need.
 git clone https://github.com/petershifi123-wq/solve-lite
 cd solve-lite
 python3 tools/installer.py                  # install: base Lite + the 3 public DLC components
-python3 tools/installer.py --skip-dlc       # base Lite only
 python3 tools/startup_check.py --json       # may I use it right now? (STARTUP_CHECK=PASS)
 python3 tools/doctor.py                     # healthcheck + capability registry
 ```
 
-Base Lite needs nothing else. Installing DLC components never activates them: activation is opt-in (`SOLVE_LITE_INT4_DLC=1`), lazy, and keeps at most one model resident. With the opt-in switch on, the loader assembles the assetroot view and the installed components serve real specialist decisions; with it off, an installed component is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE` (reason `INT4_BACKEND_NOT_ACTIVATED`).
+Base Lite needs no asset-root configuration. Normal installation includes all three public DLC components, but does not preload them. The capability router selects and lazily activates only the component needed by the current case and keeps at most one model resident. Native Markov cases do not load a specialist. A missing required component is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE`; arbitrary bounded natural-language questions route to NLI instead of being translated into invented Markov schemas.
 
-基础 Lite 不需要任何额外步骤：LITE 运行时随仓库提供，无需设置任何资产根目录变量即可 `healthcheck` 返回 `PASS`，并在离线状态下执行原生决策。安装 DLC 组件不会激活它：激活需要显式选择（`SOLVE_LITE_INT4_DLC=1`），按需延迟加载，最多常驻一个模型；开启后 loader 会组装 asset-root 视图并让已装组件真正给出专家决策，关闭时已装组件仍返回 `SPECIALIST_CAPABILITY_UNAVAILABLE`（原因 `INT4_BACKEND_NOT_ACTIVATED`）。
+基础 Lite 不需要资产根目录配置。普通安装默认包含三个公开 DLC，但不会预加载。capability router 只在当前 case 需要时懒激活相应组件，最多常驻一个；原生 Markov case 不加载专家模型。必需组件缺失时返回 `SPECIALIST_CAPABILITY_UNAVAILABLE`；有边界的自然语言问题交给 NLI，不会伪造 prompt→Markov 映射。
 
 Layered disclosure / 分层披露：
 
 ```text
 Lite only            -> ~5.7 MB on disk, no network, native decisions
-Lite + all public DLC -> ~187.6 MB on disk, of which 149.84 MB is the DLC download
+v0.1.7 code archive   -> 2.38 MB tar.gz / 2.44 MB zip (measured release artifacts)
+3 public DLC archives -> 149.84 MB total download
+Default full install  -> 678.67 MB logical on disk (647.23 MiB), including the isolated runtime + 3 DLC
 financial specialist  -> NOT_PUBLIC (not distributed, never counted in a total)
 ```
+
+The complete-install figure is a 2026-09-27 isolated-destination measurement of
+18,110 installed file/symlink entries. The release code archive, compressed DLC
+downloads, and post-install isolated Python environment are different layers;
+the ~4.6 MB native Core figure describes only Core and is never presented as the
+size of the default full install.
+
+完整安装数字来自 2026-09-27 的隔离目标目录实测，共 18,110 个文件/符号链接条目。
+发布代码压缩包、三个 DLC 下载包、安装后的隔离 Python 环境属于不同层；约 4.6 MB
+只代表原生 Core，不能冒充默认完整安装的磁盘占用。
 
 Fresh-install compatibility was machine-verified on two isolated host shapes (Doubao, WorkBuddy). P1 adds deterministic host activation: the installer registers a real `UserPromptSubmit` hook in the host's own writable config, and that exact registered command is then replayed with a host-shaped payload to prove it fires and injects. The desktop UI process itself was not driven with a human prompt, so `NATIVE_DESKTOP_PROCESS_INTEGRATION` stays `NOT_RUN`. Doubao Work exposes no local hook API, so the installer writes the skill plus a mandatory first-step banner into the host workspace and reports `UNAVAILABLE_NO_HOST_HOOK_API` instead of pretending. `PARTIAL` and `NOT_RUN` are never presented as PASS. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
