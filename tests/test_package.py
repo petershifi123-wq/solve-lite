@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -31,15 +32,22 @@ class PublicPackageContractTest(unittest.TestCase):
             "tools/uninstall.py",
             "tools/adapter.py",
             "tools/offline_harness.py",
+            "tools/specialist_clean_host_harness.py",
             "plugins/solve-lite/skills/solve-lite/SKILL.md",
             "plugins/solve-lite/skills/solve-lite/runtime/solve_lite/abi.py",
             "plugins/solve-lite/skills/solve-lite/scripts/agent_auto.py",
             "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_abi.py",
             "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_dlc.py",
+            "plugins/solve-lite/skills/solve-lite/scripts/specialist_runtime.py",
+            "plugins/solve-lite/skills/solve-lite/scripts/specialist_worker.py",
+            "plugins/solve-lite/skills/solve-lite/scripts/test_specialist_runtime.py",
             "plugins/solve-lite/skills/solve-lite/scripts/test_agent_auto.py",
             "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
             "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_dlc.py",
             "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
+            "plugins/solve-lite/skills/solve-lite/assets/specialist-runtime-lock.json",
+            "plugins/solve-lite/skills/solve-lite/assets/specialist-requirements.in",
+            "plugins/solve-lite/skills/solve-lite/assets/specialist-requirements-macos-arm64-py39.lock",
         )
         self.assertEqual([relative for relative in required if not (ROOT / relative).is_file()], [])
 
@@ -84,8 +92,9 @@ class PublicPackageContractTest(unittest.TestCase):
         self.assertEqual(core["runtime_root_env"], "SOLVE_LITE_RUNTIME_ROOT")
         self.assertNotIn("legacy_core_asset_root_env", core)
         assets = core["runtime_model_assets"]
-        self.assertEqual(assets["status"], "OPTIONAL_DLC_COMPONENTS")
-        self.assertEqual(assets["auto_download"], False)
+        self.assertEqual(assets["status"], "PUBLIC_DLC_COMPONENTS")
+        self.assertEqual(assets["normal_public_install"], True)
+        self.assertEqual(assets["runtime_activation"], "CAPABILITY_ROUTED_LAZY")
         self.assertEqual(assets["specialist_model_assets_required_at_startup"], False)
         self.assertEqual(assets["missing_pack_status"], "SPECIALIST_CAPABILITY_UNAVAILABLE")
         self.assertEqual([item["unit_id"] for item in assets["not_published"]], ["financial-pair-int4-g64-ENGINEERING-ONLY"])
@@ -101,9 +110,8 @@ class PublicPackageContractTest(unittest.TestCase):
 
     def test_healthcheck_works_without_any_asset_root(self):
         environment = dict(os.environ)
-        # A fresh-install contract describes a plain environment: pin the DLC
-        # opt-in off so an ambient SOLVE_LITE_INT4_DLC in the developer's shell
-        # cannot flip this assertion.
+        # A clean source tree describes a plain environment. Remove the legacy
+        # explicit override so a developer shell cannot change this assertion.
         for name in ("SOLVE_LITE_RUNTIME_ROOT",
                      "SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
             environment.pop(name, None)
@@ -137,6 +145,49 @@ class PublicPackageContractTest(unittest.TestCase):
         for host in ("cline", "qwen", "cursor"):
             self.assertNotEqual(by_id[host]["cold_fork_status"], "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET")
 
+    def test_normal_installers_include_public_dlc(self):
+        for relative in ("install_workbuddy.command", "install_doubao.command"):
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn('tools/installer.py --host "$HOST"', source, relative)
+            self.assertIn('${SOLVE_LITE_PACKAGE_DIR}）', source, relative)
+            self.assertIn("set -euo pipefail", source, relative)
+            self.assertIn("FINAL_INSTALL_STATUS=FAIL", source, relative)
+            self.assertIn("FINAL_INSTALL_STATUS=PASS", source, relative)
+            self.assertNotIn('tools/installer.py --host "$HOST" --json | tail', source, relative)
+            self.assertNotIn("tools/installer.py --skip-dlc", source, relative)
+        self.assertEqual(
+            json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"],
+            "0.1.7",
+        )
+        self.assertEqual(
+            json.loads((PLUGIN / ".codebuddy-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"],
+            "0.1.7",
+        )
+
+    def test_installer_command_propagates_json_failure(self):
+        for relative in ("install_workbuddy.command", "install_doubao.command"):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / "tools").mkdir()
+                (root / relative).write_text((ROOT / relative).read_text(encoding="utf-8"), encoding="utf-8")
+                (root / "tools" / "startup_check.py").write_text(
+                    'import json; print(json.dumps({"STARTUP_CHECK":"PASS"}))\n', encoding="utf-8"
+                )
+                (root / "tools" / "installer.py").write_text(
+                    'import json; print(json.dumps({"status":"FAIL"}))\n', encoding="utf-8"
+                )
+                (root / "tools" / "hook_selftest.py").write_text(
+                    'from pathlib import Path; Path("SELFTEST_RAN").write_text("yes")\n', encoding="utf-8"
+                )
+                proc = subprocess.run(
+                    ["bash", str(root / relative)], cwd=root, text=True,
+                    capture_output=True, check=False,
+                )
+                self.assertNotEqual(0, proc.returncode, proc.stdout + proc.stderr)
+                self.assertIn("FAILED_STAGE=installer", proc.stdout)
+                self.assertIn("FINAL_INSTALL_STATUS=FAIL", proc.stdout)
+                self.assertFalse((root / "SELFTEST_RAN").exists())
+
     def test_retired_missing_asset_root_code_is_gone(self):
         source = (SCRIPTS / "solve_lite_abi.py").read_text(encoding="utf-8")
         self.assertNotIn("ASSET_ROOT_MISSING", source)
@@ -161,4 +212,3 @@ class PublicPackageContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
