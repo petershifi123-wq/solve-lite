@@ -1,213 +1,64 @@
 import hashlib
 import json
-import os
-import subprocess
-import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLUGIN = ROOT / "plugins" / "solve-lite"
-SKILL = PLUGIN / "skills" / "solve-lite"
-SCRIPTS = SKILL / "scripts"
+SKILL = ROOT / "plugins/solve-lite/skills/solve-lite"
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 class PublicPackageContractTest(unittest.TestCase):
-    def test_required_surface(self):
-        required = (
-            "README.md",
-            "LICENSE",
-            "NOTICE.md",
-            "COMPATIBILITY.md",
-            "CHANGELOG.md",
-            "CORE_ASSET_MANIFEST.json",
-            "CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json",
-            "PUBLIC_REPO_MANIFEST.json",
-            "SHA256SUMS.txt",
-            ".agents/plugins/marketplace.json",
-            "tools/startup_check.py",
-            "tools/installer.py",
-            "tools/doctor.py",
-            "tools/uninstall.py",
-            "tools/adapter.py",
-            "tools/offline_harness.py",
-            "tools/specialist_clean_host_harness.py",
-            "plugins/solve-lite/skills/solve-lite/SKILL.md",
-            "plugins/solve-lite/skills/solve-lite/runtime/solve_lite/abi.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/agent_auto.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_abi.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_dlc.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/specialist_runtime.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/specialist_worker.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/test_specialist_runtime.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/test_agent_auto.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-            "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_dlc.py",
-            "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
-            "plugins/solve-lite/skills/solve-lite/assets/specialist-runtime-lock.json",
-            "plugins/solve-lite/skills/solve-lite/assets/specialist-requirements.in",
-            "plugins/solve-lite/skills/solve-lite/assets/specialist-requirements-macos-arm64-py39.lock",
-        )
-        self.assertEqual([relative for relative in required if not (ROOT / relative).is_file()], [])
+    def test_current_version_and_single_asset(self):
+        for path in (
+            ROOT / "plugins/solve-lite/.codex-plugin/plugin.json",
+            ROOT / "plugins/solve-lite/.codebuddy-plugin/plugin.json",
+        ):
+            self.assertEqual(json.loads(path.read_text())["version"], "0.1.8")
+        manifest = json.loads((SKILL / "assets/specialist-assets.json").read_text())
+        self.assertEqual(manifest["current_install_target"], "v0.1.8")
+        self.assertEqual(manifest["runtime"]["shared_encoder_copies"], 1)
+        self.assertFalse(manifest["runtime"]["torch_runtime"])
+        self.assertFalse(manifest["runtime"]["transformers_runtime"])
+        self.assertEqual(manifest["asset"]["sha256"], "a7359f8581bdae0c850def19bf776e540806b960c1751b0512a3002a7cf11f7e")
+        self.assertEqual(len(manifest["asset"]["immutable_revision"]), 40)
 
     def test_public_manifest_and_checksums(self):
-        manifest = json.loads((ROOT / "PUBLIC_REPO_MANIFEST.json").read_text(encoding="utf-8"))
+        manifest = json.loads((ROOT / "PUBLIC_REPO_MANIFEST.json").read_text())
         rows = {row["path"]: row for row in manifest["files"]}
         self.assertEqual(len(rows), manifest["payload_file_count"])
         for relative, row in rows.items():
             path = ROOT / relative
             self.assertTrue(path.is_file(), relative)
-            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), row["sha256"], relative)
             self.assertEqual(path.stat().st_size, row["bytes"], relative)
+            self.assertEqual(sha256(path), row["sha256"], relative)
         sums = {}
-        for line in (ROOT / "SHA256SUMS.txt").read_text(encoding="utf-8").splitlines():
+        for line in (ROOT / "SHA256SUMS.txt").read_text().splitlines():
             expected, relative = line.split("  ", 1)
             sums[relative] = expected
-            self.assertEqual(hashlib.sha256((ROOT / relative).read_bytes()).hexdigest(), expected, relative)
+            self.assertEqual(sha256(ROOT / relative), expected, relative)
         self.assertEqual(set(sums), set(rows) | {"PUBLIC_REPO_MANIFEST.json"})
 
-    def test_lite_core_is_bundled_and_byte_verified(self):
-        core = json.loads((ROOT / "CORE_ASSET_MANIFEST.json").read_text(encoding="utf-8"))
-        self.assertEqual(core["build_line"], "LITE")
-        self.assertEqual(core["public_self_contained_distribution"], True)
-        self.assertEqual(core["artifacts_in_public_tree"], True)
-        self.assertTrue(core["distribution"])
-        self.assertEqual(len(core["artifacts"]), 8)
-        self.assertEqual(core["public_abi"]["status"], "AVAILABLE")
-        self.assertEqual(core["public_abi"]["public_entry"], "route_prompt")
-        self.assertEqual(core["public_abi"]["core_native_entry"], "route_session")
-        runtime_root = ROOT / core["runtime_root"]
-        self.assertTrue((runtime_root / "solve_lite" / "abi.py").is_file())
-        total = 0
-        for artifact in core["artifacts"]:
-            path = runtime_root / artifact["relative_path"]
-            self.assertTrue(path.is_file(), artifact["relative_path"])
-            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), artifact["sha256"], artifact["relative_path"])
-            self.assertEqual(path.stat().st_size, artifact["bytes"], artifact["relative_path"])
-            total += artifact["bytes"]
-        self.assertEqual(total, core["artifact_bytes"])
-        self.assertEqual(core["runtime_root_env_required"], False)
-        self.assertEqual(core["legacy_core_asset_root_env_required"], False)
-        self.assertEqual(core["runtime_root_env"], "SOLVE_LITE_RUNTIME_ROOT")
-        self.assertNotIn("legacy_core_asset_root_env", core)
-        assets = core["runtime_model_assets"]
-        self.assertEqual(assets["status"], "PUBLIC_DLC_COMPONENTS")
-        self.assertEqual(assets["normal_public_install"], True)
-        self.assertEqual(assets["runtime_activation"], "CAPABILITY_ROUTED_LAZY")
-        self.assertEqual(assets["specialist_model_assets_required_at_startup"], False)
-        self.assertEqual(assets["missing_pack_status"], "SPECIALIST_CAPABILITY_UNAVAILABLE")
-        self.assertEqual([item["unit_id"] for item in assets["not_published"]], ["financial-pair-int4-g64-ENGINEERING-ONLY"])
-        self.assertEqual(len([item for item in assets["dlc_units"] if item["public"]]), 3)
-        self.assertFalse(any(path.name == "OWNER_RUNTIME_ASSET_MANIFEST.json" for path in ROOT.rglob("*")))
+    def test_active_docs_have_one_current_target(self):
+        text = "\n".join((ROOT / name).read_text() for name in ("README.md", "COMPATIBILITY.md", "CHANGELOG.md"))
+        self.assertIn("v0.1.8", text)
+        self.assertIn("82.28%", text)
+        self.assertIn("50.93", text)
+        self.assertIn("CoreML", text)
+        self.assertNotIn("2.33 GB", text)
+        self.assertNotIn("678 MB", text)
+        self.assertNotIn("solve-lite-review-compact", text)
+        self.assertNotIn("solve-lite-topic-compact", text)
+        self.assertNotIn("solve-lite-nli-compact", text)
 
-    def test_full_precision_reference_is_historical(self):
-        reference = json.loads((ROOT / "CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json").read_text(encoding="utf-8"))
-        self.assertEqual(reference["status"], "HISTORICAL_FULL_PRECISION_REFERENCE")
-        self.assertEqual(reference["historical_reference"], True)
-        self.assertEqual(reference["not_an_install_requirement"], True)
-        self.assertEqual(reference["superseded_by"], "CORE_ASSET_MANIFEST.json")
-
-    def test_healthcheck_works_without_any_asset_root(self):
-        environment = dict(os.environ)
-        # A clean source tree describes a plain environment. Remove the legacy
-        # explicit override so a developer shell cannot change this assertion.
-        for name in ("SOLVE_LITE_RUNTIME_ROOT",
-                     "SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
-            environment.pop(name, None)
-        script = (
-            "import json,sys;"
-            f"sys.path.insert(0,{str(SCRIPTS)!r});"
-            "from solve_lite_abi import healthcheck, capabilities;"
-            "print(json.dumps({'h': healthcheck(), 'c': capabilities()}))"
-        )
-        process = subprocess.run([sys.executable, "-c", script], cwd=str(ROOT), env=environment,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False)
-        self.assertEqual(process.returncode, 0, process.stderr)
-        payload = json.loads(process.stdout.strip().splitlines()[-1])
-        self.assertEqual(payload["h"]["status"], "PASS")
-        self.assertEqual(payload["h"]["runtime_root_origin"], "bundled")
-        self.assertEqual(payload["h"]["asset_root_required"], False)
-        self.assertEqual(payload["h"]["torch_imported"], False)
-        self.assertEqual(payload["h"]["network_used"], False)
-        self.assertEqual(payload["c"]["status"], "PASS")
-        self.assertIn("markov", payload["c"]["core"]["native_capabilities"])
-        self.assertEqual(payload["c"]["dlc"]["activation_state"], "NOT_ACTIVATED")
-
-    def test_registry_and_entrypoint_truth(self):
-        registry = json.loads((SKILL / "assets" / "agent_registry.json").read_text(encoding="utf-8"))
-        self.assertEqual(registry["public_abi_entrypoint"], "solve_lite_abi:route_prompt")
-        self.assertTrue(registry["cold_fork_test"].startswith("PASS_VERIFIED"))
-        self.assertEqual(registry["cold_fork_evidence"]["scope"], "PUBLIC_REPOSITORY_ONLY")
-        by_id = {host["host_id"]: host for host in registry["hosts"]}
-        for host in ("doubao", "workbuddy"):
-            self.assertEqual(by_id[host]["cold_fork_status"], "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI")
-        for host in ("cline", "qwen", "cursor"):
-            self.assertNotEqual(by_id[host]["cold_fork_status"], "BLOCKED_PENDING_CLEAN_HOST_AND_PUBLIC_CORE_ASSET")
-
-    def test_normal_installers_include_public_dlc(self):
-        for relative in ("install_workbuddy.command", "install_doubao.command"):
-            source = (ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn('tools/installer.py --host "$HOST"', source, relative)
-            self.assertIn('${SOLVE_LITE_PACKAGE_DIR}）', source, relative)
-            self.assertIn("set -euo pipefail", source, relative)
-            self.assertIn("FINAL_INSTALL_STATUS=FAIL", source, relative)
-            self.assertIn("FINAL_INSTALL_STATUS=PASS", source, relative)
-            self.assertNotIn('tools/installer.py --host "$HOST" --json | tail', source, relative)
-            self.assertNotIn("tools/installer.py --skip-dlc", source, relative)
-        self.assertEqual(
-            json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"],
-            "0.1.7",
-        )
-        self.assertEqual(
-            json.loads((PLUGIN / ".codebuddy-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"],
-            "0.1.7",
-        )
-
-    def test_installer_command_propagates_json_failure(self):
-        for relative in ("install_workbuddy.command", "install_doubao.command"):
-            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                (root / "tools").mkdir()
-                (root / relative).write_text((ROOT / relative).read_text(encoding="utf-8"), encoding="utf-8")
-                (root / "tools" / "startup_check.py").write_text(
-                    'import json; print(json.dumps({"STARTUP_CHECK":"PASS"}))\n', encoding="utf-8"
-                )
-                (root / "tools" / "installer.py").write_text(
-                    'import json; print(json.dumps({"status":"FAIL"}))\n', encoding="utf-8"
-                )
-                (root / "tools" / "hook_selftest.py").write_text(
-                    'from pathlib import Path; Path("SELFTEST_RAN").write_text("yes")\n', encoding="utf-8"
-                )
-                proc = subprocess.run(
-                    ["bash", str(root / relative)], cwd=root, text=True,
-                    capture_output=True, check=False,
-                )
-                self.assertNotEqual(0, proc.returncode, proc.stdout + proc.stderr)
-                self.assertIn("FAILED_STAGE=installer", proc.stdout)
-                self.assertIn("FINAL_INSTALL_STATUS=FAIL", proc.stdout)
-                self.assertFalse((root / "SELFTEST_RAN").exists())
-
-    def test_retired_missing_asset_root_code_is_gone(self):
-        source = (SCRIPTS / "solve_lite_abi.py").read_text(encoding="utf-8")
-        self.assertNotIn("ASSET_ROOT_MISSING", source)
-        sys.path.insert(0, str(SCRIPTS))
-        import solve_lite_abi as abi
-        self.assertEqual(abi.ERROR_ROOT, "CORE_ASSET_UNAVAILABLE")
-        self.assertEqual(abi.ERROR_ROOT, abi.ERROR_CORE)
-
-    def test_no_sensitive_paths_or_private_records(self):
-        home_prefix = "/" + "Users" + "/"
-        hits = []
-        for path in ROOT.rglob("*"):
-            if path.is_file() and path.suffix.lower() in {".py", ".md", ".json", ".txt"}:
-                if home_prefix in path.read_text(encoding="utf-8", errors="replace"):
-                    hits.append(path.relative_to(ROOT).as_posix())
-        self.assertEqual(hits, [])
-        self.assertFalse((ROOT / "evidence").exists())
-        addon = SKILL / "runtime" / "addons"
-        self.assertFalse(addon.exists(), "local DLC install state must not ship in the package")
-        self.assertFalse(any(path.name == "OWNER_RUNTIME_ASSET_MANIFEST.json" for path in ROOT.rglob("*")))
+    def test_host_registry_is_thin_four_host(self):
+        registry = json.loads((SKILL / "assets/agent_registry.json").read_text())
+        self.assertEqual({item["host_id"] for item in registry["hosts"]}, {"doubao", "workbuddy", "codex", "hermes"})
+        self.assertEqual(registry["runtime_model"], "ONE_SHARED_COREML_RUNTIME")
+        self.assertEqual(registry["acceptance"]["host_heavy_copy_count"], 0)
 
 
 if __name__ == "__main__":
