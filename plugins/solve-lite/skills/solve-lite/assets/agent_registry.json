@@ -1,5 +1,5 @@
 {
-  "schema_version": "solve-lite.agent-registry.v2",
+  "schema_version": "solve-lite.agent-registry.v3",
   "public_abi_entrypoint": "solve_lite_abi:route_prompt",
   "supported_modes_priority": [
     "explicit_host_id",
@@ -88,6 +88,20 @@
       "public_adapter_entrypoint": "plugins/solve-lite/scripts/codex_desktop_adapter.py",
       "mcp_config_key": "mcpServers",
       "mcp_cwd": "${PLUGIN_ROOT}",
+      "integration": {
+        "plugin_identity": {
+          "canonical": "solve-lite@github-solve-lite",
+          "aliases": [
+            "solve-lite@personal",
+            "solve-lite@solve-lite-local"
+          ]
+        },
+        "plugin_root_env": [
+          "PLUGIN_ROOT"
+        ],
+        "hook_mode": "plugin_manifest",
+        "skill_dir": "skills/solve-lite"
+      },
       "detection": {
         "environment_keys": [
           "CODEX_HOME"
@@ -121,8 +135,23 @@
       "public_adapter_entrypoint": null,
       "mcp_config_key": null,
       "mcp_cwd": null,
+      "integration": {
+        "plugin_identity": {
+          "canonical": "solve-lite@solve-lite-local",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "CODEBUDDY_PLUGIN_ROOT",
+          "CLAUDE_PLUGIN_ROOT"
+        ],
+        "hook_mode": "plugin_manifest",
+        "skill_dir": "skills/solve-lite"
+      },
       "detection": {
-        "environment_keys": [],
+        "environment_keys": [
+          "CODEBUDDY_PLUGIN_ROOT",
+          "CLAUDE_PLUGIN_ROOT"
+        ],
         "executables": [
           "workbuddy"
         ],
@@ -226,6 +255,7 @@
         "doubaowork"
       ],
       "priority": 70,
+      "hook_api": false,
       "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
       "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
       "supported_modes": [
