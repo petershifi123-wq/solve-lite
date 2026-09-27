@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install thin Solve Lite adapters that point to one shared v0.1.9 runtime."""
+"""Install thin Solve Lite adapters that point to one shared v0.1.10 runtime."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ def _thin_copy_ignore(path: str, names: List[str]) -> set[str]:
     """Never duplicate the user-level CoreML asset into a host adapter."""
     current = Path(path)
     if current.name == "runtime" and current.parent.name == "solve-lite":
-        return {name for name in names if name in {"shared-encoder-runtime", "dlc_runtime"}}
+        return {name for name in names if name == "shared-encoder-runtime"}
     return set()
 
 

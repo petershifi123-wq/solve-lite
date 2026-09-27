@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install Solve Lite v0.1.9 with one shared, CoreML-native runtime."""
+"""Install Solve Lite v0.1.10 with one shared, CoreML-native runtime."""
 
 from __future__ import annotations
 
@@ -73,8 +73,8 @@ def _report(runtime: Path) -> dict:
     asset = compact.status(runtime)
     return {
         "status": "PASS" if health.get("status") == "PASS" and asset.get("status") == "PASS" else "FAIL",
-        "version": "v0.1.9",
-        "current_install_target": "v0.1.9",
+        "version": "v0.1.10",
+        "current_install_target": "v0.1.10",
         "runtime_root": str(runtime),
         "healthcheck": health,
         "compact_runtime": asset,
@@ -137,7 +137,7 @@ def main() -> int:
     }
     payload = {
         "status": "PASS" if all(required.values()) else "FAIL",
-        "version": "v0.1.9",
+        "version": "v0.1.10",
         "required_checks": required,
         "shared_runtime": base,
         "compact_install": install,

@@ -19,18 +19,6 @@ PREFIX = "solve-lite"
 CHECKSUMS = "SHA256SUMS.txt"
 PUBLIC_MANIFEST = "PUBLIC_REPO_MANIFEST.json"
 METADATA = {"MANIFEST.json", PUBLIC_MANIFEST, CHECKSUMS}
-LEGACY_PREFIXES = (
-    "plugins/solve-lite/skills/solve-lite/runtime/dlc_runtime/",
-)
-LEGACY_FILES = {
-    "plugins/solve-lite/skills/solve-lite/scripts/solve_lite_dlc.py",
-    "plugins/solve-lite/skills/solve-lite/scripts/specialist_runtime.py",
-    "plugins/solve-lite/skills/solve-lite/scripts/specialist_worker.py",
-    "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_dlc.py",
-    "plugins/solve-lite/skills/solve-lite/scripts/test_specialist_runtime.py",
-    "plugins/solve-lite/skills/solve-lite/assets/addon-index.json",
-    "tools/specialist_clean_host_harness.py",
-}
 
 
 def sha256(path: Path) -> str:
@@ -49,8 +37,6 @@ def files(include_metadata: bool) -> list[Path]:
         relative = path.relative_to(ROOT).as_posix()
         if path.name == ".solve-lite-runtime.json":
             continue
-        if relative in LEGACY_FILES or relative.startswith(LEGACY_PREFIXES):
-            continue
         if not include_metadata and relative in METADATA:
             continue
         if include_metadata and relative == CHECKSUMS:
@@ -68,7 +54,7 @@ def metadata() -> None:
     content_rows = rows(content)
     manifest = {
         "schema_version": "solve-lite.local-package-manifest.v1",
-        "version": "0.1.9",
+        "version": "0.1.10",
         "status": "READY_FOR_PETER_FRESH_HOST_ACCEPTANCE",
         "product_acceptance": "WAITING_OWNER_REAL_HOST_TEST",
         "platform": "macOS-arm64",
@@ -86,10 +72,10 @@ def metadata() -> None:
     (ROOT / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     public_payload = sorted(content + [ROOT / "MANIFEST.json"], key=lambda value: value.relative_to(ROOT).as_posix())
     public_manifest = {
-        "schema_version": "solve-lite.public-repo-manifest.v0.1.9",
-        "version": "0.1.9",
+        "schema_version": "solve-lite.public-repo-manifest.v0.1.10",
+        "version": "0.1.10",
         "status": "CURRENT",
-        "current_install_target": "v0.1.9",
+        "current_install_target": "v0.1.10",
         "runtime": "Compact CoreML-native",
         "accuracy": 0.8228,
         "aps": 85.8999,
@@ -122,7 +108,7 @@ def metadata() -> None:
         "core_diff": 0,
         "ordinary_session": "OUT_OF_SCOPE_CLEAN_HOST_PUBLIC_ABI",
         "product_pass": False,
-        "github_hold": "AUTHORIZED_V0_1_9_RELEASE",
+        "github_hold": "AUTHORIZED_V0_1_10_RELEASE",
         "manifest_sha256": sha256(ROOT / "MANIFEST.json"),
     }
     DIST.mkdir(mode=0o700, exist_ok=True)

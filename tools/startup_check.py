@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only v0.1.9 startup and shared-runtime integrity check."""
+"""Read-only v0.1.10 startup and shared-runtime integrity check."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def main() -> int:
     }
     payload = {
         "STARTUP_CHECK": "PASS" if all(checks.values()) else "FAIL",
-        "version": "v0.1.9",
+        "version": "v0.1.10",
         "runtime_root": str(runtime),
         "checks": checks,
         "core": core,

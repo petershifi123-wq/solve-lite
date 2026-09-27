@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Host/adapter lifecycle for the Codex Desktop plugin (install, doctor, uninstall).
 
-The asset side of the install lives in tools/installer.py (Lite base + DLC
-components); this wrapper only drives the frozen desktop adapter.
+The shared CoreML asset install lives in tools/installer.py; this wrapper only
+drives the desktop adapter lifecycle.
 
   python3 tools/adapter.py doctor
   python3 tools/adapter.py install --dry-run

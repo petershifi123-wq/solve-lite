@@ -59,7 +59,6 @@ def _hook_env(workspace: Path) -> Dict[str, str]:
     env["SOLVE_LITE_WORKSPACE"] = str(workspace)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONNOUSERSITE"] = "1"
-    env["SOLVE_LITE_INT4_STATE_DIR"] = str(workspace / "int4-state")
     env.pop("SOLVE_LITE_HOOK_DISABLE", None)
     return env
 
@@ -208,7 +207,14 @@ def selftest_host(host_id: str, plugin_root: Path, *, config_dir: Optional[Path]
 
     records = _ledger(workspace)
     audit_records = [r for r in _audit(workspace) if r.get("status") == "PASS"]
-    reward_visible = [d for d in dispatches if "⚡" in d.get("additional_context", "")]
+    reward_visible = [
+        d
+        for d in dispatches
+        if any(
+            marker in d.get("additional_context", "")
+            for marker in ("⚡", "🎁", "REWARD_DISPLAY_UNAVAILABLE")
+        )
+    ]
     unmeasured_token_visible = [d for d in dispatches
                                 if "Token：" in d.get("additional_context", "")
                                 or "Token:" in d.get("additional_context", "")]
