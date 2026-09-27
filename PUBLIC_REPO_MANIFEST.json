@@ -3,7 +3,7 @@
   "aps": 85.8999,
   "asset_control_manifest": "plugins/solve-lite/skills/solve-lite/assets/specialist-assets.json",
   "complete_install_bytes": 50932773,
-  "current_install_target": "v0.1.8",
+  "current_install_target": "v0.1.9",
   "files": [
     {
       "bytes": 318,
@@ -16,29 +16,29 @@
       "sha256": "91779bd491d292e125911c8d479534e23d590ff0a1a39027bbb105a83bc55fef"
     },
     {
-      "bytes": 1075,
+      "bytes": 953,
+      "path": "AGENTS.md",
+      "sha256": "d4eacf0f776cb9d1a2fd987cc956cf28863c334157ff58f0dc914252685c6e9d"
+    },
+    {
+      "bytes": 1675,
       "path": "CHANGELOG.md",
-      "sha256": "a22ed2897ae87cec2c8392f633323cee32dee05d4ba97800e79659f88e6202f2"
+      "sha256": "71042f9f1a9cb44cdae3b775cdb6c636a4b431b6ffa20dc143a3e653922ddda9"
     },
     {
       "bytes": 970,
       "path": "COMPATIBILITY.md",
-      "sha256": "f446d81b76153409de2cf247f54b5da1603d3cdc66c2abb26d8e4cb98d9a0baf"
+      "sha256": "823030635619d730d0d9e14fe2b8ad9d7f454e589ded7b21e8785845536a21f5"
     },
     {
-      "bytes": 5765,
+      "bytes": 5767,
       "path": "CORE_ASSET_MANIFEST.json",
-      "sha256": "48fb66d300f2ffa07e6199796ccce51f1c89048954333797b97c1aa7527b3d3d"
+      "sha256": "4bec8cc6bed4bdf3dd5d2725a4c189793d4ad33fa50383a80fefa1432a4c2ba9"
     },
     {
-      "bytes": 4934,
-      "path": "CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json",
-      "sha256": "14b5acb6a5fd8ef9a8e40ec6433efbf93d50a7408c1c479f31613f4a8950618c"
-    },
-    {
-      "bytes": 6583,
+      "bytes": 2213,
       "path": "HOST_INTEGRATION_NOTES.md",
-      "sha256": "672ca6c0c09990e0673e1dc3f94a1af35eb8b82edf7edc7f68caf524e435e951"
+      "sha256": "a72c67a9076f3e028c87a824528694e69e39eebb1d4630d058a3428e73ff3259"
     },
     {
       "bytes": 1196,
@@ -46,9 +46,9 @@
       "sha256": "ca15e033fbd3c72375b97fa9034911e67fe54c491c4a6059a25ee228233b1461"
     },
     {
-      "bytes": 16156,
+      "bytes": 16121,
       "path": "MANIFEST.json",
-      "sha256": "c16d9e19d0c1ef49dc402d294edf9c574f1c60637df190ab4d5292c4e5de5f4e"
+      "sha256": "1f9969735902542baf461c1ea5a0883776540ac9857014b3d4804d950ea6c3da"
     },
     {
       "bytes": 304,
@@ -56,9 +56,9 @@
       "sha256": "b9700551a013cd5b124ddaaeb84d0211a0586c256f19984cfcca03868f46e318"
     },
     {
-      "bytes": 3804,
+      "bytes": 4609,
       "path": "README.md",
-      "sha256": "fcb5c216c6c46bfe7903c52e4c98a9e126dbefd8fd2e222f0f3bc13cd0079a18"
+      "sha256": "2838c067918a5ded3df305f957a4809199cc0b2fadb881eaa1d4e62555209503"
     },
     {
       "bytes": 1511,
@@ -81,14 +81,14 @@
       "sha256": "f5246ef50a8a67e495cb8d87c14cd21a1860f04a0d0b5ab62022de32615bf9ef"
     },
     {
-      "bytes": 528,
+      "bytes": 445,
       "path": "plugins/solve-lite/.codebuddy-plugin/plugin.json",
-      "sha256": "05ccd9122167a0b8e6d51a328e30fdc5c4aaac4b4aa950bf0cf7c0b330fac36d"
+      "sha256": "17cd47ebb3d8f5b87262020dbdf550201f5251d92e5aad637e89d923952251ac"
     },
     {
-      "bytes": 1247,
+      "bytes": 1123,
       "path": "plugins/solve-lite/.codex-plugin/plugin.json",
-      "sha256": "72da1a7e8a531de2b6b761226873652158f464c26edbcc7c38534d55a49f682d"
+      "sha256": "d750a65b30a54db8dabfbffc230b94aaa7b2e931dee109f58ce5b85d9f51be1d"
     },
     {
       "bytes": 770,
@@ -123,12 +123,12 @@
     {
       "bytes": 2111,
       "path": "plugins/solve-lite/skills/solve-lite/SKILL.md",
-      "sha256": "28c8951cf4709eb9f84e66dd2cc111baf4694b8314932a72ed27136499f40e83"
+      "sha256": "f6e0d05fe49bdcdf1f1449a7564ec6a8d37ecefef178842eabe090ee620d4dae"
     },
     {
-      "bytes": 1965,
+      "bytes": 4859,
       "path": "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
-      "sha256": "0e55a20054369c9f9c5c3bedf20089d5ca644a0ce7dfdd14ddda36c10120b65d"
+      "sha256": "daff734c6fd76081f47fea1f58b6ee33e524b7ba02fa1de0438557a5afdeb6d0"
     },
     {
       "bytes": 344,
@@ -158,7 +158,7 @@
     {
       "bytes": 1654,
       "path": "plugins/solve-lite/skills/solve-lite/assets/specialist-assets.json",
-      "sha256": "558d119c0a3441c1f7cf3c6ee8e7d27e06e0af8170f437c705b03bc70614b8c8"
+      "sha256": "cca9b3ee9852c76172fdd6dc8be5d295daaf189d5bb6057a95ff658859343930"
     },
     {
       "bytes": 1248,
@@ -186,9 +186,9 @@
       "sha256": "969c63737524b22949650826f81c62d28a914cc22961cbf9718053587439ebe4"
     },
     {
-      "bytes": 6031,
+      "bytes": 6033,
       "path": "plugins/solve-lite/skills/solve-lite/runtime/CORE_ASSET_MANIFEST_LITE.json",
-      "sha256": "0144b820caaeb73546313186d0507a09f17ed2237aa1e251f823fe3d13c83fa2"
+      "sha256": "4cd9c4b59f1277e3db164731e6ea90dab08077f21f91d8fd81927c9d6c4e7bee"
     },
     {
       "bytes": 4204,
@@ -313,17 +313,17 @@
     {
       "bytes": 17360,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/agent_auto.py",
-      "sha256": "91cbb18794ad2cdec9904fdde36fa56ccc749878cd77c7ac8113660d5ad14db5"
+      "sha256": "c28c0722b1401c80468399cc085b9e9d1489cfe9feadcb0254dd73f83b4f9cc2"
     },
     {
       "bytes": 12200,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/compact_runtime.py",
-      "sha256": "bfd844764f86e1af0a5dc1242422c1851f16fde8171358f9fcc6b4b66142f3b2"
+      "sha256": "9b88e131c7c061363ec72f9f74093aacbb365bdc67e1e00d71cb54d19708cc88"
     },
     {
-      "bytes": 7179,
+      "bytes": 7164,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/shared_runtime.py",
-      "sha256": "1df0656b09f99a03bd99da51e16fba2fe01f59805b9866bace680a05a7296839"
+      "sha256": "7c53023147f0482197adb970723079d011d2903a4ff9a7e16f49c85431133e6d"
     },
     {
       "bytes": 34288,
@@ -331,14 +331,14 @@
       "sha256": "a7930b900e03e6178252d2e33efb6e7d31724108c416f89502162a26ff73e323"
     },
     {
-      "bytes": 8698,
+      "bytes": 8454,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_agent_auto.py",
-      "sha256": "2bf4f568961f467a2c04eb1b23b247bce7f9a6e83e19cad6bfb21125f8f7d41d"
+      "sha256": "8378983c426c40f3ff669aac7f08d392ad6ffce5665b29ed4fc752ffe2b317dc"
     },
     {
-      "bytes": 11478,
+      "bytes": 3143,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-      "sha256": "7c045d07728ab34001bc766b99c2fbdeae693e20fa2e103db41d9cfd6fe22bb4"
+      "sha256": "5f976503f7d5e0e9bb190f9310578088d78fc989f59c2be1577534919cbc4dcd"
     },
     {
       "bytes": 9716,
@@ -351,19 +351,19 @@
       "sha256": "fa2ee71cf0cf6b1da85be99f74c27490ceacd709840d2c282ac6bce4e4226d82"
     },
     {
-      "bytes": 1786,
+      "bytes": 2819,
       "path": "tests/test_host_hooks.py",
-      "sha256": "a96c92d589f9400b8a8e4f94509e9fb21f992da5736f447f8656cdc13322898e"
+      "sha256": "9bbd9ba39b696e6f18b5da0971e250980606b1ace10f5c381c58bff915aaf21b"
     },
     {
-      "bytes": 3084,
+      "bytes": 3531,
       "path": "tests/test_package.py",
-      "sha256": "18a432eb56a7a56e1aa457e9a4bb5a90d0549bd6bc607f392139d791c0806acf"
+      "sha256": "3c458a1e94cb3691734f0948a5ed3c6c135fbef083101c5dfc74ef4168818424"
     },
     {
       "bytes": 2535,
       "path": "tests/test_shared_runtime.py",
-      "sha256": "1337c4e4be588517c9682203e255e96b8d041d186e72f91f0e59c5ae3a2ea4e4"
+      "sha256": "1c15776dae4a9b8540d56acfac17878404ac2eecc220f5b2cfdb4402b9c58e64"
     },
     {
       "bytes": 959,
@@ -381,9 +381,9 @@
       "sha256": "87a8c6bdc68db04ff7d504c58b2494728fd13e6e92bdcbcb8b02f184ff673267"
     },
     {
-      "bytes": 8895,
+      "bytes": 8636,
       "path": "tools/build_release.py",
-      "sha256": "d97b3e0c6e94291a35451bc1d857ef5fc77f8a6dc2be44884d6309662f1da836"
+      "sha256": "8ce40c1180996c65ddb7dffc673887899bcf135b34c46cd9a70df38719c5ea56"
     },
     {
       "bytes": 3155,
@@ -391,9 +391,9 @@
       "sha256": "03459860fc5e8b959f719a9f28bdf4df0ac0dede09dcf60b972f8d3b087b46de"
     },
     {
-      "bytes": 4166,
+      "bytes": 2996,
       "path": "tools/doctor.py",
-      "sha256": "c91b94040039b967b92e57a1bd70701dcfc125111b6fb8acea549ab4c17a1009"
+      "sha256": "b1589bbf21f81811b127c4a0cc77ce45f35ca114b8d416d6176f86c1a161dd53"
     },
     {
       "bytes": 14595,
@@ -401,24 +401,24 @@
       "sha256": "c8f2ac1dbeec051b02f50bfe4d39515937096047ce2786a2f743983b4bbc909e"
     },
     {
-      "bytes": 32082,
+      "bytes": 32301,
       "path": "tools/host_hooks.py",
-      "sha256": "22266002043bfd9778c6c7f631f34e5ccd8644d4be5577fd5d49d731d9f3e841"
+      "sha256": "8d1991cf064747eef765e5cfadc4c82c649f226223750e5b3cb36e5f1f7b6349"
     },
     {
       "bytes": 5986,
       "path": "tools/installer.py",
-      "sha256": "900f4d694bda9460ddbc4eec68cf6365f5c89857739f10265b703d7908a182ae"
+      "sha256": "4fb8c11b39656990ab078e2e0ced2c98c34b9dd2917cf322eb894619d361f841"
     },
     {
-      "bytes": 5809,
+      "bytes": 3076,
       "path": "tools/offline_harness.py",
-      "sha256": "11eb38cd83d4f4e40593ad9f1e00c20ee759018d7c122b6233347cce6a03d515"
+      "sha256": "2ef522b4f50abba78dccf1acea73effa1d0fdafba3ae212dc5971c01db405b29"
     },
     {
       "bytes": 2867,
       "path": "tools/startup_check.py",
-      "sha256": "b0365218112b49b4bfd66421d83f0d7f96d1d5841ca3a587212ab3154178adb3"
+      "sha256": "ba0cee3c6e899f316694162bdd74285dac70b71c97dfbac7057947cd14e2c941"
     },
     {
       "bytes": 211,
@@ -433,8 +433,8 @@
   ],
   "payload_file_count": 85,
   "runtime": "Compact CoreML-native",
-  "schema_version": "solve-lite.public-repo-manifest.v0.1.8",
+  "schema_version": "solve-lite.public-repo-manifest.v0.1.9",
   "status": "CURRENT",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "wrong_ge_90": 6
 }

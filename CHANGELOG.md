@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.1.8 — Current
+## 0.1.9 — Current
+
+- Added an AI Agent quick-install contract and root `AGENTS.md`.
+- Made `--host auto` discover Codex from `~/.codex` and Hermes from `~/.hermes` while retaining WorkBuddy and Doubao detection.
+- Updated Codex and WorkBuddy manifests to the one-copy Shared CoreML Runtime contract.
+- Removed obsolete dependency locks and the historical full-model manifest from the current tree.
+- Sanitized active host notes, package metadata and checksums for novice-agent installation.
+- The accepted Compact model, metrics and immutable Hugging Face asset are unchanged.
+
+## 0.1.8 — Superseded; do not install
 
 - Made the Compact Runtime the only current install target.
 - Added one shared BERT L4/H256 FP32 CoreML encoder with four calibrated tiny heads.
@@ -21,4 +30,4 @@ Preserved as Git and release history. It is not a current install target.
 
 ## Earlier versions
 
-Historical only. Use `v0.1.8` for current installation.
+Historical only. Use `v0.1.9` for current installation.
