@@ -17,9 +17,9 @@ class PublicPackageContractTest(unittest.TestCase):
             ROOT / "plugins/solve-lite/.codex-plugin/plugin.json",
             ROOT / "plugins/solve-lite/.codebuddy-plugin/plugin.json",
         ):
-            self.assertEqual(json.loads(path.read_text())["version"], "0.1.8")
+            self.assertEqual(json.loads(path.read_text())["version"], "0.1.9")
         manifest = json.loads((SKILL / "assets/specialist-assets.json").read_text())
-        self.assertEqual(manifest["current_install_target"], "v0.1.8")
+        self.assertEqual(manifest["current_install_target"], "v0.1.9")
         self.assertEqual(manifest["runtime"]["shared_encoder_copies"], 1)
         self.assertFalse(manifest["runtime"]["torch_runtime"])
         self.assertFalse(manifest["runtime"]["transformers_runtime"])
@@ -41,10 +41,11 @@ class PublicPackageContractTest(unittest.TestCase):
             sums[relative] = expected
             self.assertEqual(sha256(ROOT / relative), expected, relative)
         self.assertEqual(set(sums), set(rows) | {"PUBLIC_REPO_MANIFEST.json"})
+        self.assertFalse(any("dlc_runtime" in path or "specialist-requirements" in path for path in rows))
 
     def test_active_docs_have_one_current_target(self):
         text = "\n".join((ROOT / name).read_text() for name in ("README.md", "COMPATIBILITY.md", "CHANGELOG.md"))
-        self.assertIn("v0.1.8", text)
+        self.assertIn("v0.1.9", text)
         self.assertIn("82.28%", text)
         self.assertIn("50.93", text)
         self.assertIn("CoreML", text)
@@ -53,6 +54,13 @@ class PublicPackageContractTest(unittest.TestCase):
         self.assertNotIn("solve-lite-review-compact", text)
         self.assertNotIn("solve-lite-topic-compact", text)
         self.assertNotIn("solve-lite-nli-compact", text)
+        self.assertFalse((ROOT / "CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json").exists())
+        for name in (
+            "specialist-requirements.in",
+            "specialist-requirements-macos-arm64-py39.lock",
+            "specialist-runtime-lock.json",
+        ):
+            self.assertFalse((SKILL / "assets" / name).exists(), name)
 
     def test_host_registry_is_thin_four_host(self):
         registry = json.loads((SKILL / "assets/agent_registry.json").read_text())
