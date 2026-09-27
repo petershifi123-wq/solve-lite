@@ -1,7 +1,7 @@
 {
   "schema": "solve-lite.shared-encoder-runtime.asset.v1",
   "status": "CURRENT",
-  "current_install_target": "v0.1.8",
+  "current_install_target": "v0.1.9",
   "control_plane": "GitHub",
   "asset_store": "Hugging Face",
   "runtime": {
