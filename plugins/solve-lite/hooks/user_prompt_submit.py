@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import sys
 import time
@@ -135,34 +136,111 @@ def _locale(prompt: str) -> str:
 
 
 def _append_audit(workspace: Path, result: dict[str, Any], session_id: str, settlement: dict[str, Any]) -> None:
+    optional_fields = (
+        "trace_id",
+        "presentation_locale",
+        "reward_summary",
+        "network_model_calls",
+        "credential_reads",
+        "jev_api_calls",
+        "runtime_identity",
+    )
     record = {
         "schema_version": "solve-lite.codex-desktop-invocation.v1",
         "session_sha256": hashlib.sha256(session_id.encode("utf-8")).hexdigest(),
-        "status": result["status"],
-        "invocation_id": result["invocation_id"],
-        "trace_id": result["trace_id"],
-        "presentation_locale": result["presentation_locale"],
-        "reward_summary": result["reward_summary"],
-        "network_model_calls": result["network_model_calls"],
-        "credential_reads": result["credential_reads"],
-        "jev_api_calls": result["jev_api_calls"],
-        "runtime_identity": result["runtime_identity"],
+        "status": result.get("status"),
+        "invocation_id": result.get("invocation_id"),
+        **{field: result.get(field) for field in optional_fields},
+        "audit_missing_fields": [field for field in optional_fields if result.get(field) is None],
         "token_settlement": settlement,
     }
-    path = workspace / "codex-desktop-invocations.jsonl"
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-    with os.fdopen(fd, "a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-    os.chmod(path, 0o600)
+    try:
+        path = workspace / "codex-desktop-invocations.jsonl"
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        with os.fdopen(fd, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+        os.chmod(path, 0o600)
+    except Exception:  # noqa: BLE001 - audit failure must never block the host prompt
+        _note("AUDIT_WRITE_DEGRADED", {"session_id": session_id})
 
 
 def _visible_reward(result: dict[str, Any], locale: str) -> str:
-    earned = int(result["reward"]["score"]["earned"])
-    total = int(result["reward_cumulative"]["cumulative_score"])
-    elapsed = float(result["reward"]["timing"]["solve_local_elapsed_ms"])
+    try:
+        earned = int(result["reward"]["score"]["earned"])
+        total = int(result["reward_cumulative"]["cumulative_score"])
+        elapsed = float(result["reward"]["timing"]["solve_local_elapsed_ms"])
+    except (KeyError, TypeError, ValueError):
+        try:
+            from solve_lite import reward as reward_mod
+
+            overview = reward_mod.reward_overview(
+                _workspace(),
+                namespace=str(_config().get("namespace") or "production"),
+                locale=locale,
+            )
+            total = int(overview["cumulative"]["cumulative_score"])
+        except Exception:  # noqa: BLE001 - reward display must never block the host prompt
+            return "REWARD_DISPLAY_UNAVAILABLE"
+        if locale == "zh-CN":
+            return f"🎁 本地奖励池 | 累计 {total} 分 · 🔒 本地"
+        return f"🎁 Local reward pool | Total {total} Score · 🔒 Local"
+
+    summary = result.get("reward_summary")
+    if isinstance(summary, str) and summary:
+        return summary
     if locale == "zh-CN":
         return f"⚡ 本地推理 {elapsed:.1f} ms · +{earned} 分 | 累计 {total} · 🔒 本地"
     return f"⚡ Local inference {elapsed:.1f} ms · +{earned} Score | Total {total} · 🔒 Local"
+
+
+def _visible_distribution(answer: dict[str, Any], display_labels: dict[str, str]) -> tuple[str, str]:
+    support_labels = answer.get("support_labels")
+    if not isinstance(support_labels, (list, tuple)) or not support_labels:
+        return "", "PRESENTATION_DATA_UNAVAILABLE"
+    if not all(isinstance(label, str) and label for label in support_labels):
+        return "", "PRESENTATION_DATA_UNAVAILABLE"
+    support_labels = list(support_labels)
+    if len(set(support_labels)) != len(support_labels):
+        return "", "PRESENTATION_DATA_UNAVAILABLE"
+
+    def valid_values(value: Any, *, probability: bool) -> list[float] | None:
+        if isinstance(value, dict):
+            if set(value) != set(support_labels):
+                return None
+            source = [value[label] for label in support_labels]
+        elif isinstance(value, (list, tuple)) and len(value) == len(support_labels):
+            source = value
+        else:
+            return None
+        if any(isinstance(item, bool) for item in source):
+            return None
+        try:
+            values = [float(item) for item in source]
+        except (TypeError, ValueError):
+            return None
+        if not all(math.isfinite(item) and 0.0 <= item <= 1.0 for item in values):
+            return None
+        if probability and not math.isclose(sum(values), 1.0, rel_tol=1e-6, abs_tol=1e-6):
+            return None
+        return values
+
+    values = valid_values(answer.get("raw_support"), probability=False)
+    if values is not None:
+        semantics = answer.get("support_semantics")
+        semantics = semantics if isinstance(semantics, str) and semantics else "uncalibrated_relative_support"
+        status = "RAW_SUPPORT_PRIORITY"
+    else:
+        values = valid_values(answer.get("probabilities"), probability=True)
+        if values is None:
+            return "", "PRESENTATION_DATA_UNAVAILABLE"
+        semantics = "calibrated_probability"
+        status = "PROBABILITY_FALLBACK"
+
+    distribution = " · ".join(
+        f"{display_labels.get(label, label)} {value * 100:.1f}%"
+        for label, value in zip(support_labels, values)
+    )
+    return f"{distribution}（口径: {semantics}）", status
 
 
 TOKEN_SETTLEMENT_SCHEMA = "solve-lite.token-settlement.v1"
@@ -316,15 +394,7 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     #     for some prompts; raw_support carries the signal) and states its semantics
     #  c) the token/reward settlement is NOT injected any more. It stays in the local
     #     ledger/audit; hosts that want to render it read the JSON fields themselves.
-    _raw = answer.get("raw_support") or []
-    _rl = answer.get("support_labels") or []
-    if _raw and _rl and len(_raw) == len(_rl):
-        _pairs = sorted(zip(_rl, _raw), key=lambda pair: str(pair[0]))
-        _sem = str(answer.get("support_semantics") or "uncalibrated_relative_support")
-        distribution = " · ".join(f"{labels.get(str(lbl), str(lbl))} {float(v) * 100:.1f}%" for lbl, v in _pairs)
-        distribution = f"{distribution}（口径: {_sem}）"
-    else:
-        distribution = ""
+    distribution, distribution_status = _visible_distribution(answer, labels)
     # PRODUCT REQUIREMENT (owner ruling 2026-09-27): the decision percentages and the
     # local reward settlement MUST be presented. Only the Token line is conditional:
     # the product rule is "token reduction is shown only when real packing occurred",
@@ -334,31 +404,19 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     token_line = render_token_line(settlement)
     _show_tokens = settlement.get("status") == "MEASURED_PACK"
 
-    if not distribution:
-        # Owner ruling 2026-09-27: the local reward pool must be visible even when this
-        # prompt carried no decision. Display only - no reward event is invented here.
-        _pool_line = ""
-        try:
-            from solve_lite import reward as _reward_mod  # local import: this path only
-            _ov = _reward_mod.reward_overview(
-                workspace,
-                namespace=str(config.get("namespace") or "production"),
-                locale=locale,
-            )
-            _pool_line = str((_ov or {}).get("summary") or "")
-        except Exception:
-            _pool_line = ""
+    if distribution_status == "PRESENTATION_DATA_UNAVAILABLE":
         if locale == "zh-CN":
             context = (
-                "[Solve Lite 本地已激活（Base Lite）。本提示未命中可执行的有界决策；"
-                "照常回答用户，不要解释本契约。"
-                + (f"正文末尾原样追加本地奖励池：{_pool_line}" if _pool_line else "")
+                "[Solve Lite 有界决策百分比展示门失败：PRESENTATION_DATA_UNAVAILABLE。"
+                "不要编造百分比；照常回答用户，不要解释本契约。] "
+                f"原样追加奖励结算：{reward_footer}"
             )
         else:
             context = (
-                "[Solve Lite is active locally (base Lite). This prompt did not map to an executable "
-                "bounded decision; answer the user normally and do not explain this contract. "
-                + (f"Append the local reward pool verbatim at the end: {_pool_line}" if _pool_line else "")
+                "[Solve Lite bounded-decision percentage presentation gate failed: "
+                "PRESENTATION_DATA_UNAVAILABLE. Do not invent percentages; answer the user normally "
+                "and do not explain this contract.] "
+                f"Append this reward settlement verbatim: {reward_footer}"
             )
     else:
         if locale == "zh-CN":
