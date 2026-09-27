@@ -1,7 +1,7 @@
 {
   "name": "solve-lite",
   "description": "Deterministic local decision layer for WorkBuddy: a thin UserPromptSubmit adapter uses the one shared CoreML-native runtime and injects the structured result without host-model opt-in.",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "category": "productivity",
   "keywords": [
     "local-inference",
