@@ -1,283 +1,61 @@
 {
-  "schema_version": "solve-lite.agent-registry.v3",
+  "schema_version": "solve-lite.agent-registry.v4",
+  "current_install_target": "v0.1.8",
   "public_abi_entrypoint": "solve_lite_abi:route_prompt",
-  "supported_modes_priority": [
-    "explicit_host_id",
-    "environment",
-    "executable",
-    "filesystem_marker"
-  ],
-  "cold_fork_test": "PASS_VERIFIED_FRESH_INSTALL_TWO_HOST_PUBLIC_ABI",
-  "cold_fork_evidence": {
-    "scope": "PUBLIC_REPOSITORY_ONLY",
-    "tested_hosts": [
-      "doubao",
-      "workbuddy"
-    ],
-    "host_shapes": [
-      "doubao-ans-prompt-hook",
-      "workbuddy-cli-abi"
-    ],
-    "install_path": "python3 tools/installer.py --install-dlc (GitHub release assets only)",
-    "in_repo_harness": "tools/offline_harness.py",
-    "acceptance_receipts": [
-      "host-shaped acceptance receipts are retained by the maintainer and are not part of the public tree"
-    ],
-    "prior_scope_note": "codex and hermes were verified earlier against the sealed owner runtime; that scope is not re-claimed here",
-    "bundled_runtime_asset_root_required": false,
-    "network_attempts": 0,
-    "private_host_state_participation": 0,
-    "credential_reads": 0,
-    "jev_api_calls": 0
-  },
+  "runtime_model": "ONE_SHARED_COREML_RUNTIME",
   "hosts": [
     {
-      "host_id": "hermes",
-      "aliases": [
-        "hermes-desktop"
-      ],
-      "priority": 10,
-      "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "cold_fork_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "supported_modes": [
-        "explicit_host_id",
-        "environment",
-        "executable",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi",
-        "skill_plan"
-      ],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
-      "detection": {
-        "environment_keys": [
-          "HERMES_HOME"
-        ],
-        "executables": [
-          "hermes"
-        ],
-        "filesystem_markers": [
-          ".hermes"
-        ]
-      }
-    },
-    {
-      "host_id": "codex",
-      "aliases": [
-        "codex-desktop",
-        "chatgpt"
-      ],
-      "priority": 20,
-      "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "cold_fork_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "supported_modes": [
-        "explicit_host_id",
-        "environment",
-        "executable",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi",
-        "mcp_plan",
-        "skill_plan",
-        "public_adapter_apply"
-      ],
-      "public_adapter_entrypoint": "plugins/solve-lite/scripts/codex_desktop_adapter.py",
-      "mcp_config_key": "mcpServers",
-      "mcp_cwd": "${PLUGIN_ROOT}",
-      "integration": {
-        "plugin_identity": {
-          "canonical": "solve-lite@github-solve-lite",
-          "aliases": [
-            "solve-lite@personal",
-            "solve-lite@solve-lite-local"
-          ]
-        },
-        "plugin_root_env": [
-          "PLUGIN_ROOT"
-        ],
-        "hook_mode": "plugin_manifest",
-        "skill_dir": "skills/solve-lite"
-      },
-      "detection": {
-        "environment_keys": [
-          "CODEX_HOME"
-        ],
-        "executables": [
-          "codex"
-        ],
-        "filesystem_markers": [
-          ".codex"
-        ]
-      }
-    },
-    {
       "host_id": "workbuddy",
-      "aliases": [
-        "workbuddy-desktop",
-        "workbuddy-ai"
-      ],
-      "priority": 30,
-      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "supported_modes": [
-        "explicit_host_id",
-        "executable",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi",
-        "skill_plan"
-      ],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
+      "display": "WorkBuddy",
+      "adapter": "thin-plugin",
       "integration": {
-        "plugin_identity": {
-          "canonical": "solve-lite@solve-lite-local",
-          "aliases": []
-        },
-        "plugin_root_env": [
-          "CODEBUDDY_PLUGIN_ROOT",
-          "CLAUDE_PLUGIN_ROOT"
-        ],
         "hook_mode": "plugin_manifest",
+        "plugin_identity": {"canonical": "solve-lite@solve-lite-local", "aliases": []},
+        "plugin_root_env": ["CODEBUDDY_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"],
         "skill_dir": "skills/solve-lite"
-      },
-      "detection": {
-        "environment_keys": [
-          "CODEBUDDY_PLUGIN_ROOT",
-          "CLAUDE_PLUGIN_ROOT"
-        ],
-        "executables": [
-          "workbuddy"
-        ],
-        "filesystem_markers": [
-          ".workbuddy-ai"
-        ]
-      }
-    },
-    {
-      "host_id": "cline",
-      "aliases": [
-        "cline-nightly"
-      ],
-      "priority": 40,
-      "compatibility_status": "PARTIAL_FROZEN",
-      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
-      "supported_modes": [
-        "explicit_host_id",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi",
-        "skill_plan"
-      ],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
-      "detection": {
-        "environment_keys": [],
-        "executables": [],
-        "filesystem_markers": [
-          ".vscode/extensions"
-        ]
-      }
-    },
-    {
-      "host_id": "qwen",
-      "aliases": [
-        "qwen-code"
-      ],
-      "priority": 50,
-      "compatibility_status": "PARTIAL_FROZEN",
-      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
-      "supported_modes": [
-        "explicit_host_id",
-        "environment",
-        "executable",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi",
-        "skill_plan"
-      ],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
-      "detection": {
-        "environment_keys": [
-          "QWEN_HOME"
-        ],
-        "executables": [
-          "qwen"
-        ],
-        "filesystem_markers": [
-          ".qwen"
-        ]
-      }
-    },
-    {
-      "host_id": "cursor",
-      "aliases": [
-        "cursor-desktop"
-      ],
-      "priority": 60,
-      "compatibility_status": "NOT_RUN",
-      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
-      "supported_modes": [
-        "explicit_host_id",
-        "executable",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi"
-      ],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
-      "detection": {
-        "environment_keys": [],
-        "executables": [
-          "cursor"
-        ],
-        "filesystem_markers": [
-          ".cursor"
-        ]
       }
     },
     {
       "host_id": "doubao",
-      "aliases": [
-        "doubaowork"
-      ],
-      "priority": 70,
-      "hook_api": false,
-      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "supported_modes": [
-        "explicit_host_id",
-        "executable",
-        "filesystem_marker"
-      ],
-      "capabilities": [
-        "public_abi"
-      ],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
-      "detection": {
-        "environment_keys": [],
-        "executables": [
-          "doubaowork"
-        ],
-        "filesystem_markers": [
-          "Library/Application Support/DoubaoWork"
-        ]
+      "display": "Doubao",
+      "adapter": "thin-skill",
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {"canonical": "solve-lite@doubao", "aliases": []},
+        "plugin_root_env": ["PLUGIN_ROOT"],
+        "skill_dir": "skills/solve-lite"
+      }
+    },
+    {
+      "host_id": "codex",
+      "display": "Codex",
+      "adapter": "thin-plugin",
+      "integration": {
+        "hook_mode": "plugin_manifest",
+        "plugin_identity": {"canonical": "solve-lite@github-solve-lite", "aliases": ["solve-lite@personal", "solve-lite@solve-lite-local"]},
+        "plugin_root_env": ["PLUGIN_ROOT"],
+        "skill_dir": "skills/solve-lite"
+      }
+    },
+    {
+      "host_id": "hermes",
+      "display": "Hermes",
+      "adapter": "thin-skill",
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {"canonical": "solve-lite@hermes", "aliases": []},
+        "plugin_root_env": ["PLUGIN_ROOT"],
+        "skill_dir": "skills/solve-lite"
       }
     }
-  ]
+  ],
+  "acceptance": {
+    "scope": "isolated installed-copy before public release",
+    "required_hosts": ["workbuddy", "doubao", "codex", "hermes"],
+    "shared_runtime_copies": 1,
+    "host_heavy_copy_count": 0,
+    "network_calls_at_runtime": 0,
+    "torch_runtime": false,
+    "transformers_runtime": false
+  }
 }

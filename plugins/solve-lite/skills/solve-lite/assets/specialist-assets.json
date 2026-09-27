@@ -1,0 +1,43 @@
+{
+  "schema": "solve-lite.shared-encoder-runtime.asset.v1",
+  "status": "CURRENT",
+  "current_install_target": "v0.1.8",
+  "control_plane": "GitHub",
+  "asset_store": "Hugging Face",
+  "runtime": {
+    "formal_name": "Shared Small Encoder + Tiny Heads / Shared Encoder Runtime",
+    "backend": "CoreML-native",
+    "platform": "macOS-arm64",
+    "offline_after_install": true,
+    "network_calls_at_runtime": 0,
+    "torch_runtime": false,
+    "transformers_runtime": false,
+    "shared_encoder_copies": 1,
+    "routes": ["review", "topic", "nli", "financial"]
+  },
+  "asset": {
+    "id": "solve-lite-shared-encoder-runtime-v1",
+    "filename": "solve-lite-shared-encoder-runtime-v1.tar.gz",
+    "hf_repo": "petershifi123/solve-lite-models",
+    "immutable_revision": "9952d75a973e8ba4c70fddb38897480d5f1e8fd8",
+    "download_url": "https://huggingface.co/petershifi123/solve-lite-models/resolve/9952d75a973e8ba4c70fddb38897480d5f1e8fd8/solve-lite-shared-encoder-runtime-v1.tar.gz",
+    "download_bytes": 39017013,
+    "sha256": "a7359f8581bdae0c850def19bf776e540806b960c1751b0512a3002a7cf11f7e",
+    "installed_root": "shared-encoder-runtime",
+    "installed_bytes": 44817609,
+    "installed_file_count": 10,
+    "installed_tree_sha256": "857a7e0d10a1b1bf0eda59f1cad479ba6b57ca75ae9903ab098b658c1adea2a8"
+  },
+  "scorecard": {
+    "full_accuracy": 0.8228,
+    "aps": 85.8999,
+    "wrong_ge_90": 6,
+    "complete_install_bytes": 50932773,
+    "complete_install_decimal_mb": 50.932773,
+    "nli_compact_precision_debt": "ACCEPTED_NONBLOCKING"
+  },
+  "historical_reference": {
+    "full_runtime_accuracy": 0.9253,
+    "current_install_target": false
+  }
+}
