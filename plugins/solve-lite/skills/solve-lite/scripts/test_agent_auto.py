@@ -17,9 +17,9 @@ class AgentAutoTest(unittest.TestCase):
 
     def test_registry_schema_and_truth(self):
         self.assertEqual(self.modes, agent_auto.SUPPORTED_MODES)
-        self.assertEqual(len(self.hosts), 7)
+        self.assertEqual(len(self.hosts), 4)
         self.assertEqual([host.priority for host in self.hosts], sorted(host.priority for host in self.hosts))
-        self.assertEqual(len({host.priority for host in self.hosts}), 7)
+        self.assertEqual(len({host.priority for host in self.hosts}), 4)
         passed = {"doubao", "workbuddy"}
         prior = {"codex", "hermes"}
         self.assertTrue(all(
@@ -31,10 +31,6 @@ class AgentAutoTest(unittest.TestCase):
             for host in prior
         ))
         self.assertTrue(all(
-            self.by_id[host].cold_fork_status == "UNTESTED_PUBLIC_ABI_AVAILABLE"
-            for host in {"cline", "qwen", "cursor"}
-        ))
-        self.assertTrue(all(
             self.by_id[host].compatibility_status == "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI"
             for host in passed
         ))
@@ -42,15 +38,14 @@ class AgentAutoTest(unittest.TestCase):
             self.by_id[host].compatibility_status == "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE"
             for host in prior
         ))
-        self.assertEqual(self.by_id["cursor"].compatibility_status, "NOT_RUN")
 
     def test_deterministic_supported_mode_priority(self):
         selected = agent_auto.detect({
-            "host_id": "qwen-code",
+            "host_id": "workbuddy-ai",
             "environment": {"CODEX_HOME": "present"},
             "executables": ["hermes"],
         })
-        self.assertEqual(selected.host_id, "qwen")
+        self.assertEqual(selected.host_id, "workbuddy")
         self.assertEqual(agent_auto.detect({"executables": ["/opt/bin/codex"]}).host_id, "codex")
         self.assertEqual(agent_auto.detect({"filesystem_markers": [".workbuddy-ai"]}).host_id, "workbuddy")
 
