@@ -13,7 +13,7 @@ from solve_lite_abi import route_prompt as _route_prompt
 
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "assets" / "agent_registry.json"
-REGISTRY_SCHEMA = "solve-lite.agent-registry.v3"
+REGISTRY_SCHEMA = "solve-lite.agent-registry.v5"
 COLD_FORK_STATUS = "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI"
 COLD_FORK_STATUS_PRIOR = "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE"
 COLD_FORK_PENDING = "UNTESTED_PUBLIC_ABI_AVAILABLE"
