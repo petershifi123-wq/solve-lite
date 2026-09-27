@@ -1,6 +1,6 @@
 {
   "schema_version": "solve-lite.agent-registry.v5",
-  "current_install_target": "v0.1.9",
+  "current_install_target": "v0.1.10",
   "public_abi_entrypoint": "solve_lite_abi:route_prompt",
   "runtime_model": "ONE_SHARED_COREML_RUNTIME",
   "supported_modes_priority": [
