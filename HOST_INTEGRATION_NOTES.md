@@ -78,3 +78,26 @@
   不得把退化概率当作结论展示。
 - **注入策略**：路由判定为无信息（neutral / 无有界决策）时**默认不注入**，避免打扰；
   需要审计时开 verbose。
+
+## 8. Hook 绝不能阻塞宿主（P0 事故规则，2026-09-27 实测）
+
+真实事故：WorkBuddy 执行了 plugin 层 `hooks.json` 里写死 `${PLUGIN_ROOT}` 的命令；该宿主不展开
+该变量 → 命令变成 `/hooks/user_prompt_submit.py` → python3 报 Errno 2 → **宿主直接 block 了
+用户的 prompt**（用户当场无法使用）。
+
+硬规则：
+
+1. **hook 命令必须无条件 `exit 0`**：找不到脚本、缺依赖、超时，一律静默成功。绝不能让上游
+   把 hook 失败当成"拒绝本次用户输入"。推荐写法：
+
+   ```sh
+   sh -c 'D=${PLUGIN_ROOT:-$PWD}; F=$D/hooks/user_prompt_submit.py; \
+          [ -f "$F" ] || F=$PWD/hooks/user_prompt_submit.py; \
+          if [ -f "$F" ]; then exec /usr/bin/python3 "$F"; fi; exit 0'
+   ```
+
+2. **不把依赖变量展开的命令写进宿主配置**：不展开变量的宿主（WorkBuddy 实测）必须由 installer
+   写**绝对路径**（`tools/host_hooks.py` 已如此）；plugin 层 `hooks.json` 只保留上面的 fail-safe 形式。
+3. **注册后立刻自证**：`python3 tools/hook_selftest.py --host auto`；并人工做一次负向测试
+   （把路径故意改坏 → hook 仍返回 0 且宿主不 block）。
+4. **两条命令别同时"活着"**：宿主 settings 已有绝对路径注册时，plugin 层那条应 fail-safe 直通。
