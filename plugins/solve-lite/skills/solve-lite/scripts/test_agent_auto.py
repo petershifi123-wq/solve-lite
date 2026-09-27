@@ -54,6 +54,16 @@ class AgentAutoTest(unittest.TestCase):
         self.assertEqual(agent_auto.detect({"executables": ["/opt/bin/codex"]}).host_id, "codex")
         self.assertEqual(agent_auto.detect({"filesystem_markers": [".workbuddy-ai"]}).host_id, "workbuddy")
 
+    def test_registry_is_single_source_for_host_integration(self):
+        codex = self.by_id["codex"].integration
+        workbuddy = self.by_id["workbuddy"].integration
+        self.assertEqual(codex["plugin_identity"]["canonical"], "solve-lite@github-solve-lite")
+        self.assertIn("solve-lite@personal", codex["plugin_identity"]["aliases"])
+        self.assertEqual(
+            workbuddy["plugin_root_env"],
+            ["CODEBUDDY_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"],
+        )
+
     def test_unknown_and_ambiguous_fail_closed(self):
         with self.assertRaises(agent_auto.UnknownHostError):
             agent_auto.detect({"host_id": "unknown-host"})

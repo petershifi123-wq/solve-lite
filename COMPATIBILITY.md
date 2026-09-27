@@ -7,7 +7,8 @@ This snapshot reports only the capability proven by machine evidence. A fresh-in
 | Solve Lite public plugin | 0.1.7 | FRESH_INSTALL_ACCEPTANCE_PASS |
 | LITE runtime (bundled, 8 native modules) | LITE build lot | PASS_VERIFIED_BUNDLED_RUNTIME |
 | Full-precision core manifest | v2 (historical) | HISTORICAL_REFERENCE_ONLY |
-| DLC components (review, topic, nli) | 0.1.5 packages | INSTALL_VERIFIED_OPT_IN_ACTIVATION |
+| DLC components (review, topic, nli) | 0.1.7 packages | DEFAULT_INSTALL + CAPABILITY_ROUTED_LAZY_ACTIVATION |
+| Shared specialist runtime | pinned CPython 3.9 + hash-locked venv | REPO_LOCAL / NO_GLOBAL_PIP / LAZY_WORKER |
 | Financial specialist DLC | not published | NOT_PUBLIC |
 | Doubao | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI + UNAVAILABLE_NO_HOST_HOOK_API |
 | WorkBuddy | fresh isolated host shape | PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI + HOST_HOOK_REGISTRATION_PASS |
@@ -17,13 +18,13 @@ This snapshot reports only the capability proven by machine evidence. A fresh-in
 | Qwen | not rerun in this gate | PARTIAL_FROZEN |
 | Cursor | not run | NOT_RUN |
 | macOS | 27.0 arm64 | TESTED |
-| Python | 3.9.6 | TESTED |
+| Python | CPython 3.9 ABI, macOS arm64 | TESTED; INSTALLER-MANAGED FALLBACK |
 
-The two fresh isolated hosts each started from a clean copy of the public tree and passed: bundled-runtime healthcheck `PASS` with no asset root configured, one real offline native decision, clean `SPECIALIST_CAPABILITY_UNAVAILABLE` for a specialist case, verified installation of the three public DLC components, opt-in lazy activation left off, and byte-identical frozen kernel modules. Network attempts during runtime, credential reads, and Jev API calls were zero. Codex and Hermes were verified earlier under the owner-runtime scope and are not re-claimed here.
+The two fresh isolated hosts each started from a clean copy of the public tree and passed the recorded v0.1.7 scope: bundled-runtime healthcheck `PASS` with no asset root configured, one real offline native decision, verified installation of the three public DLC components, and byte-identical frozen kernel modules. The current P0 contract supersedes its old manual-activation policy: normal installation includes all three public DLCs, while the capability router activates only the required one lazily. Network attempts during runtime, credential reads, and Jev API calls remain zero. Codex and Hermes were verified earlier under the owner-runtime scope and are not re-claimed here.
 
 P1 host activation adds two machine-checkable facts on top of that scoped PASS:
 
-- WorkBuddy: the installer wrote a `UserPromptSubmit` hook into the host's own writable config, and the self-test replayed **that registered command** with a host-shaped payload. The hook fired, returned a non-empty `additionalContext` carrying `activation=UNCONDITIONAL_HOOK`, and produced one ledger record per prompt. `HOST_HOOK_REGISTRATION=PASS`, `HOST_HOOK_DISPATCH_REPLAY=PASS`.
+- WorkBuddy: the installer writes one authoritative plugin-manifest `UserPromptSubmit` hook, using the host-provided `CODEBUDDY_PLUGIN_ROOT` / `CLAUDE_PLUGIN_ROOT`, and removes only its own legacy settings-level duplicate. The self-test replays **that exact registered command** with a host-shaped bounded payload, proves a real NLI result, a percentage envelope and an audit-backed reward settlement, and verifies that missing plugin-root variables fail open. `HOST_HOOK_REGISTRATION=PASS`, `HOST_HOOK_DISPATCH_REPLAY=PASS` in isolated host-shaped testing; native desktop manual acceptance remains separately scoped.
 - Doubao Work: the app bundle contains no `UserPromptSubmit`, `hookSpecificOutput` or hook-config reader, so there is nothing to register. The installer instead wrote the skill plus a mandatory first-step banner into the host workspace, asserted that banner, and printed the copy-paste one-step command. `HOST_HOOK_API=NO_HOST_HOOK_API`; the off-host pre-prompt step is asserted in its place and reported as such, not as a host hook.
 - Neither fact claims the desktop UI process itself was driven by a human prompt: `NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN`. No installer step used sudo and no system directory was written.
 
@@ -42,8 +43,8 @@ NATIVE_DESKTOP_PROCESS_INTEGRATION=NOT_RUN
 FULL_UI_LIFECYCLE=NOT_CLAIMED
 ```
 
-Distribution truth: `PUBLIC_SELF_CONTAINED_DISTRIBUTION=TRUE` for base Lite (bundled LITE runtime, no asset root required). Specialist model assets are `OPTIONAL_DLC_COMPONENTS`: the three public packs come only from this repository's Release, the financial pair is `NOT_PUBLIC`, nothing is auto-downloaded, and a missing pack is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE` - never as a core failure and never with a fallback computation.
+Distribution truth: `PUBLIC_SELF_CONTAINED_DISTRIBUTION=TRUE` for base Lite (bundled LITE runtime, no asset root required). Normal public installation creates a repository-local pinned specialist environment and downloads the three public DLC packs only from this repository's Release; the financial pair is `NOT_PUBLIC`. No system/global Python package state is changed. DLCs are not preloaded, and a missing required runtime or pack is reported as `SPECIALIST_CAPABILITY_UNAVAILABLE` - never as a core failure and never with a fallback computation.
 
-Round-3 execution truth: with the opt-in backend active (`SOLVE_LITE_INT4_DLC=1`), `nli` and `topic` execute real specialist decisions on an isolated install; at most one DLC model is resident at a time (load/unload swap, `DLCBusy` while a forward is in flight), and with the switch off an installed component still answers `SPECIALIST_CAPABILITY_UNAVAILABLE` (reason `INT4_BACKEND_NOT_ACTIVATED`).
+Current execution truth: the capability router activates installed `nli`, `topic` or `review` components lazily; native Markov routes do not request a specialist. At most one DLC model is resident at a time (load/unload swap, `DLCBusy` while a forward is in flight). Missing packs fail closed.
 
-Known limitation (measured): the `review` component's route is admitted by the case-schema check but its sealed adapter then refuses with `adapter support dimension does not match public schema`. That route is refused cleanly (no fallback, no fabricated answer) pending a VV ruling on the intended review schema.
+Clean isolated evidence now includes real `review`, `topic` and `nli` decisions through the repository-local specialist worker. Host-native desktop acceptance remains separately scoped as stated above.

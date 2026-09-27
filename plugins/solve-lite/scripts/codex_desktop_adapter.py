@@ -47,12 +47,11 @@ import time
 from pathlib import Path
 from typing import Any
 
-PLUGIN_ID = "solve-lite@personal"
 PLUGIN_NAME = "solve-lite"
-MARKETPLACE = "personal"
 HOOK_SOURCE = "hooks/hooks.json"
 ROOT_MANIFEST_SOURCE = "plugin.json"
 HOOK_EVENT = "user_prompt_submit"
+REGISTRY_REL = Path("skills/solve-lite/assets/agent_registry.json")
 PROBE_PROMPT = "热狗是否属于三明治？"
 DEFAULT_CLI_CANDIDATES = (
     "/Applications/ChatGPT.app/Contents/Resources/codex",
@@ -63,6 +62,34 @@ DEFAULT_CLI_CANDIDATES = (
 
 def plugin_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+def codex_integration() -> dict[str, Any]:
+    """Return the single public-registry entry that owns Codex integration."""
+    payload = json.loads((plugin_root() / REGISTRY_REL).read_text(encoding="utf-8"))
+    host = next(entry for entry in payload.get("hosts", []) if entry.get("host_id") == "codex")
+    integration = host.get("integration") or {}
+    identity = integration.get("plugin_identity") or {}
+    if not identity.get("canonical"):
+        raise RuntimeError("codex plugin_identity.canonical missing from agent registry")
+    return integration
+
+
+def plugin_ids() -> tuple[str, ...]:
+    identity = codex_integration()["plugin_identity"]
+    ordered = [identity["canonical"], *(identity.get("aliases") or [])]
+    return tuple(dict.fromkeys(str(value) for value in ordered if value))
+
+
+def canonical_plugin_id() -> str:
+    return plugin_ids()[0]
+
+
+def _marketplace(plugin_id: str) -> str:
+    name, separator, marketplace = plugin_id.partition("@")
+    if name != PLUGIN_NAME or not separator or not marketplace:
+        raise ValueError(f"invalid Solve Lite plugin id: {plugin_id}")
+    return marketplace
 
 
 def codex_home() -> Path:
@@ -112,13 +139,13 @@ def manifest_digest(entries: dict[str, str]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def cached_plugin_dir() -> Path | None:
+def cached_plugin_dir(plugin_id: str | None = None) -> Path | None:
     version_path = plugin_root() / ".codex-plugin" / "plugin.json"
     try:
         version = json.loads(version_path.read_text(encoding="utf-8"))["version"]
     except Exception:
         return None
-    path = codex_home() / "plugins" / "cache" / MARKETPLACE / PLUGIN_NAME / str(version)
+    path = codex_home() / "plugins" / "cache" / _marketplace(plugin_id or canonical_plugin_id()) / PLUGIN_NAME / str(version)
     return path if path.is_dir() else None
 
 
@@ -213,12 +240,13 @@ def _hook_entries(cli: str, cwd: Path) -> tuple[list[dict[str, Any]], list[str]]
         server.close()
     entries: list[dict[str, Any]] = []
     warnings: list[str] = []
+    accepted_ids = set(plugin_ids())
     for bucket in listing.get("data", []):
         warnings.extend(bucket.get("warnings") or [])
         for error in bucket.get("errors") or []:
             warnings.append(f"{error.get('path')}: {error.get('message')}")
         for hook in bucket.get("hooks", []):
-            if str(hook.get("pluginId") or "") == PLUGIN_ID:
+            if str(hook.get("pluginId") or "") in accepted_ids:
                 entries.append(hook)
     return entries, warnings
 
@@ -233,6 +261,25 @@ def _config_read(cli: str) -> dict[str, Any]:
     return result.get("config") or {}
 
 
+def _select_plugin_state(marketplaces: list[dict[str, Any]]) -> dict[str, Any]:
+    """Resolve canonical and legacy IDs without inventing a second identity."""
+    matches: dict[str, dict[str, Any]] = {}
+    accepted = set(plugin_ids())
+    for marketplace in marketplaces:
+        for plugin in marketplace.get("plugins", []):
+            plugin_id = str(plugin.get("id") or "")
+            if plugin_id in accepted:
+                matches[plugin_id] = plugin
+    for plugin_id in plugin_ids():
+        plugin = matches.get(plugin_id)
+        if plugin and plugin.get("installed"):
+            return plugin
+    for plugin_id in plugin_ids():
+        if plugin_id in matches:
+            return matches[plugin_id]
+    return {}
+
+
 def _plugin_state(cli: str) -> dict[str, Any]:
     server = AppServer(cli)
     try:
@@ -240,11 +287,7 @@ def _plugin_state(cli: str) -> dict[str, Any]:
         result = server.call("plugin/list", {}, seq=1)
     finally:
         server.close()
-    for marketplace in result.get("marketplaces", []):
-        for plugin in marketplace.get("plugins", []):
-            if plugin.get("id") == PLUGIN_ID:
-                return plugin
-    return {}
+    return _select_plugin_state(result.get("marketplaces", []))
 
 def default_workspace() -> Path:
     configured = os.environ.get("SOLVE_LITE_WORKSPACE")
@@ -331,10 +374,10 @@ def check_package() -> dict[str, Any]:
     return {**out, "status": "PASS"}
 
 
-def check_identity() -> dict[str, Any]:
+def check_identity(plugin_id: str | None = None) -> dict[str, Any]:
     """Source plugin directory vs the materialized plugin cache must be byte identical."""
     source = tree_manifest(plugin_root())
-    cache_dir = cached_plugin_dir()
+    cache_dir = cached_plugin_dir(plugin_id)
     if cache_dir is None:
         return {"status": "FAIL", "detail": "installed cache directory not found"}
     cache = tree_manifest(cache_dir)
@@ -773,7 +816,14 @@ def doctor(
         "enabled": bool(plugin.get("enabled")),
     }
 
-    checks["SOURCE_CACHE_IDENTITY"] = check_identity() if plugin.get("installed") else {"status": "SKIPPED"}
+    active_plugin_id = str(plugin.get("id") or canonical_plugin_id())
+    checks["PLUGIN_IDENTITY"] = {
+        "status": "PASS" if active_plugin_id in plugin_ids() else "FAIL",
+        "active": active_plugin_id,
+        "canonical": canonical_plugin_id(),
+        "aliases": list(plugin_ids()[1:]),
+    }
+    checks["SOURCE_CACHE_IDENTITY"] = check_identity(active_plugin_id) if plugin.get("installed") else {"status": "SKIPPED"}
 
     config = _config_read(cli)
     hooks, warnings = _hook_entries(cli, cwd)
@@ -829,7 +879,7 @@ def doctor(
     checks["REAL_INVOKE"] = real_invocation_evidence(default_workspace(), ledger_baseline)
     checks["ORDINARY_SESSION"] = check_ordinary_session(default_workspace(), ledger_baseline)
 
-    hard = ["ADAPTER_SOURCE", "PLUGIN_INSTALLED", "PLUGIN_ENABLED", "SOURCE_CACHE_IDENTITY",
+    hard = ["ADAPTER_SOURCE", "PLUGIN_INSTALLED", "PLUGIN_ENABLED", "PLUGIN_IDENTITY", "SOURCE_CACHE_IDENTITY",
             "HOST_DISCOVERY", "ROUTER_REGISTERED", "PROJECT_TRUST"]
     failed = [name for name in hard if checks[name]["status"] != "PASS"]
     report["checks"] = checks
@@ -891,9 +941,13 @@ def _snapshot(paths: list[Path], destination: Path) -> list[dict[str, Any]]:
 def install(dry_run: bool, receipt: Path | None) -> tuple[int, dict[str, Any]]:
     cli = codex_cli()
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    existing = _plugin_state(cli)
+    install_id = str(existing.get("id") or canonical_plugin_id())
     report: dict[str, Any] = {
         "schema_version": "solve-lite.codex-desktop-install.v1",
-        "plugin_id": PLUGIN_ID,
+        "plugin_id": install_id,
+        "canonical_plugin_id": canonical_plugin_id(),
+        "recognized_plugin_ids": list(plugin_ids()),
         "codex_cli": cli,
         "codex_cli_version": (run([cli, "--version"], timeout=30)[1] or "").strip(),
         "dry_run": dry_run,
@@ -911,7 +965,7 @@ def install(dry_run: bool, receipt: Path | None) -> tuple[int, dict[str, Any]]:
     report["backup_dir"] = str(backup)
 
     if not dry_run:
-        rc, output = run([cli, "plugin", "add", PLUGIN_ID], timeout=300)
+        rc, output = run([cli, "plugin", "add", install_id], timeout=300)
         report["plugin_add"] = {"returncode": rc, "tail": output.strip().splitlines()[-6:]}
         if rc != 0:
             report["result"] = "FAIL"
@@ -925,7 +979,7 @@ def install(dry_run: bool, receipt: Path | None) -> tuple[int, dict[str, Any]]:
                     "config/batchWrite",
                     {
                         "edits": [{
-                            "keyPath": f'plugins."{PLUGIN_ID}".enabled',
+                            "keyPath": f'plugins."{install_id}".enabled',
                             "mergeStrategy": "upsert",
                             "value": True,
                         }],
@@ -939,7 +993,10 @@ def install(dry_run: bool, receipt: Path | None) -> tuple[int, dict[str, Any]]:
                 server.close()
             report["enabled_via"] = "config/batchWrite"
 
-    identity = check_identity()
+    state = _plugin_state(cli)
+    active_plugin_id = str(state.get("id") or install_id)
+    report["active_plugin_id"] = active_plugin_id
+    identity = check_identity(active_plugin_id)
     report["identity"] = identity
     hooks, warnings = _hook_entries(cli, Path(os.path.expanduser("~")))
     report["discovery"] = {
@@ -970,9 +1027,12 @@ def install(dry_run: bool, receipt: Path | None) -> tuple[int, dict[str, Any]]:
 def uninstall(confirmed: bool, purge_cache: bool) -> tuple[int, dict[str, Any]]:
     cli = codex_cli()
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    existing = _plugin_state(cli)
+    remove_id = str(existing.get("id") or canonical_plugin_id())
     report: dict[str, Any] = {
         "schema_version": "solve-lite.codex-desktop-uninstall.v1",
-        "plugin_id": PLUGIN_ID,
+        "plugin_id": remove_id,
+        "canonical_plugin_id": canonical_plugin_id(),
         "codex_cli": cli,
         "uninstalled_at": stamp,
         "confirmed": confirmed,
@@ -984,7 +1044,7 @@ def uninstall(confirmed: bool, purge_cache: bool) -> tuple[int, dict[str, Any]]:
 
     backup = _backup_dir(stamp)
     targets = [codex_home() / "config.toml", marketplace_path()]
-    cache_dir = cached_plugin_dir()
+    cache_dir = cached_plugin_dir(remove_id)
     if cache_dir is not None and purge_cache:
         targets.append(cache_dir)
     report["backup"] = _snapshot(targets, backup)
@@ -993,7 +1053,7 @@ def uninstall(confirmed: bool, purge_cache: bool) -> tuple[int, dict[str, Any]]:
     marketplace_before = (
         marketplace_path().read_text(encoding="utf-8") if marketplace_path().is_file() else ""
     )
-    rc, output = run([cli, "plugin", "remove", PLUGIN_ID], timeout=300)
+    rc, output = run([cli, "plugin", "remove", remove_id], timeout=300)
     report["plugin_remove"] = {"returncode": rc, "tail": output.strip().splitlines()[-6:]}
 
     if marketplace_path().is_file() and PLUGIN_NAME not in marketplace_path().read_text(encoding="utf-8"):
@@ -1014,7 +1074,7 @@ def uninstall(confirmed: bool, purge_cache: bool) -> tuple[int, dict[str, Any]]:
         "restore": (
             f"cp -a '{backup}/config.toml' '{codex_home()}/config.toml' && "
             f"cp -a '{backup}/marketplace.json' '{marketplace_path()}' && "
-            f"'{cli}' plugin add {PLUGIN_ID}"
+            f"'{cli}' plugin add {remove_id}"
         ),
     }
     return (0 if clean else 1), report

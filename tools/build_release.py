@@ -15,9 +15,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT.parent / "dist"
-PREFIX = ROOT.name
+PREFIX = "solve-lite"
 CHECKSUMS = "SHA256SUMS.txt"
-METADATA = {"MANIFEST.json", CHECKSUMS, "evidence/PACKAGE_AUDIT.json"}
+METADATA = {"MANIFEST.json", CHECKSUMS}
 
 
 def sha256(path: Path) -> str:
@@ -51,9 +51,9 @@ def metadata() -> None:
     content_rows = rows(content)
     manifest = {
         "schema_version": "solve-lite.local-package-manifest.v1",
-        "version": "0.1.5",
-        "status": "PACKAGE_CLOSEOUT_MACHINE_PASS",
-        "product_acceptance": "GATEX_CLOSED_FROZEN",
+        "version": "0.1.7",
+        "status": "PATCH_READY_FOR_REAL_HOST_TEST",
+        "product_acceptance": "WAITING_OWNER_REAL_HOST_TEST",
         "platform": "macOS-arm64-python3.9",
         "file_count_excluding_release_metadata": len(content),
         "content_tree_sha256": hashlib.sha256(content_rows.encode()).hexdigest(),
@@ -86,10 +86,12 @@ def metadata() -> None:
         "core_diff": 0,
         "ordinary_session": "OUT_OF_SCOPE_CLEAN_HOST_PUBLIC_ABI",
         "product_pass": False,
-        "github_hold": "NONE_VV_APPROVED_PUBLIC_RELEASE",
+        "github_hold": "HOLD_WAITING_OWNER_REAL_HOST_TEST",
         "manifest_sha256": sha256(ROOT / "MANIFEST.json"),
     }
-    audit_path = ROOT / "evidence" / "PACKAGE_AUDIT.json"
+    DIST.mkdir(mode=0o700, exist_ok=True)
+    audit_path = DIST / "PACKAGE_AUDIT.json"
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
     audit_path.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (ROOT / CHECKSUMS).write_text(rows(files(True)), encoding="utf-8")
 

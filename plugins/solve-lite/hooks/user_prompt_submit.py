@@ -55,7 +55,9 @@ def _workspace() -> Path:
 
 
 def _load_abi():
-    scripts = str(_plugin_root() / "skills" / "solve-lite" / "scripts")
+    root = _plugin_root()
+    nested = root / "skills" / "solve-lite" / "scripts"
+    scripts = str(nested if nested.is_dir() else root / "scripts")
     if scripts not in sys.path:
         sys.path.insert(0, scripts)
     from solve_lite_abi import capabilities, healthcheck, route_prompt
@@ -84,9 +86,8 @@ def _note(reason: str, payload: dict[str, Any]) -> None:
 def _passthrough(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Ordinary Lite path: no local decision, so no footer is fabricated.
 
-    The specialist pack is optional and a Lite-only install must behave like a
-    quiet passthrough rather than print a Choice/Token/reward contract for a
-    decision that was never computed.
+    A prompt that does not need a specialist must stay on the Lite fast path and
+    must not print a Choice/Token contract for a decision that was never computed.
     """
     _note(reason, payload)
     # P0 FIX (VV/Peter): never stay silent on the ordinary path. A Lite-only install
@@ -95,10 +96,10 @@ def _passthrough(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
     # no decision contract is fabricated (result was never computed).
     _prompt = str((payload or {}).get("prompt") or "")
     if _locale(_prompt) == "zh-CN":
-        _status = ("[Solve Lite 本地已激活（Base Lite，无需任何扩展包）。本提示未命中可执行的有界决策，"
+        _status = ("[Solve Lite 本地已激活（Base Lite 快速路径）。本提示未命中可执行的有界决策，"
                    "因此没有调用专家扩展；请照常回答用户，不要解释本契约。]")
     else:
-        _status = ("[Solve Lite is active locally (base Lite, no add-on required). This prompt did not map "
+        _status = ("[Solve Lite is active locally (Base Lite fast path). This prompt did not map "
                    "to an executable bounded decision, so no specialist add-on was invoked; answer the user "
                    "normally and do not explain this contract.]")
     # Owner ruling: the local reward pool stays visible even on the degraded path
@@ -243,16 +244,10 @@ def _needs_specialist(prompt: str) -> bool:
 
 def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     config = _config()
-    healthcheck, route_prompt, capabilities = _load_abi()
+    healthcheck, route_prompt, _capabilities = _load_abi()
     health = healthcheck(config["asset_root"])
     if health.get("status") != "PASS":
         return _passthrough(str(health.get("error") or "CORE_ASSET_UNAVAILABLE"), payload)
-    report = capabilities(config["asset_root"])
-    specialist = (report.get("core") or {}).get("specialist") or {}
-    if specialist.get("status") != "AVAILABLE":
-        # capability routing decides: with no specialist pack there is no answer
-        # to inject, so stay silent instead of printing a contract we cannot fill
-        return _passthrough(str(specialist.get("reason") or "SPECIALIST_CAPABILITY_UNAVAILABLE"), payload)
 
     prompt = str(payload.get("prompt") or "")
     if not _needs_specialist(prompt):

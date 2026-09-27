@@ -20,7 +20,7 @@ Every host — including hosts that expose no hook API — MUST satisfy this bef
 1. **Run one local Lite pass on every user prompt first.** The host model never decides
    whether Solve Lite applies.
    * host with a hook API -> the `UserPromptSubmit` hook does it automatically
-     (activation token: `UNCONDITIONAL_HOOK`).
+     (activation model: `CAPABILITY_ROUTED_LAZY`).
    * host without a hook API -> make it the fixed first step outside the model, or run the
      one-step command: `python3 "<plugin>/hooks/user_prompt_submit.py" --clipboard`.
    * verify any host: `python3 tools/hook_selftest.py --host auto`.
@@ -32,9 +32,9 @@ Every host — including hosts that expose no hook API — MUST satisfy this bef
    * The **Token line** is shown only when the trace really packed context
      (`status == MEASURED_PACK`); otherwise that single line is omitted.
 
-3. **Specialist capability is optional DLC.** Install it and it is available, but it is
-   loaded only when a specialist route actually applies: one DLC at a time, no preload at
-   startup, released when idle.
+3. **Public specialist DLC is installed by default and loaded by capability.** Review,
+   Topic and NLI stay separate from Core, are not preloaded, and only the DLC selected by
+   the existing capability router may be resident: one at a time, released when idle.
 
 ## What a fresh clone gives you (base Lite)
 
@@ -47,10 +47,10 @@ A plain clone is complete and usable immediately:
 | | Base Lite | + all public DLC components |
 |---|---|---|
 | Runtime | `plugins/solve-lite/skills/solve-lite/runtime` (~4.6 MB, 8 native modules) | same |
-| Clone on disk | ~5.7 MB | ~5.7 MB + ~181.9 MB DLC assets |
+| Clone on disk | ~5.7 MB | ~5.7 MB + repo-local specialist venv + ~181.9 MB DLC assets |
 | Extra download | none | 149.84 MB (review 29.17 + topic 44.32 + nli 76.35) |
 | Network at runtime | never | never |
-| PyTorch needed | no | only for DLC execution (`SOLVE_LITE_INT4_DLC=1`) |
+| PyTorch needed | no | installed only inside the repo-local venv; imported only for a DLC route |
 | Native routes | `markov` | `markov` |
 | Specialist routes | not available | available per installed component |
 
@@ -65,10 +65,7 @@ git clone <this repository> && cd solve-lite
 # 1. install: base Lite + the published specialist DLC components (default)
 python3 tools/installer.py
 
-# 2. base only, no DLC components
-python3 tools/installer.py --skip-dlc
-
-# 3. read-only status / capability report
+# 2. read-only status / capability report
 python3 tools/installer.py --check
 python3 tools/doctor.py --json
 ```
@@ -83,13 +80,14 @@ python3 tools/startup_check.py --json
 
 `STARTUP_CHECK=PASS` means this install can be used right now: the bundled LITE
 core is verified, `healthcheck` passes with no asset root, and a native decision
-really runs. A DLC component that cannot be downloaded is reported as
-`DLC_NOT_INSTALLED` plus `No specialist add-on installed; base Lite is
-unaffected` — the installer still succeeds and Lite still starts.
+really runs. Normal installation also requires the pinned repository-local
+specialist venv and all three public DLCs. A missing dependency, hash mismatch,
+or failed DLC download makes the normal installer fail closed; `--skip-dlc` is
+an engineering-only Base Lite fixture switch.
 
 There is **no asset root to configure** and no `SOLVE_LITE_CORE_ASSET_ROOT`
 requirement. `tools/installer.py --install-dlc` downloads only from this
-repository's GitHub Release (`v0.1.5`), verifies every package against the
+repository's GitHub Release (`v0.1.7`), verifies every package against the
 pinned release digests and the Release `SHA256SUMS`, and installs them under
 `…/runtime/addons/solve-lite-int4-dlc/`. The financial specialist component is
 **not published** (licence chain unresolved) and cannot be installed.
@@ -100,19 +98,20 @@ skips the network stage entirely; `SOLVE_LITE_DLC_DOWNLOAD_ATTEMPTS` (default 3)
 `SOLVE_LITE_DLC_BACKOFF_SECONDS` (default 2) and `SOLVE_LITE_DLC_DOWNLOAD_TIMEOUT`
 (default 120) tune the retry/backoff/Range-resume downloader.
 
-## Activation is a separate, opt-in step
+No user-managed Torch/Transformers setup is required. The installer creates
+`runtime/specialist-env`, installs the exact hash-locked dependency set there,
+and never uses system/global `pip`. If compatible CPython 3.9 is absent, it
+downloads the pinned macOS arm64 fallback in `runtime/specialist-python` and
+verifies the archive SHA-256 before extraction. Lite startup checks only the
+signed local receipt and does not start the specialist worker.
 
-Installing a component never runs it.  To have specialist routes actually served:
+## Capability-routed lazy activation
 
-```bash
-SOLVE_LITE_INT4_DLC=1 python3 tools/doctor.py --json
-```
-
-With the switch on, the loader assembles the asset-root view from the installed
-components, activates the bundled INT4 backend (lazy, one resident model, DLCBusy)
-and specialist routes return real decisions.  With the switch off, a route whose
-component is installed still answers `SPECIALIST_CAPABILITY_UNAVAILABLE` with reason
-`INT4_BACKEND_NOT_ACTIVATED` - never a hidden fallback and never a fabricated answer.
+Installing a component never preloads it. The existing case-schema capability router
+selects the required route and activates that installed DLC automatically and lazily.
+Native Markov requests do not activate a specialist. Arbitrary bounded natural-language
+questions use NLI; do not invent a prompt-to-Markov schema. At most one model is resident,
+and a concurrent swap returns `DLCBusy` rather than loading a second model.
 
 ## Capability truth
 
@@ -124,19 +123,12 @@ component is installed still answers `SPECIALIST_CAPABILITY_UNAVAILABLE` with re
   that does not match the compiled modules.
 * There is never a fallback computation and never a silently invented answer.
 
-## DLC activation is opt-in
+## DLC residency
 
-Installing a component does **not** activate it. Nothing is preloaded, and at
-most one specialist model is resident at a time:
-
-```bash
-export SOLVE_LITE_INT4_DLC=1                                   # opt in to DLC execution
-export SOLVE_LITE_INT4_DLC_ROOT=<repo>/plugins/solve-lite/skills/solve-lite/runtime/addons/solve-lite-int4-dlc/asset-root
-export SOLVE_LITE_INT4_DLC_IDLE_SECONDS=600                    # idle unload
-```
-
-While a component is loading, a second request gets `DLCBusy` instead of a
-second resident model.
+Nothing is preloaded. At most one specialist model is resident at a time; while
+a component is loading, a second request gets `DLCBusy` instead of a second
+resident model. `SOLVE_LITE_INT4_DLC_ROOT` remains an engineering override, not
+a public-install step.
 
 ## Host integration
 

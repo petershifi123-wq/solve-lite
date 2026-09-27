@@ -7,7 +7,7 @@ for them:
 
   install      download from the public release, verify, materialise, register
   capability   per-capability status (never a claim of a computation we cannot run)
-  activation   opt-in only, lazy, at most one resident DLC (DLCBusy), no preload
+  activation   automatic by admitted capability, lazy, one resident DLC, no preload
 
 Rules this module keeps:
 
@@ -16,7 +16,8 @@ Rules this module keeps:
 * runtime, healthcheck and capability paths never download and never import torch;
 * a missing or incomplete DLC is reported as SPECIALIST_CAPABILITY_UNAVAILABLE -
   never as CORE_ASSET_UNAVAILABLE and never as a fabricated answer;
-* installing a DLC never activates it.
+* installing a DLC never preloads it; the first admitted specialist route activates
+  the backend and loads only its required model.
 """
 
 from __future__ import annotations
@@ -25,7 +26,6 @@ import hashlib
 import json
 import os
 import shutil
-import sys
 import time
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -40,7 +40,7 @@ REGISTRY_FILENAME = "dlc-registry.json"
 EVENTS_FILENAME = "dlc-events.jsonl"
 DESCRIPTOR_FILENAME = "dlc.json"
 
-RELEASE_TAG = "v0.1.5"
+RELEASE_TAG = "v0.1.7"
 RELEASE_BASE_URL = f"https://github.com/petershifi123-wq/solve-lite/releases/download/{RELEASE_TAG}"
 
 STATUS_INSTALLED = "DLC_INSTALLED"
@@ -181,20 +181,14 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _module_present(name: str) -> bool:
-    """Filesystem-only presence test; never enters the import machinery."""
-    for entry in list(sys.path):
-        if not entry:
-            continue
-        base = Path(entry)
-        try:
-            if (base / f"{name}.py").is_file() or (base / name / "__init__.py").is_file():
-                return True
-            if any(base.glob(f"{name}-*.dist-info")) or any(base.glob(f"{name}-*.egg-info")):
-                return True
-        except OSError:
-            continue
-    return False
+def _specialist_runtime_status(runtime_root: str | Path) -> dict[str, Any]:
+    """Probe only the repo-local venv; global packages never count as PASS."""
+    try:
+        import specialist_runtime
+
+        return specialist_runtime.healthcheck(runtime_root, deep=False)
+    except Exception as exc:  # noqa: BLE001 - capability reporting stays structured
+        return {"status": "FAIL", "reason": f"RUNTIME_PROBE_FAILED:{type(exc).__name__}"}
 
 
 # --------------------------------------------------------------------------- registry
@@ -724,7 +718,7 @@ def assemble_asset_root(runtime_root: str | Path, *, force: bool = False) -> dic
 
 
 def summarise(results: list[dict[str, Any]]) -> dict[str, Any]:
-    """Aggregate unit results; a failed DLC never fails the install."""
+    """Aggregate unit results; the caller decides whether partial is acceptable."""
     installed = [i for i in results if i["status"] == STATUS_INSTALLED]
     deferred = [i for i in results if i["status"] != STATUS_INSTALLED]
     stop = [i for i in results if i.get("status") == "DLC_VERIFY_FAILED"]
@@ -800,7 +794,8 @@ def _unit_state(unit_spec: Mapping[str, Any], runtime_root: str | Path) -> dict[
 def capability_view(runtime_root: str | Path) -> dict[str, Any]:
     """Per-capability DLC state.  No import, no network, no model load."""
     states = [_unit_state(spec, runtime_root) for spec in DLC_UNITS]
-    missing_modules = [name for name in PYTHON_DEPENDENCIES if not _module_present(name)]
+    specialist_runtime = _specialist_runtime_status(runtime_root)
+    missing_modules = [] if specialist_runtime.get("status") == "PASS" else list(PYTHON_DEPENDENCIES)
     installed = [item for item in states if item["status"] == STATUS_INSTALLED]
     public_installed = [item for item in installed if item["public"]]
     backend_present = (Path(runtime_root).expanduser().resolve() / "dlc_runtime" / "int4_dlc").is_dir()
@@ -813,10 +808,10 @@ def capability_view(runtime_root: str | Path) -> dict[str, Any]:
         reason = "DLC_EXECUTION_BACKEND_ABSENT"
     elif missing_modules:
         execution = "SPECIALIST_CAPABILITY_UNAVAILABLE"
-        reason = "PYTHON_DEPENDENCIES_MISSING"
+        reason = "REPO_LOCAL_SPECIALIST_RUNTIME_NOT_READY"
     elif not activation_requested:
-        execution = "SPECIALIST_CAPABILITY_UNAVAILABLE"
-        reason = "DLC_INSTALLED_NOT_ACTIVATED"
+        execution = "SPECIALIST_CAPABILITY_READY_LAZY"
+        reason = "DLC_INSTALLED_READY_FOR_LAZY_ACTIVATION"
     else:
         execution = "SPECIALIST_CAPABILITY_OPT_IN_ACTIVE"
         reason = "DLC_ACTIVATED"
@@ -832,12 +827,15 @@ def capability_view(runtime_root: str | Path) -> dict[str, Any]:
         "not_public_units": [item["unit_id"] for item in states if item["status"] == STATUS_NOT_PUBLIC],
         "missing_python_modules": missing_modules,
         "required_python_modules": list(PYTHON_DEPENDENCIES),
+        "specialist_runtime": specialist_runtime,
         "execution_backend_present": backend_present,
         "specialist_execution_status": execution,
         "specialist_execution_reason": reason,
-        "activation_state": "ACTIVATED" if activation_requested else "NOT_ACTIVATED",
+        "activation_state": (
+            "ACTIVATED" if activation_requested else "READY_LAZY" if public_installed else "NOT_ACTIVATED"
+        ),
         "activation_env": ACTIVATION_ENV,
-        "installed_means_called": not activation_requested,
+        "installed_means_called": False,
         "resident_model_limit": MAX_RESIDENT_DLC,
         "activation_policy": activation_contract(enabled=activation_requested),
         "preloaded": PRELOAD_AT_STARTUP,
@@ -865,10 +863,11 @@ def activation_contract(*, enabled: bool | None = None) -> dict[str, Any]:
     if enabled is None:
         enabled = str(os.environ.get(ACTIVATION_ENV, "")).strip().lower() in {"1", "true", "yes", "on"}
     return {
-        "opt_in_env": ACTIVATION_ENV,
+        "legacy_override_env": ACTIVATION_ENV,
         "root_env": ACTIVATION_ROOT_ENV,
         "idle_env": ACTIVATION_IDLE_ENV,
         "enabled": bool(enabled),
+        "auto_lazy_by_capability": True,
         "installed_means_called": False,
         "preload_at_startup": PRELOAD_AT_STARTUP,
         "max_resident_dlc": MAX_RESIDENT_DLC,
@@ -941,14 +940,19 @@ def default_runtime_root() -> Path:
 def base_install_bytes(repo_root: str | Path, *, runtime_root: str | Path | None = None) -> int:
     """Size of a base Lite install: the clone itself, DLC assets excluded."""
     root = Path(repo_root).resolve()
-    excluded = addon_root(runtime_root or default_runtime_root())
+    runtime = Path(runtime_root or default_runtime_root()).resolve()
+    excluded_roots = (
+        addon_root(runtime),
+        runtime / "specialist-env",
+        runtime / "specialist-python",
+    )
     total = 0
     for path in root.rglob("*"):
         if not path.is_file():
             continue
         if "__pycache__" in path.parts or path.suffix == ".pyc":
             continue
-        if excluded == path or excluded in path.parents:
+        if any(excluded == path or excluded in path.parents for excluded in excluded_roots):
             continue
         total += path.stat().st_size
     return total

@@ -13,9 +13,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "solve-lite"
 
-# The publish harness describes the *plain* public environment.  A developer's
-# ambient DLC opt-in would make the fresh-tree view read ACTIVATED and fail
-# `dlc_not_preloaded` on a clean tree, so pin it off here.
+# The publish harness describes the *plain* public source tree before the normal
+# installer adds DLC packages. An ambient legacy override must not change that
+# source-only baseline, so remove it here.
 for _ambient in ("SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
     os.environ.pop(_ambient, None)
 SCRIPTS = PLUGIN / "skills" / "solve-lite" / "scripts"
@@ -90,7 +90,7 @@ def main() -> int:
             dlc_view.get("specialist_execution_status") == "SPECIALIST_CAPABILITY_UNAVAILABLE"
             and "CORE_ASSET_UNAVAILABLE" not in json.dumps(dlc_view)
         ),
-        "dlc_not_preloaded": dlc_view.get("activation_state") == "NOT_ACTIVATED" and dlc_view.get("installed_means_called") is True,
+        "dlc_not_preloaded": dlc_view.get("activation_state") == "NOT_ACTIVATED" and dlc_view.get("installed_means_called") is False,
         "financial_dlc_not_public": dlc_view.get("not_public_units") == ["financial-pair-int4-g64-ENGINEERING-ONLY"],
         "no_network_in_runtime": health.get("network_used") is False and health.get("torch_imported") is False,
         "no_asset_root_missing_error": (
@@ -103,8 +103,10 @@ def main() -> int:
     suites = [
         run_test(SCRIPTS / "test_solve_lite_abi.py"),
         run_test(SCRIPTS / "test_solve_lite_dlc.py"),
+        run_test(SCRIPTS / "test_specialist_runtime.py"),
         run_test(SCRIPTS / "test_agent_auto.py"),
         run_test(PLUGIN / "scripts" / "test_codex_desktop_adapter.py"),
+        run_test(ROOT / "tests" / "test_host_hooks.py"),
         run_test(ROOT / "tests" / "test_package.py"),
         run_test(ROOT / "tools" / "startup_check.py"),
     ]
