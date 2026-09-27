@@ -1,9 +1,9 @@
 ---
 name: solve-lite
-description: Run Solve Lite v0.1.8 local decisions through one shared CoreML-native runtime.
+description: Run Solve Lite v0.1.9 local decisions through one shared CoreML-native runtime.
 ---
 
-# Solve Lite v0.1.8
+# Solve Lite v0.1.9
 
 `SOLVE_LITE_MANDATORY_FIRST_STEP`
 
@@ -11,7 +11,7 @@ Use `scripts/solve_lite_abi.py` as the public entry point. The installed adapter
 
 ## Current contract
 
-- Current install target: `v0.1.8`.
+- Current install target: `v0.1.9`.
 - Compact Runtime: 82.28% accuracy, APS 85.8999, 6 wrong answers at confidence ≥0.90.
 - Complete install: 50.932773 MB.
 - Backend: OS CoreML plus the shipped arm64 helper.
