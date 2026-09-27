@@ -1,6 +1,6 @@
 {
   "name": "solve-lite",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Local-first bounded decision routing, calibrated percentages, token truth, and auditable rewards for ordinary Codex Desktop sessions. Fresh installs run on the bundled LITE runtime with no asset root; specialist capabilities install as optional DLC components.",
   "author": {
     "name": "Peter"
