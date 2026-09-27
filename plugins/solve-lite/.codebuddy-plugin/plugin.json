@@ -1,7 +1,7 @@
 {
   "name": "solve-lite",
-  "description": "Deterministic local decision layer for ordinary hosts: a UserPromptSubmit hook runs the bundled LITE runtime on every prompt (milliseconds, no torch, no DLC) and injects the structured result, so activation never depends on the host model deciding to invoke anything.",
-  "version": "0.1.8",
+  "description": "Deterministic local decision layer for WorkBuddy: a thin UserPromptSubmit adapter uses the one shared CoreML-native runtime and injects the structured result without host-model opt-in.",
+  "version": "0.1.9",
   "category": "productivity",
   "keywords": [
     "local-inference",
