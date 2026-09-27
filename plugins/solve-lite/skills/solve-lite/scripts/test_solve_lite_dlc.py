@@ -27,13 +27,42 @@ class DlcContract(unittest.TestCase):
             self.assertTrue(spec["package_sha256"] is None or len(spec["package_sha256"]) == 64)
             self.assertTrue(spec["route_dirs"])
         for spec in public:
-            self.assertEqual(len(spec["package_sha256"]), 64)
-            self.assertGreater(spec["package_bytes"], 1_000_000)
+            self.assertIsNone(spec["package_sha256"])
+            self.assertIsNone(spec["package_bytes"])
+            self.assertIsNone(spec["download_url"])
 
-    def test_only_github_release_is_used(self):
-        self.assertTrue(dlc.RELEASE_BASE_URL.startswith("https://github.com/"))
-        self.assertIn("/releases/download/", dlc.RELEASE_BASE_URL)
-        self.assertNotIn("huggingface", dlc.RELEASE_BASE_URL.lower())
+    def test_github_manifest_controls_pinned_hf_assets(self):
+        manifest = json.loads(dlc.ASSET_MANIFEST_PATH.read_text(encoding="utf-8"))
+        self.assertEqual("GitHub", manifest["control_plane"])
+        self.assertEqual("Hugging Face", manifest["model_asset_store"])
+        self.assertEqual("v0.1.8", manifest["release_candidate"])
+        self.assertTrue(manifest["hf_upload_authorized"])
+        self.assertEqual("petershifi123", manifest["hf_owner"])
+        self.assertEqual("solve-lite-models", manifest["hf_repo_name"])
+        self.assertEqual("exact_current_accepted_torch", manifest["migration_control"])
+        self.assertEqual(0.95, manifest["minimum_migration_agreement"])
+        self.assertEqual(3, len(manifest["assets"]))
+        required = {
+            "id", "version", "backend", "download_bytes", "sha256", "hf_repo",
+            "immutable_revision", "filename", "installed_bytes", "download_url",
+            "migration_agreement", "migration_decisions", "migration_verdict",
+        }
+        for row in manifest["assets"]:
+            self.assertEqual(required, set(row))
+            self.assertIsNone(row["sha256"])
+            self.assertIsNone(row["download_url"])
+            self.assertIsNone(row["immutable_revision"])
+            self.assertEqual("petershifi123/solve-lite-models", row["hf_repo"])
+        self.assertEqual("", dlc.RELEASE_BASE_URL)
+
+    def test_unfinished_v018_distribution_fails_closed(self):
+        result = dlc.distribution_preflight()
+        self.assertEqual("BLOCKED", result["status"])
+        self.assertEqual(3, len(result["failures"]))
+        for failure in result["failures"]:
+            self.assertIn("sha256", failure["missing_or_invalid"])
+            self.assertIn("immutable_revision", failure["missing_or_invalid"])
+            self.assertIn("download_url", failure["missing_or_invalid"])
 
     def test_import_does_not_pull_network_or_torch(self):
         code = (
@@ -61,6 +90,14 @@ class DlcContract(unittest.TestCase):
             result = dlc.install_unit("financial-pair-int4-g64-ENGINEERING-ONLY", runtime_root=workspace)
         self.assertEqual(result["status"], dlc.STATUS_NOT_PUBLIC)
         self.assertEqual(result["reason"], "ENGINEERING_ONLY_NOT_EXPORTED")
+
+    def test_unverified_public_asset_is_always_refused(self):
+        with tempfile.TemporaryDirectory() as workspace:
+            result = dlc.install_unit(
+                dlc.public_units()[0]["unit_id"], runtime_root=workspace, verify=False
+            )
+        self.assertEqual("DLC_VERIFY_FAILED", result["status"])
+        self.assertEqual("SHA256_VERIFICATION_REQUIRED", result["reason"])
 
     def test_uninstall_removes_registry_and_assets(self):
         with tempfile.TemporaryDirectory() as workspace:

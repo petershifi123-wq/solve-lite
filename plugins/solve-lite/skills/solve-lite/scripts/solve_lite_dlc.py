@@ -40,8 +40,12 @@ REGISTRY_FILENAME = "dlc-registry.json"
 EVENTS_FILENAME = "dlc-events.jsonl"
 DESCRIPTOR_FILENAME = "dlc.json"
 
-RELEASE_TAG = "v0.1.7"
-RELEASE_BASE_URL = f"https://github.com/petershifi123-wq/solve-lite/releases/download/{RELEASE_TAG}"
+RELEASE_TAG = "v0.1.8"
+CONTROL_MANIFEST = "GitHub:CORE_ASSET_MANIFEST.json"
+# Compatibility name for callers that provide an offline/test mirror.  Public
+# model downloads no longer use a GitHub Release base URL.
+RELEASE_BASE_URL = ""
+ASSET_MANIFEST_PATH = Path(__file__).resolve().parents[1] / "assets" / "specialist-assets.json"
 
 STATUS_INSTALLED = "DLC_INSTALLED"
 STATUS_NOT_INSTALLED = "DLC_NOT_INSTALLED"
@@ -67,6 +71,12 @@ DLC_UNITS: tuple[dict[str, Any], ...] = (
         "route": "review",
         "route_dirs": ("model-cache/distilbert--distilbert-base-uncased-finetuned-sst-2-english",),
         "package": "solve-lite-review-compact.tar.gz",
+        "filename": "solve-lite-review-compact.tar.gz",
+        "backend": "PENDING_BACKEND_SELECTION",
+        "hf_repo": None,
+        "immutable_revision": None,
+        "download_url": None,
+        "installed_bytes": None,
         "package_bytes": 29172762,
         "package_sha256": "264a7bbd905426ac9c2c67bbc2fc813d0bca60967ec329a955e8e2e7c0573a34",
         "weights_sha256": "6129187636f5e588649b38d083bff01abfb9965c8bc1421a48031914df4930e8",
@@ -84,6 +94,12 @@ DLC_UNITS: tuple[dict[str, Any], ...] = (
         "route": "topic",
         "route_dirs": ("model-cache/fabriceyhc--bert-base-uncased-dbpedia_14",),
         "package": "solve-lite-topic-compact.tar.gz",
+        "filename": "solve-lite-topic-compact.tar.gz",
+        "backend": "PENDING_BACKEND_SELECTION",
+        "hf_repo": None,
+        "immutable_revision": None,
+        "download_url": None,
+        "installed_bytes": None,
         "package_bytes": 44319676,
         "package_sha256": "ad2933cbe828441b6b3196b1230b094e81e4726eeac258d119373802b94a9e08",
         "weights_sha256": "caa82163a0c90f35ca1e1509b1c000cdfe3da195fd9120cd3aeed1544817f901",
@@ -101,6 +117,12 @@ DLC_UNITS: tuple[dict[str, Any], ...] = (
         "route": "nli",
         "route_dirs": ("model-cache/cross-encoder--nli-deberta-v3-base",),
         "package": "solve-lite-nli-compact.tar.gz",
+        "filename": "solve-lite-nli-compact.tar.gz",
+        "backend": "PENDING_BACKEND_SELECTION",
+        "hf_repo": None,
+        "immutable_revision": None,
+        "download_url": None,
+        "installed_bytes": None,
         "package_bytes": 76350116,
         "package_sha256": "4deddd7e5c5e9457af6746d0b28f1343223721a445142b7a91fcc626c956df00",
         "weights_sha256": "24c8b72e2b546e3dab7e4dbf587e71d950712f0f098c2194cb4a90de28abc46f",
@@ -133,7 +155,81 @@ DLC_UNITS: tuple[dict[str, Any], ...] = (
     },
 )
 
+
+def _merge_control_manifest(units: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any], ...]:
+    """Overlay distribution truth from the GitHub-tracked asset manifest."""
+    try:
+        document = json.loads(ASSET_MANIFEST_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        document = {"status": "MISSING", "assets": []}
+    rows = {
+        str(item.get("id")): item
+        for item in document.get("assets", [])
+        if isinstance(item, Mapping) and item.get("id")
+    }
+    merged: list[dict[str, Any]] = []
+    for original in units:
+        item = dict(original)
+        control = rows.get(str(item["unit_id"]))
+        if item.get("public") and isinstance(control, Mapping):
+            item.update({
+                "version": control.get("version"),
+                "backend": control.get("backend"),
+                "package_bytes": control.get("download_bytes"),
+                "package_sha256": control.get("sha256"),
+                "hf_repo": control.get("hf_repo"),
+                "immutable_revision": control.get("immutable_revision"),
+                "package": control.get("filename"),
+                "filename": control.get("filename"),
+                "installed_bytes": control.get("installed_bytes"),
+                "download_url": control.get("download_url"),
+                "distribution_status": document.get("status"),
+            })
+        elif item.get("public"):
+            item.update({"download_url": None, "distribution_status": "CONTROL_RECORD_MISSING"})
+        merged.append(item)
+    return tuple(merged)
+
+
+DLC_UNITS = _merge_control_manifest(DLC_UNITS)
+
 PYTHON_DEPENDENCIES: tuple[str, ...] = ("torch", "transformers")
+
+
+def distribution_preflight() -> dict[str, Any]:
+    """Fail closed until every public v0.1.8 artifact is immutable and pinned."""
+    failures: list[dict[str, Any]] = []
+    for spec in public_units():
+        missing: list[str] = []
+        digest = spec.get("package_sha256")
+        revision = spec.get("immutable_revision")
+        url = str(spec.get("download_url") or "")
+        repo = str(spec.get("hf_repo") or "")
+        backend = str(spec.get("backend") or "")
+        if spec.get("version") != RELEASE_TAG:
+            missing.append("version")
+        if not backend or "PENDING" in backend:
+            missing.append("backend")
+        if not isinstance(spec.get("package_bytes"), int) or int(spec["package_bytes"]) <= 0:
+            missing.append("download_bytes")
+        if not isinstance(digest, str) or len(digest) != 64:
+            missing.append("sha256")
+        if not repo or "/" not in repo:
+            missing.append("hf_repo")
+        if not isinstance(revision, str) or len(revision) < 7 or revision in {"main", "master", "latest"}:
+            missing.append("immutable_revision")
+        expected_prefix = f"https://huggingface.co/{repo}/resolve/{revision}/" if repo and revision else ""
+        if not url or not expected_prefix or not url.startswith(expected_prefix):
+            missing.append("download_url")
+        if missing:
+            failures.append({"unit_id": spec["unit_id"], "missing_or_invalid": missing})
+    return {
+        "status": "PASS" if not failures else "BLOCKED",
+        "release_tag": RELEASE_TAG,
+        "control_manifest": str(ASSET_MANIFEST_PATH),
+        "public_units": len(public_units()),
+        "failures": failures,
+    }
 
 
 # --------------------------------------------------------------------------- paths
@@ -229,25 +325,6 @@ def _append_event(runtime_root: str | Path, event: Mapping[str, Any]) -> None:
 
 
 # --------------------------------------------------------------------------- install
-
-
-def _fetch(url: str, timeout: float = 60.0) -> bytes:
-    import urllib.request
-
-    request = urllib.request.Request(url, headers={"User-Agent": "solve-lite-dlc-installer"})
-    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 - fixed public release URL
-        return response.read()
-
-
-def release_sha256sums(base_url: str = RELEASE_BASE_URL) -> dict[str, str]:
-    """Published checksum list of the release, used to cross-check every package."""
-    raw = _fetch(f"{base_url.rstrip('/')}/SHA256SUMS").decode("utf-8")
-    table: dict[str, str] = {}
-    for line in raw.splitlines():
-        parts = line.split()
-        if len(parts) == 2 and len(parts[0]) == 64:
-            table[parts[1]] = parts[0]
-    return table
 
 
 #: download resilience (a flaky CDN must never make the installer look broken)
@@ -468,7 +545,7 @@ def install_unit(
     unit_id: str,
     *,
     runtime_root: str | Path,
-    base_url: str = RELEASE_BASE_URL,
+    base_url: str | None = None,
     package_dir: str | Path | None = None,
     verify: bool = True,
     force: bool = False,
@@ -482,6 +559,13 @@ def install_unit(
     same pinned release checksums, so it is never a weaker path.
     """
     spec = unit(unit_id)
+    if not verify:
+        return {
+            "status": "DLC_VERIFY_FAILED",
+            "unit_id": spec["unit_id"],
+            "reason": "SHA256_VERIFICATION_REQUIRED",
+            "detail": "v0.1.8 refuses unverified specialist assets",
+        }
     if not spec["public"]:
         return {
             "status": STATUS_NOT_PUBLIC,
@@ -526,7 +610,20 @@ def install_unit(
                 "source": "release_url_skipped",
             }
         else:
-            url = f"{base_url.rstrip('/')}/{spec['package']}"
+            url = (
+                f"{base_url.rstrip('/')}/{spec['package']}"
+                if base_url
+                else str(spec.get("download_url") or "")
+            )
+            if not url:
+                return {
+                    "status": STATUS_NOT_INSTALLED,
+                    "unit_id": spec["unit_id"],
+                    "reason": "ASSET_LOCATION_NOT_CONFIGURED",
+                    "recoverable": True,
+                    "base_lite_unaffected": True,
+                    "detail": "GitHub control manifest has no pinned HF asset location",
+                }
             say(f"download {url}")
             outcome = _download(url, package, expect_sha256=str(spec["package_sha256"]), log=say)
             if outcome["status"] != "OK":
@@ -548,28 +645,16 @@ def install_unit(
             source = url
     digest = _sha256_file(package)
     expected = str(spec["package_sha256"])
-    verification = "PINNED_RELEASE_DIGEST"
-    if not verify:
-        verification = "UNVERIFIED_OPT_OUT"
-    elif digest != expected:
-        published: str | None = None
-        try:
-            published = release_sha256sums(base_url).get(str(spec["package"]))
-        except Exception:  # noqa: BLE001 - offline hosts still verify against the pin
-            published = None
-        if published and published == digest:
-            verification = "RELEASE_SHA256SUMS_MATCH_PIN_DRIFT"
-            say(f"note: {spec['package']} matches the release SHA256SUMS (release rebuilt since the pin)")
-        else:
-            return {
-                "status": "DLC_VERIFY_FAILED",
-                "unit_id": spec["unit_id"],
-                "reason": "PACKAGE_SHA256_MISMATCH",
-                "expected": expected,
-                "observed": digest,
-                "published_sha256sums": published,
-                "detail": "refusing to install bytes that no published checksum vouches for",
-            }
+    verification = "PINNED_GITHUB_MANIFEST_DIGEST"
+    if digest != expected:
+        return {
+            "status": "DLC_VERIFY_FAILED",
+            "unit_id": spec["unit_id"],
+            "reason": "PACKAGE_SHA256_MISMATCH",
+            "expected": expected,
+            "observed": digest,
+            "detail": "refusing bytes that do not match the pinned GitHub control manifest",
+        }
     extracted = _extract(package, staged / str(spec["addon_id"]))
     try:
         materialised = _materialise(spec, extracted, addon)
@@ -602,6 +687,9 @@ def install_unit(
         "license_class": spec["license_class"],
         "asset_relative_paths": list(spec["route_dirs"]),
         "package": spec["package"],
+        "backend": spec.get("backend"),
+        "hf_repo": spec.get("hf_repo"),
+        "immutable_revision": spec.get("immutable_revision"),
         "package_bytes": spec["package_bytes"],
         "package_sha256": spec["package_sha256"],
         "observed_package_sha256": digest,
@@ -933,8 +1021,10 @@ LEGACY_DLC_ROOT_ENV = ACTIVATION_ROOT_ENV
 
 
 def default_runtime_root() -> Path:
-    """The runtime that ships inside this repository (``../runtime``)."""
-    return (Path(__file__).resolve().parent / ".." / "runtime").resolve()
+    """The versioned one-copy runtime shared by all host adapters."""
+    import shared_runtime
+
+    return shared_runtime.default_runtime_root()
 
 
 def base_install_bytes(repo_root: str | Path, *, runtime_root: str | Path | None = None) -> int:
@@ -950,7 +1040,10 @@ def base_install_bytes(repo_root: str | Path, *, runtime_root: str | Path | None
     for path in root.rglob("*"):
         if not path.is_file():
             continue
-        if "__pycache__" in path.parts or path.suffix == ".pyc":
+        relative = path.relative_to(root)
+        if any(part in {".git", "__pycache__", ".pytest_cache"} for part in relative.parts):
+            continue
+        if path.suffix in {".pyc", ".pyo"}:
             continue
         if any(excluded == path or excluded in path.parents for excluded in excluded_roots):
             continue
@@ -1001,13 +1094,13 @@ __all__ = [
     "addon_root",
     "assemble_asset_root",
     "capability_view",
+    "distribution_preflight",
     "effective_asset_root",
     "install_public_units",
     "install_unit",
     "install_units",
     "load_registry",
     "public_units",
-    "release_sha256sums",
     "route_view",
     "unit",
     "unavailable_hint",

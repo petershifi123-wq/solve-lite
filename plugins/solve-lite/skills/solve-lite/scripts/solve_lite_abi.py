@@ -51,6 +51,8 @@ ABI_SCHEMA = "solve-lite.public-abi.lite.v1"
 BUNDLED_RUNTIME_RELATIVE = Path("..") / "runtime"
 
 ENV_RUNTIME_ROOT = "SOLVE_LITE_RUNTIME_ROOT"
+ENV_SHARED_RUNTIME_ROOT = "SOLVE_LITE_SHARED_RUNTIME_ROOT"
+SHARED_POINTER_FILENAME = ".solve-lite-runtime.json"
 #: backward-compatible explicit switch. Public routing now activates an installed
 #: specialist backend lazily when (and only when) the admitted case needs it.
 BACKEND_ENV = "SOLVE_LITE_INT4_DLC"
@@ -83,6 +85,32 @@ def skill_root() -> Path:
 
 def bundled_runtime_root() -> Path:
     return (Path(__file__).resolve().parent / BUNDLED_RUNTIME_RELATIVE).resolve()
+
+
+def _pointer_runtime_root() -> Path | None:
+    """Resolve the installer's one-copy runtime receipt without user config."""
+    for anchor in (_skill_root(), _skill_root().parent.parent):
+        path = anchor / SHARED_POINTER_FILENAME
+        if not path.is_file():
+            continue
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        value = document.get("runtime_root") if isinstance(document, Mapping) else None
+        if isinstance(value, str) and value.strip():
+            return Path(value).expanduser()
+    return None
+
+
+def _default_shared_runtime_root() -> Path | None:
+    """Return the installer-owned canonical runtime without host configuration."""
+    try:
+        import shared_runtime
+
+        return shared_runtime.default_runtime_root()
+    except (ImportError, OSError, ValueError):
+        return None
 
 
 def manifest_candidates() -> list[Path]:
@@ -133,6 +161,12 @@ def _runtime_root_candidates(asset_root: str | Path | None) -> list[tuple[Path, 
         value = os.environ.get(env_name)
         if value:
             candidates.append((Path(value).expanduser(), origin))
+    pointer = _pointer_runtime_root()
+    if pointer is not None:
+        candidates.append((pointer, "shared_runtime_pointer"))
+    default_shared = _default_shared_runtime_root()
+    if default_shared is not None:
+        candidates.append((default_shared, "shared_runtime_default"))
     candidates.append((bundled_runtime_root(), "bundled"))
     return candidates
 
@@ -323,10 +357,20 @@ def _dlc_layer():
     return solve_lite_dlc
 
 
+def _compact_layer():
+    scripts = str(Path(__file__).resolve().parent)
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    import compact_runtime
+
+    return compact_runtime
+
+
 def _specialist_asset_root(runtime_root: Path) -> Path | None:
-    """Where the kernel should look for optional specialist/DLC assets."""
+    """Installed shared CoreML asset root, when present."""
     try:
-        return _dlc_layer().effective_asset_root(runtime_root)
+        state = _compact_layer().status(runtime_root)
+        return Path(state["asset_root"]) if state.get("status") == "PASS" else None
     except Exception:  # noqa: BLE001
         return None
 
@@ -378,9 +422,9 @@ def capabilities(asset_root: str | Path | None = None) -> dict[str, Any]:
         }
     )
     try:
-        base["dlc"] = _dlc_layer().capability_view(root)
+        base["compact_runtime"] = _compact_layer().status(root)
     except Exception as exc:  # noqa: BLE001
-        base["dlc"] = {"status": "UNKNOWN", "reason": f"DLC_LAYER_EXCEPTION:{type(exc).__name__}"}
+        base["compact_runtime"] = {"status": "UNKNOWN", "reason": f"COMPACT_RUNTIME_EXCEPTION:{type(exc).__name__}"}
     return base
 
 
@@ -435,9 +479,9 @@ def healthcheck(asset_root: str | Path | None = None) -> dict[str, Any]:
         base["core_healthcheck_status"] = "FAIL"
         base["core_healthcheck_reason"] = f"CORE_HEALTHCHECK_EXCEPTION:{type(exc).__name__}"
     try:
-        base["dlc"] = _dlc_layer().capability_view(root)
+        base["compact_runtime"] = _compact_layer().status(root)
     except Exception as exc:  # noqa: BLE001
-        base["dlc"] = {"status": "UNKNOWN", "reason": f"DLC_LAYER_EXCEPTION:{type(exc).__name__}"}
+        base["compact_runtime"] = {"status": "UNKNOWN", "reason": f"COMPACT_RUNTIME_EXCEPTION:{type(exc).__name__}"}
     return base
 
 
@@ -450,44 +494,23 @@ def available_routes(asset_root: str | Path | None = None) -> dict[str, Any]:
         report = loaded["module"].capabilities()
     except Exception:  # noqa: BLE001
         report = {}
-    specialist = report.get("specialist") or {}
     root = Path(loaded["runtime_root"])
     try:
-        dlc_view = _dlc_layer().capability_view(root)
+        compact = _compact_layer().status(root)
     except Exception as exc:  # noqa: BLE001
-        dlc_view = {"status": "UNKNOWN", "reason": f"DLC_LAYER_EXCEPTION:{type(exc).__name__}"}
+        compact = {"status": "UNKNOWN", "reason": f"COMPACT_RUNTIME_EXCEPTION:{type(exc).__name__}"}
+    installed = list(compact.get("routes") or []) if compact.get("status") == "PASS" else []
     out = {
-        "dlc": {
-            "status": dlc_view.get("status"),
-            "installed_routes": dlc_view.get("installed_routes") or [],
-            "not_installed_routes": dlc_view.get("not_installed_routes") or [],
-            "not_public_routes": dlc_view.get("not_public_routes") or [],
-            "installed_units": [
-                item.get("unit_id") for item in (dlc_view.get("units") or []) if item.get("status") == "DLC_INSTALLED"
-            ],
-            "installable_units": dlc_view.get("installable_units") or [],
-            "activation": dlc_view.get("activation") or {},
-        },
         "status": "PASS",
         "native_routes": list(report.get("native_capabilities") or ["markov"]),
-        "installed_routes": dlc_view.get("installed_routes") or [],
-        "not_installed_routes": dlc_view.get("not_installed_routes") or [],
-        "specialist_execution_status": dlc_view.get("specialist_execution_status"),
-        "specialist_execution_reason": dlc_view.get("specialist_execution_reason"),
-        "activation_state": dlc_view.get("activation_state"),
-        "activation_env": dlc_view.get("activation_env"),
-        "installed_means_called": dlc_view.get("installed_means_called"),
-        "resident_model_limit": dlc_view.get("resident_model_limit"),
-        "preloaded": dlc_view.get("preloaded"),
+        "installed_routes": installed,
+        "not_installed_routes": [route for route in ("review", "topic", "nli", "financial") if route not in installed],
+        "specialist_execution_status": "READY" if installed else "SPECIALIST_CAPABILITY_UNAVAILABLE",
+        "specialist_execution_reason": "SHARED_COREML_RUNTIME" if installed else "COMPACT_RUNTIME_NOT_INSTALLED",
+        "compact_runtime": compact,
         "native_status": (report.get("native") or {}).get("status"),
         "specialist_routes": list(report.get("specialist_capabilities") or []),
-        "specialist_status": specialist.get("status"),
-        "specialist_reason": specialist.get("reason"),
     }
-    try:
-        out["dlc"] = _dlc_layer().route_view(Path(loaded["runtime_root"]))
-    except Exception as exc:  # noqa: BLE001
-        out["dlc"] = {"status": "UNKNOWN", "reason": f"DLC_LAYER_EXCEPTION:{type(exc).__name__}"}
     return out
 
 
@@ -737,6 +760,13 @@ def route_prompt(
     asset_root = _specialist_asset_root(root)
     required_route = _required_route(case)
     specialist_route = required_route if required_route in {"financial", "topic", "review", "nli"} else None
+    if specialist_route is not None:
+        result = _compact_layer().route_case(root, case, specialist_route)
+        result.setdefault("entrypoint", ENTRYPOINT)
+        result.setdefault("runtime_root", str(root))
+        result.setdefault("case_id", (case or {}).get("case_id"))
+        result.setdefault("invocation_id", invocation_id)
+        return result
     if (
         specialist_route is not None
         and os.environ.get(SPECIALIST_WORKER_ENV) != "1"

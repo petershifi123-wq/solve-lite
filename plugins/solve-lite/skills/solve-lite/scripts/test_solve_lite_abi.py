@@ -23,6 +23,23 @@ class PublicLiteAbi(unittest.TestCase):
         for name in ("SOLVE_LITE_RUNTIME_ROOT", "SOLVE_LITE_CORE_ASSET_ROOT",
                      "SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
             os.environ.pop(name, None)
+        self._shared_tmp = tempfile.TemporaryDirectory()
+        os.environ["SOLVE_LITE_SHARED_RUNTIME_ROOT"] = str(
+            Path(self._shared_tmp.name) / "not-installed"
+        )
+
+    def tearDown(self):
+        os.environ.pop("SOLVE_LITE_SHARED_RUNTIME_ROOT", None)
+        self._shared_tmp.cleanup()
+
+    def test_installer_owned_shared_runtime_is_auto_discovered(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            shared = Path(tmp) / "v0.1.8"
+            shutil.copytree(abi.bundled_runtime_root(), shared, symlinks=True)
+            os.environ["SOLVE_LITE_SHARED_RUNTIME_ROOT"] = str(shared)
+            resolved, origin = abi.locate_runtime_root()
+            self.assertEqual(shared.resolve(), resolved)
+            self.assertEqual("shared_runtime_default", origin)
 
     def test_healthcheck_passes_without_any_configured_asset_root(self):
         health = abi.healthcheck()
