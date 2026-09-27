@@ -27,7 +27,7 @@ class SharedRuntimeContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = self._source(root)
-            destination = root / "runtime/v0.1.9"
+            destination = root / "runtime/v0.1.10"
             first = shared_runtime.prepare_base(source, destination)
             second = shared_runtime.prepare_base(source, destination)
             self.assertEqual(first["status"], "PASS")
@@ -42,7 +42,7 @@ class SharedRuntimeContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = self._source(root)
-            destination = root / "runtime/v0.1.9"
+            destination = root / "runtime/v0.1.10"
             destination.mkdir(parents=True)
             (destination / "unexpected").write_text("different")
             result = shared_runtime.prepare_base(source, destination)
@@ -51,7 +51,7 @@ class SharedRuntimeContract(unittest.TestCase):
 
     def test_asset_manifest_is_immutable_and_single_copy(self):
         document = compact_runtime.manifest()
-        self.assertEqual(document["current_install_target"], "v0.1.9")
+        self.assertEqual(document["current_install_target"], "v0.1.10")
         self.assertEqual(document["runtime"]["shared_encoder_copies"], 1)
         self.assertEqual(len(document["asset"]["immutable_revision"]), 40)
         self.assertNotIn(document["asset"]["immutable_revision"], {"main", "master", "latest"})

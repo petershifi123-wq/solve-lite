@@ -25,7 +25,7 @@ class ThinHostAdapterTest(unittest.TestCase):
     def test_each_adapter_has_pointer_and_no_heavy_copy(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            runtime = root / "runtime/v0.1.9"
+            runtime = root / "runtime/v0.1.10"
             runtime.mkdir(parents=True)
             for host in ("workbuddy", "doubao", "codex", "hermes"):
                 destination = root / "hosts" / host
