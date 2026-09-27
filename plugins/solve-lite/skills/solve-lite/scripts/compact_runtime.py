@@ -1,4 +1,4 @@
-"""One-copy CoreML specialist runtime for Solve Lite v0.1.9."""
+"""One-copy CoreML specialist runtime for Solve Lite v0.1.10."""
 
 from __future__ import annotations
 
@@ -110,7 +110,7 @@ def _safe_extract(package: Path, destination: Path) -> None:
 def _download(url: str, destination: Path) -> None:
     partial = destination.with_suffix(destination.suffix + ".part")
     offset = partial.stat().st_size if partial.is_file() else 0
-    headers = {"User-Agent": "solve-lite-v0.1.9-installer"}
+    headers = {"User-Agent": "solve-lite-v0.1.10-installer"}
     if offset:
         headers["Range"] = f"bytes={offset}-"
     with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=180) as response:
@@ -180,7 +180,7 @@ def install(
         os.replace(staged, target)
         receipt = {
             "schema": "solve-lite.compact-runtime.install.v1",
-            "version": "v0.1.9",
+            "version": "v0.1.10",
             "source": source_label,
             "archive_sha256": observed_sha,
             "installed_tree_sha256": observed["sha256"],

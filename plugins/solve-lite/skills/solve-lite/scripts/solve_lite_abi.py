@@ -1,20 +1,20 @@
 """Public Solve Lite ABI bridge - LITE-first.
 
-This module is the only entrypoint a host needs.  On a fresh install the bundled
-LITE runtime is found without any configuration: there is no core asset root to
-supply, no 2.33 GB model pack to fetch, and no Owner-supplied asset tree.
+This module is the only entrypoint a host needs.  On a fresh install it finds the
+bundled native kernel and the one installer-owned shared CoreML runtime without
+asking the user for paths.
 
 Contract
 --------
   bundled native Core missing / hash mismatch / ABI mismatch -> CORE_ASSET_UNAVAILABLE
-  Specialist DLC component not installed / not complete      -> SPECIALIST_CAPABILITY_UNAVAILABLE
+  Shared CoreML runtime missing / invalid                     -> SPECIALIST_CAPABILITY_UNAVAILABLE
   Nothing else blocks: the native decision path is executable the moment the
   plugin tree exists on disk.
 
 Design rules kept from the sealed LITE line:
 
 * no network at import, during healthcheck, or during routing;
-* no torch/transformers import on the startup or native path;
+* no external ML framework import on the startup or native path;
 * never substitute a computation for a missing capability;
 * every failure is returned as a structured mapping - this module does not
   raise out of ``healthcheck``, ``route_prompt`` or ``capabilities``.
@@ -26,7 +26,6 @@ import hashlib
 import json
 import os
 import platform
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Mapping
@@ -53,15 +52,6 @@ BUNDLED_RUNTIME_RELATIVE = Path("..") / "runtime"
 ENV_RUNTIME_ROOT = "SOLVE_LITE_RUNTIME_ROOT"
 ENV_SHARED_RUNTIME_ROOT = "SOLVE_LITE_SHARED_RUNTIME_ROOT"
 SHARED_POINTER_FILENAME = ".solve-lite-runtime.json"
-#: backward-compatible explicit switch. Public routing now activates an installed
-#: specialist backend lazily when (and only when) the admitted case needs it.
-BACKEND_ENV = "SOLVE_LITE_INT4_DLC"
-DLC_RUNTIME_DIRNAME = "dlc_runtime"
-ACTIVATION_ROOT_ENV = "SOLVE_LITE_INT4_DLC_ROOT"
-SPECIALIST_WORKER_ENV = "SOLVE_LITE_SPECIALIST_WORKER"
-_BACKEND_STATE: dict[str, Any] = {}
-#: honoured for backward compatibility only - never required on a fresh install
-
 KERNEL_DIRNAME = "_kernel_native"
 MODULE_SUFFIX = ".so"
 
@@ -348,15 +338,6 @@ def locate_core(asset_root: str | Path | None = None) -> dict[str, Any]:
     }
 
 
-def _dlc_layer():
-    scripts = str(Path(__file__).resolve().parent)
-    if scripts not in sys.path:
-        sys.path.insert(0, scripts)
-    import solve_lite_dlc
-
-    return solve_lite_dlc
-
-
 def _compact_layer():
     scripts = str(Path(__file__).resolve().parent)
     if scripts not in sys.path:
@@ -385,7 +366,7 @@ def _core_capabilities(module: Any, asset_root: Path | None) -> dict[str, Any]:
 
 
 def capabilities(asset_root: str | Path | None = None) -> dict[str, Any]:
-    """Capability registry: no model load, no torch, no network, never raises."""
+    """Capability registry: no model load, no network, never raises."""
     base: dict[str, Any] = {
         "abi_schema": ABI_SCHEMA,
         "entrypoint": ENTRYPOINT,
@@ -430,7 +411,7 @@ def capabilities(asset_root: str | Path | None = None) -> dict[str, Any]:
 
 def healthcheck(asset_root: str | Path | None = None) -> dict[str, Any]:
     """Startup health.  PASS means: the bundled LITE core is verified and the
-    native decision path is executable.  No DLC and no model pack is required."""
+    native decision path is executable.  Specialist routes use shared CoreML."""
     loaded = load_core(asset_root)
     base: dict[str, Any] = {
         "entrypoint": ENTRYPOINT,
@@ -514,12 +495,6 @@ def available_routes(asset_root: str | Path | None = None) -> dict[str, Any]:
     return out
 
 
-def _backend_opt_in() -> bool:
-    import os
-
-    return str(os.environ.get(BACKEND_ENV, "")).strip().lower() in {"1", "true", "yes", "on"}
-
-
 def _required_route(case: Mapping[str, Any]) -> str | None:
     """Mirror the frozen kernel's admitted schema router without doing inference."""
     family = str(case.get("family") or "").strip().lower()
@@ -561,174 +536,6 @@ def _required_route(case: Mapping[str, Any]) -> str | None:
     return None
 
 
-def _specialist_hint(runtime_root: Path) -> dict[str, Any]:
-    """Public hint: which DLC components exist (read-only)."""
-    try:
-        return _dlc_layer().unavailable_hint(runtime_root)
-    except Exception:  # noqa: BLE001
-        return {}
-
-
-def _specialist_runtime_layer():
-    import specialist_runtime
-
-    return specialist_runtime
-
-
-def _inside_specialist_env(runtime_root: Path) -> bool:
-    try:
-        expected = _specialist_runtime_layer().runtime_paths(runtime_root)["venv"]
-        return Path(sys.prefix).resolve() == Path(expected).resolve()
-    except Exception:  # noqa: BLE001
-        return False
-
-
-def _delegate_specialist(
-    runtime_root: Path,
-    workspace: str | Path,
-    case: dict[str, Any],
-    session: Mapping[str, Any] | None,
-    *,
-    namespace: str,
-    invocation_id: str | None,
-) -> dict[str, Any]:
-    """Run one specialist decision in the pinned repo-local environment."""
-    try:
-        specialist = _specialist_runtime_layer()
-        ready = specialist.healthcheck(runtime_root, deep=False)
-    except Exception as exc:  # noqa: BLE001 - public boundary is structured
-        return {
-            "status": ERROR_SPECIALIST,
-            "error": ERROR_SPECIALIST,
-            "reason": f"SPECIALIST_RUNTIME_PROBE_FAILED:{type(exc).__name__}",
-            "detail": str(exc)[:300],
-            "answers": {},
-            "fallback_computation": False,
-            "core_status": "AVAILABLE",
-        }
-    if ready.get("status") != "PASS":
-        return {
-            "status": ERROR_SPECIALIST,
-            "error": ERROR_SPECIALIST,
-            "reason": "SPECIALIST_RUNTIME_NOT_READY",
-            "detail": ready,
-            "answers": {},
-            "fallback_computation": False,
-            "core_status": "AVAILABLE",
-            "dlc": _specialist_hint(runtime_root),
-        }
-    paths = specialist.runtime_paths(runtime_root)
-    request = {
-        "workspace": str(workspace),
-        "case": case,
-        "session": dict(session or {}),
-        "asset_root": str(runtime_root),
-        "namespace": namespace,
-        "invocation_id": invocation_id,
-    }
-    environment = dict(os.environ)
-    environment.update(specialist.worker_environment(runtime_root))
-    try:
-        process = subprocess.run(
-            [str(paths["python"]), "-I", str(Path(__file__).with_name("specialist_worker.py"))],
-            input=json.dumps(request, ensure_ascii=False),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            env=environment,
-            check=False,
-            timeout=300,
-        )
-        result = json.loads((process.stdout or "").strip().splitlines()[-1])
-    except (OSError, subprocess.SubprocessError, ValueError, IndexError) as exc:
-        return {
-            "status": ERROR_SPECIALIST,
-            "error": ERROR_SPECIALIST,
-            "reason": f"SPECIALIST_WORKER_FAILED:{type(exc).__name__}",
-            "detail": str(exc)[:300],
-            "answers": {},
-            "fallback_computation": False,
-            "core_status": "AVAILABLE",
-        }
-    if not isinstance(result, dict):
-        return {
-            "status": ERROR_SPECIALIST,
-            "error": ERROR_SPECIALIST,
-            "reason": "SPECIALIST_WORKER_INVALID_RESPONSE",
-            "answers": {},
-            "fallback_computation": False,
-            "core_status": "AVAILABLE",
-        }
-    result.setdefault("specialist_process", {})
-    result["specialist_process"].update(
-        {"isolated_venv": True, "returncode": process.returncode, "python": str(paths["python"])}
-    )
-    return result
-
-
-def _activate_now(engine: Path, asset_root: Path, runtime_root: Path) -> dict[str, Any]:
-    try:
-        if str(engine) not in sys.path:
-            sys.path.insert(0, str(engine))
-        from int4_dlc.activate import activate  # type: ignore[import-not-found]
-        native = runtime_root / "solve_lite" / "lite_runtime" / "_kernel_native"
-        activation = activate(asset_root=asset_root, kernel_native=native)
-    except Exception as exc:  # noqa: BLE001 - a broken backend must not break the host
-        return {"status": "ACTIVATION_FAILED", "activated": False, "engine": str(engine),
-                "reason": f"{type(exc).__name__}"[:120], "asset_root": str(asset_root)}
-    manager = getattr(activation, "manager", None)
-    _BACKEND_STATE["manager"] = manager
-    return {
-        "status": "ACTIVATED",
-        "activated": True,
-        "engine": str(engine),
-        "asset_root": str(asset_root),
-        "patched": bool(getattr(activation, "patched", False)),
-        "max_resident_dlc": 1,
-        "preload_at_startup": False,
-        "resident_dlc_id": getattr(manager, "_current_dlc", None),
-    }
-
-
-def activate_specialist_backend(
-    runtime_root: Path,
-    asset_root: Path | None = None,
-    required_route: str | None = None,
-) -> dict[str, Any]:
-    """Activate lazily for one admitted specialist route; never preload a model."""
-    explicit = _backend_opt_in()
-    if required_route is None and not explicit:
-        active = bool((_BACKEND_STATE.get("value") or {}).get("activated"))
-        return {"status": "NOT_REQUIRED", "activated": active, "engine": None, "asset_root": None}
-    if required_route is not None:
-        try:
-            installed = set(_dlc_layer().route_view(runtime_root).get("installed_routes") or [])
-        except Exception as exc:  # noqa: BLE001
-            return {"status": "DLC_STATE_UNAVAILABLE", "activated": False,
-                    "reason": type(exc).__name__, "required_route": required_route}
-        if required_route not in installed:
-            return {"status": "ROUTE_NOT_INSTALLED", "activated": False,
-                    "required_route": required_route, "installed_routes": sorted(installed)}
-    if asset_root is None:
-        asset_root = _specialist_asset_root(runtime_root)
-    engine = runtime_root / DLC_RUNTIME_DIRNAME
-    if not (engine / "int4_dlc").is_dir():
-        return {"status": "BACKEND_MISSING", "activated": False, "engine": str(engine), "asset_root": None}
-    if asset_root is None or not asset_root.is_dir():
-        return {"status": "NO_ASSET_ROOT", "activated": False, "engine": str(engine), "asset_root": None}
-    key = f"{engine}:{asset_root}"
-    if _BACKEND_STATE.get("key") == key:
-        cached = dict(_BACKEND_STATE["value"])
-        cached["activation_mode"] = "AUTO_LAZY_CAPABILITY" if required_route is not None else "EXPLICIT_ENV"
-        cached["required_route"] = required_route
-        return cached
-    value = _activate_now(engine, asset_root, runtime_root)
-    value["activation_mode"] = "AUTO_LAZY_CAPABILITY" if required_route is not None else "EXPLICIT_ENV"
-    value["required_route"] = required_route
-    _BACKEND_STATE.update({"key": key, "value": value})
-    return value
-
-
 def route_prompt(
     workspace: str | Path,
     case: dict[str, Any],
@@ -767,27 +574,6 @@ def route_prompt(
         result.setdefault("case_id", (case or {}).get("case_id"))
         result.setdefault("invocation_id", invocation_id)
         return result
-    if (
-        specialist_route is not None
-        and os.environ.get(SPECIALIST_WORKER_ENV) != "1"
-        and not _inside_specialist_env(root)
-    ):
-        return _delegate_specialist(
-            root,
-            workspace,
-            case,
-            session,
-            namespace=namespace,
-            invocation_id=invocation_id,
-        )
-    env_previous: dict[str, str | None] = {}
-    if specialist_route is not None:
-        for name in (BACKEND_ENV, ACTIVATION_ROOT_ENV):
-            env_previous[name] = os.environ.get(name)
-        os.environ[BACKEND_ENV] = "1"
-        if asset_root is not None:
-            os.environ[ACTIVATION_ROOT_ENV] = str(asset_root)
-    backend = activate_specialist_backend(root, asset_root, specialist_route)
     try:
         result = loaded["module"].route_session(
             workspace,
@@ -813,26 +599,13 @@ def route_prompt(
             "credential_reads": 0,
             "jev_api_calls": 0,
         }
-    finally:
-        if env_previous:
-            for name, previous in env_previous.items():
-                if previous is None:
-                    os.environ.pop(name, None)
-                else:
-                    os.environ[name] = previous
     result.setdefault("entrypoint", ENTRYPOINT)
     result.setdefault("runtime_root", str(root))
     result.setdefault("fallback_computation", False)
-    result.setdefault("specialist_backend", backend)
-    if isinstance(result, dict) and result.get("status") == ERROR_SPECIALIST:
-        # A missing/damaged specialist pack is a capability failure, not a core
-        # failure. Normal public installation is responsible for installing all
-        # three public packs.
-        result.setdefault("error", ERROR_SPECIALIST)
-        result.setdefault("core_status", "AVAILABLE")
-        hint = _specialist_hint(root)
-        if hint:
-            result["dlc"] = hint
+    result.setdefault(
+        "specialist_backend",
+        {"status": "NOT_REQUIRED", "activated": False, "engine": None, "asset_root": None},
+    )
     return result
 
 

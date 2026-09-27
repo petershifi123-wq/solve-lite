@@ -27,7 +27,7 @@ class PublicLiteAbi(unittest.TestCase):
 
     def test_current_asset_contract_is_pinned(self):
         document = compact_runtime.manifest()
-        self.assertEqual(document["current_install_target"], "v0.1.9")
+        self.assertEqual(document["current_install_target"], "v0.1.10")
         self.assertEqual(document["runtime"]["shared_encoder_copies"], 1)
         self.assertEqual(document["runtime"]["network_calls_at_runtime"], 0)
         self.assertFalse(document["runtime"]["torch_runtime"])

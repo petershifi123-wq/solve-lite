@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-RUNTIME_VERSION = "v0.1.9"
+RUNTIME_VERSION = "v0.1.10"
 POINTER_FILENAME = ".solve-lite-runtime.json"
 RECEIPT_FILENAME = "shared-runtime-receipt.json"
 ENV_SHARED_RUNTIME_ROOT = "SOLVE_LITE_SHARED_RUNTIME_ROOT"
