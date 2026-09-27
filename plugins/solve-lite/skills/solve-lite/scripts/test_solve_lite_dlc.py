@@ -49,7 +49,7 @@ class DlcContract(unittest.TestCase):
         self.assertEqual(view["specialist_execution_status"], "SPECIALIST_CAPABILITY_UNAVAILABLE")
         self.assertEqual(view["specialist_execution_reason"], "DLC_NOT_INSTALLED")
         self.assertEqual(view["activation_state"], "NOT_ACTIVATED")
-        self.assertTrue(view["installed_means_called"])
+        self.assertFalse(view["installed_means_called"])
         self.assertFalse(view["preloaded"])
         self.assertFalse(view["network_used"])
         self.assertFalse(view["torch_imported"])

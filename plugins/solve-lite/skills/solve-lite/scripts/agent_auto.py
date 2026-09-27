@@ -13,7 +13,7 @@ from solve_lite_abi import route_prompt as _route_prompt
 
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "assets" / "agent_registry.json"
-REGISTRY_SCHEMA = "solve-lite.agent-registry.v2"
+REGISTRY_SCHEMA = "solve-lite.agent-registry.v3"
 COLD_FORK_STATUS = "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI"
 COLD_FORK_STATUS_PRIOR = "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE"
 COLD_FORK_PENDING = "UNTESTED_PUBLIC_ABI_AVAILABLE"
@@ -67,6 +67,7 @@ class HostSpec:
     environment_keys: Tuple[str, ...]
     executables: Tuple[str, ...]
     filesystem_markers: Tuple[str, ...]
+    integration: Mapping[str, Any]
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,17 @@ def load_registry(path: Path = REGISTRY_PATH) -> Tuple[Tuple[str, ...], Tuple[Ho
         if any(mode not in modes for mode in host_modes):
             raise RegistryError("host declares a mode outside registry priority")
         detection = raw["detection"]
+        integration = raw.get("integration") or {}
+        if not isinstance(integration, dict):
+            raise RegistryError("integration must be a mapping")
+        identity = integration.get("plugin_identity")
+        if identity is not None:
+            if not isinstance(identity, dict):
+                raise RegistryError("plugin identity must be a mapping")
+            _text(identity.get("canonical"), "plugin_identity.canonical")
+            _string_tuple(identity.get("aliases", []), "plugin_identity.aliases")
+        if "plugin_root_env" in integration:
+            _string_tuple(integration["plugin_root_env"], "integration.plugin_root_env")
         adapter = raw.get("public_adapter_entrypoint")
         mcp_key = raw.get("mcp_config_key")
         mcp_cwd = raw.get("mcp_cwd")
@@ -184,6 +196,7 @@ def load_registry(path: Path = REGISTRY_PATH) -> Tuple[Tuple[str, ...], Tuple[Ho
             environment_keys=_string_tuple(detection.get("environment_keys"), "environment_keys"),
             executables=_string_tuple(detection.get("executables"), "executables"),
             filesystem_markers=_string_tuple(detection.get("filesystem_markers"), "filesystem_markers"),
+            integration=dict(integration),
         )
         if host.cold_fork_status not in COLD_FORK_STATUSES:
             raise RegistryError("host cold fork status is not recognized")

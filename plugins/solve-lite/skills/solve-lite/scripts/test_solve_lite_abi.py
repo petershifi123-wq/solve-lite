@@ -18,9 +18,8 @@ import solve_lite_abi as abi  # noqa: E402
 
 class PublicLiteAbi(unittest.TestCase):
     def setUp(self):
-        # The public fresh-install contract describes a *plain* environment, so
-        # pin the DLC opt-in off here: an ambient SOLVE_LITE_INT4_DLC in the
-        # developer's shell would otherwise flip a fresh-clone assertion.
+        # The clean source-tree contract describes a plain environment. Remove
+        # the legacy explicit override so a developer shell cannot change it.
         for name in ("SOLVE_LITE_RUNTIME_ROOT", "SOLVE_LITE_CORE_ASSET_ROOT",
                      "SOLVE_LITE_INT4_DLC", "SOLVE_LITE_INT4_DLC_ROOT"):
             os.environ.pop(name, None)
@@ -66,6 +65,93 @@ class PublicLiteAbi(unittest.TestCase):
         self.assertFalse(result["fallback_computation"])
         self.assertEqual(result["network_model_calls"], 0)
         self.assertEqual(result["credential_reads"], 0)
+        self.assertEqual(result["specialist_backend"]["status"], "NOT_REQUIRED")
+
+    def test_admitted_schema_selects_existing_capability_routes(self):
+        native = json.loads(CASE.read_text(encoding="utf-8"))
+        self.assertEqual(abi._required_route(native), "markov")
+        nli = {
+            "state": {"items": [{"premise": "p", "hypothesis": "h"}]},
+            "questions": {"q": {"type": "choice", "criteria": {"yes": "yes"}}},
+        }
+        self.assertEqual(abi._required_route(nli), "nli")
+
+    def test_declared_family_selects_existing_capability_route(self):
+        expected = {
+            "review": "review",
+            "amazon_review_polarity": "review",
+            "topic": "topic",
+            "natural_language_inference": "nli",
+            "financial_sentiment": "financial",
+            "markov_attribution": "markov",
+        }
+        for family, route in expected.items():
+            with self.subTest(family=family):
+                self.assertEqual(abi._required_route({"family": family}), route)
+        self.assertIsNone(abi._required_route({"family": "ordinary_chat"}))
+
+    def test_specialist_route_requests_automatic_lazy_activation(self):
+        seen = {}
+
+        class FakeModule:
+            @staticmethod
+            def route_session(workspace, case, session, **kwargs):
+                return {"status": "PASS", "answers": {"q": {}}, "adapter_route": "nli"}
+
+        originals = (abi.load_core, abi._specialist_asset_root, abi.activate_specialist_backend)
+        try:
+            os.environ[abi.SPECIALIST_WORKER_ENV] = "1"
+            abi.load_core = lambda asset_root=None: {
+                "status": "AVAILABLE", "runtime_root": "/tmp/runtime", "module": FakeModule()
+            }
+            abi._specialist_asset_root = lambda root: Path("/tmp/assets")
+
+            def activate(root, asset_root=None, required_route=None):
+                seen["route"] = required_route
+                return {"status": "ACTIVATED", "activated": True}
+
+            abi.activate_specialist_backend = activate
+            case = {
+                "case_id": "nli-auto-lazy",
+                "family": "natural_language_inference",
+                "state": {"items": [{"premise": "p", "hypothesis": "h"}]},
+                "questions": {"q": {"type": "choice", "criteria": {"yes": "yes"}}},
+            }
+            result = abi.route_prompt("/tmp/workspace", case)
+        finally:
+            os.environ.pop(abi.SPECIALIST_WORKER_ENV, None)
+            abi.load_core, abi._specialist_asset_root, abi.activate_specialist_backend = originals
+        self.assertEqual("nli", seen["route"])
+        self.assertEqual("ACTIVATED", result["specialist_backend"]["status"])
+        self.assertNotIn("SOLVE_LITE_INT4_DLC", os.environ)
+        self.assertNotIn("SOLVE_LITE_INT4_DLC_ROOT", os.environ)
+
+    def test_specialist_route_delegates_to_repo_local_worker(self):
+        seen = {}
+        original_load = abi.load_core
+        original_delegate = abi._delegate_specialist
+        try:
+            abi.load_core = lambda asset_root=None: {
+                "status": "AVAILABLE", "runtime_root": "/tmp/runtime", "module": object()
+            }
+
+            def delegate(root, workspace, case, session, **kwargs):
+                seen.update({"root": root, "workspace": workspace, "case": case, **kwargs})
+                return {"status": "PASS", "answers": {"q": {}}, "isolated": True}
+
+            abi._delegate_specialist = delegate
+            result = abi.route_prompt(
+                "/tmp/workspace",
+                {"case_id": "nli", "family": "natural_language_inference"},
+                invocation_id="test:delegate",
+            )
+        finally:
+            abi.load_core = original_load
+            abi._delegate_specialist = original_delegate
+        self.assertEqual(result["status"], "PASS")
+        self.assertTrue(result["isolated"])
+        self.assertEqual(seen["root"], Path("/tmp/runtime"))
+        self.assertEqual(seen["namespace"], "production")
 
     def test_specialist_case_is_refused_cleanly(self):
         case = json.loads(SPECIALIST_CASE.read_text(encoding="utf-8"))
