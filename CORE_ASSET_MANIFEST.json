@@ -94,9 +94,7 @@
  "distribution": "self-contained-public-repository",
  "historical_full_precision_reference": "CORE_ASSET_MANIFEST_FULL_FP_REFERENCE.json",
  "install_default": "LITE",
- "legacy_core_asset_root_env_required": false,
- "legacy_core_asset_root_env_status": "DEPRECATED_ACCEPTED_IF_SET",
- "product_version": "0.1.7-public",
+ "product_version": "0.1.8",
  "public_abi": {
   "capabilities": "capabilities",
   "compatibility_bridge": "solve_lite_abi_lite:route_prompt",
@@ -113,100 +111,24 @@
  "runtime_bytes": 4644461,
  "runtime_files": 40,
  "runtime_model_assets": {
-  "activation_env": "SOLVE_LITE_INT4_DLC",
-  "activation_required_for_execution": true,
-  "auto_download": false,
-  "dlc_units": [
-   {
-    "addon_id": "solve-lite-review-compact",
-    "asset_relative_paths": [
-     "model-cache/distilbert--distilbert-base-uncased-finetuned-sst-2-english"
-    ],
-    "capability": "advanced_sentiment_review_polarity",
-    "decision_agreement_vs_frozen_fp32_reference": 0.9747,
-    "license_class": "OFFICIAL_DLC_APACHE_2_0",
-    "package": "solve-lite-review-compact.tar.gz",
-    "package_bytes": 29172762,
-    "package_sha256": "264a7bbd905426ac9c2c67bbc2fc813d0bca60967ec329a955e8e2e7c0573a34",
-    "public": true,
-    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.7/solve-lite-review-compact.tar.gz",
-    "route": "review",
-    "unit_id": "review-sst2-distilbert-int4-g64"
-   },
-   {
-    "addon_id": "solve-lite-topic-compact",
-    "asset_relative_paths": [
-     "model-cache/fabriceyhc--bert-base-uncased-dbpedia_14"
-    ],
-    "capability": "knowledge_topic_routing",
-    "decision_agreement_vs_frozen_fp32_reference": 0.9913,
-    "license_class": "OFFICIAL_DLC_APACHE_2_0",
-    "package": "solve-lite-topic-compact.tar.gz",
-    "package_bytes": 44319676,
-    "package_sha256": "ad2933cbe828441b6b3196b1230b094e81e4726eeac258d119373802b94a9e08",
-    "public": true,
-    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.7/solve-lite-topic-compact.tar.gz",
-    "route": "topic",
-    "unit_id": "topic-dbpedia14-bert-int4-g64"
-   },
-   {
-    "addon_id": "solve-lite-nli-compact",
-    "asset_relative_paths": [
-     "model-cache/cross-encoder--nli-deberta-v3-base"
-    ],
-    "capability": "natural_language_inference",
-    "decision_agreement_vs_frozen_fp32_reference": 0.9593,
-    "license_class": "OFFICIAL_DLC_APACHE_2_0",
-    "package": "solve-lite-nli-compact.tar.gz",
-    "package_bytes": 76350116,
-    "package_sha256": "4deddd7e5c5e9457af6746d0b28f1343223721a445142b7a91fcc626c956df00",
-    "public": true,
-    "release_url": "https://github.com/petershifi123-wq/solve-lite/releases/download/v0.1.7/solve-lite-nli-compact.tar.gz",
-    "route": "nli",
-    "unit_id": "nli-deberta-v3-base-int4-g64"
-   },
-   {
-    "addon_id": "financial-pair",
-    "asset_relative_paths": [
-     "model-cache/ProsusAI--finbert",
-     "model-cache-public-trained/financial_sentiment"
-    ],
-    "capability": "financial_sentiment_pair",
-    "decision_agreement_vs_frozen_fp32_reference": null,
-    "license_class": "ENGINEERING_VERIFICATION_ONLY_DO_NOT_DISTRIBUTE",
-    "package": null,
-    "package_bytes": null,
-    "package_sha256": null,
-    "public": false,
-    "release_url": null,
-    "route": "financial",
-    "unit_id": "financial-pair-int4-g64-ENGINEERING-ONLY"
-   }
-  ],
-  "fallback_computation": false,
-  "included_in_public_repository": false,
-  "included_in_release": false,
-  "install_command": "python3 tools/installer.py",
-  "max_resident_dlc": 1,
+  "asset_manifest": "plugins/solve-lite/skills/solve-lite/assets/specialist-assets.json",
+  "asset_store": "Hugging Face",
+  "control_plane": "GitHub",
+  "current_install_target": "v0.1.8",
+  "status": "CURRENT_SHARED_COREML_RUNTIME",
+  "shared_runtime_single_copy": true,
+  "backend": "CoreML-native",
+  "routes": ["review", "topic", "nli", "financial"],
+  "archive_sha256": "a7359f8581bdae0c850def19bf776e540806b960c1751b0512a3002a7cf11f7e",
+  "installed_tree_sha256": "857a7e0d10a1b1bf0eda59f1cad479ba6b57ca75ae9903ab098b658c1adea2a8",
+  "immutable_revision": "9952d75a973e8ba4c70fddb38897480d5f1e8fd8",
+  "complete_install_bytes": 50932773,
+  "offline_after_install": true,
+  "network_calls_at_runtime": 0,
+  "torch_runtime": false,
+  "transformers_runtime": false,
   "missing_pack_status": "SPECIALIST_CAPABILITY_UNAVAILABLE",
-  "native_startup_requires_network": false,
-  "native_startup_requires_torch": false,
-  "not_published": [
-   {
-    "addon_id": "financial-pair",
-    "license_class": "ENGINEERING_VERIFICATION_ONLY_DO_NOT_DISTRIBUTE",
-    "reason": "licence chain unresolved; weights are not redistributed",
-    "route": "financial",
-    "status": "NOT_PUBLIC",
-    "unit_id": "financial-pair-int4-g64-ENGINEERING-ONLY"
-   }
-  ],
-  "preload_at_startup": false,
-  "requested_by": "normal_public_install",
-  "specialist_model_assets_required_at_startup": false,
-  "status": "PUBLIC_DLC_COMPONENTS",
-  "normal_public_install": true,
-  "runtime_activation": "CAPABILITY_ROUTED_LAZY"
+  "install_command": "python3 tools/installer.py --host auto"
  },
  "runtime_root": "plugins/solve-lite/skills/solve-lite/runtime",
  "runtime_root_env": "SOLVE_LITE_RUNTIME_ROOT",

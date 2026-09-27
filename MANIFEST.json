@@ -1,9 +1,6 @@
 {
-  "accuracy": 0.8228,
-  "aps": 85.8999,
-  "asset_control_manifest": "plugins/solve-lite/skills/solve-lite/assets/specialist-assets.json",
-  "complete_install_bytes": 50932773,
-  "current_install_target": "v0.1.8",
+  "content_tree_sha256": "e1c8e16b5f280ba7fe0610d211676c0b39a8fb341f44e1416cca268e0eaeac82",
+  "file_count_excluding_release_metadata": 84,
   "files": [
     {
       "bytes": 318,
@@ -44,11 +41,6 @@
       "bytes": 1196,
       "path": "LICENSE",
       "sha256": "ca15e033fbd3c72375b97fa9034911e67fe54c491c4a6059a25ee228233b1461"
-    },
-    {
-      "bytes": 16156,
-      "path": "MANIFEST.json",
-      "sha256": "c16d9e19d0c1ef49dc402d294edf9c574f1c60637df190ab4d5292c4e5de5f4e"
     },
     {
       "bytes": 304,
@@ -431,10 +423,9 @@
       "sha256": "4e34d69899bd101ab1a871c4515221922b2b1e23464087cb7da1b03c658f5852"
     }
   ],
-  "payload_file_count": 85,
-  "runtime": "Compact CoreML-native",
-  "schema_version": "solve-lite.public-repo-manifest.v0.1.8",
-  "status": "CURRENT",
-  "version": "0.1.8",
-  "wrong_ge_90": 6
+  "platform": "macOS-arm64",
+  "product_acceptance": "WAITING_OWNER_REAL_HOST_TEST",
+  "schema_version": "solve-lite.local-package-manifest.v1",
+  "status": "READY_FOR_PETER_FRESH_HOST_ACCEPTANCE",
+  "version": "0.1.8"
 }
