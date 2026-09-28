@@ -1,8 +1,9 @@
 {
   "schema_version": "solve-lite.agent-registry.v5",
-  "current_install_target": "v0.1.10",
+  "current_install_target": "v0.1.11",
   "public_abi_entrypoint": "solve_lite_abi:route_prompt",
   "runtime_model": "ONE_SHARED_COREML_RUNTIME",
+  "declared_host_profiles": 18,
   "supported_modes_priority": [
     "explicit_host_id",
     "environment",
@@ -12,42 +13,191 @@
   "cold_fork_test": "PASS_VERIFIED_FRESH_INSTALL_TWO_HOST_PUBLIC_ABI",
   "cold_fork_evidence": {
     "scope": "PUBLIC_REPOSITORY_ONLY",
-    "fresh_install_hosts": ["workbuddy", "doubao"],
-    "prior_scope_hosts": ["codex", "hermes"],
-    "current_release_requires_isolated_installed_copy_checks": true
+    "fresh_install_hosts": [
+      "workbuddy",
+      "doubao"
+    ],
+    "prior_scope_hosts": [
+      "codex",
+      "hermes"
+    ],
+    "current_release_requires_isolated_installed_copy_checks": true,
+    "note": "Declared host profile is not a PASS claim; only evidence-backed statuses may be advertised as verified."
   },
   "hosts": [
     {
-      "host_id": "hermes",
-      "aliases": ["hermes-desktop"],
+      "host_id": "claude-code",
+      "aliases": [
+        "claude"
+      ],
       "priority": 10,
-      "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "cold_fork_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "supported_modes": ["explicit_host_id", "environment", "executable", "filesystem_marker"],
-      "capabilities": ["public_abi", "skill_plan", "shared_coreml_runtime"],
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
       "public_adapter_entrypoint": null,
       "mcp_config_key": null,
       "mcp_cwd": null,
       "integration": {
         "hook_mode": "portable_skill",
-        "plugin_identity": {"canonical": "solve-lite@hermes", "aliases": []},
-        "plugin_root_env": ["PLUGIN_ROOT"],
-        "skill_dir": "skills/solve-lite"
+        "plugin_identity": {
+          "canonical": "solve-lite@claude-code",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "CLAUDE_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".claude/skills/solve-lite"
       },
       "detection": {
-        "environment_keys": ["HERMES_HOME"],
-        "executables": ["hermes"],
-        "filesystem_markers": [".hermes"]
+        "environment_keys": [
+          "CLAUDE_HOME"
+        ],
+        "executables": [
+          "claude"
+        ],
+        "filesystem_markers": [
+          ".claude"
+        ]
+      }
+    },
+    {
+      "host_id": "cursor",
+      "aliases": [
+        "cursor-desktop"
+      ],
+      "priority": 20,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@cursor",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "CURSOR_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".cursor/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "CURSOR_HOME"
+        ],
+        "executables": [
+          "cursor"
+        ],
+        "filesystem_markers": [
+          ".cursor"
+        ]
+      }
+    },
+    {
+      "host_id": "github-copilot",
+      "aliases": [
+        "copilot"
+      ],
+      "priority": 30,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@github-copilot",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "COPILOT_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".copilot/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "COPILOT_HOME"
+        ],
+        "executables": [
+          "github-copilot",
+          "copilot"
+        ],
+        "filesystem_markers": [
+          ".github/copilot",
+          ".copilot"
+        ]
       }
     },
     {
       "host_id": "codex",
-      "aliases": ["codex-desktop", "chatgpt"],
-      "priority": 20,
+      "aliases": [
+        "codex-desktop"
+      ],
+      "priority": 40,
       "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
       "cold_fork_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
-      "supported_modes": ["explicit_host_id", "environment", "executable", "filesystem_marker"],
-      "capabilities": ["public_abi", "mcp_plan", "skill_plan", "public_adapter_apply", "shared_coreml_runtime"],
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "mcp_plan",
+        "skill_plan",
+        "public_adapter_apply",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
       "public_adapter_entrypoint": "plugins/solve-lite/scripts/codex_desktop_adapter.py",
       "mcp_config_key": "mcpServers",
       "mcp_cwd": "${PLUGIN_ROOT}",
@@ -55,67 +205,741 @@
         "hook_mode": "plugin_manifest",
         "plugin_identity": {
           "canonical": "solve-lite@github-solve-lite",
-          "aliases": ["solve-lite@personal", "solve-lite@solve-lite-local"]
+          "aliases": [
+            "solve-lite@personal",
+            "solve-lite@solve-lite-local"
+          ]
         },
-        "plugin_root_env": ["PLUGIN_ROOT"],
-        "skill_dir": "skills/solve-lite"
+        "plugin_root_env": [
+          "CODEX_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".codex/skills/solve-lite"
       },
       "detection": {
-        "environment_keys": ["CODEX_HOME"],
-        "executables": ["codex"],
-        "filesystem_markers": [".codex"]
+        "environment_keys": [
+          "CODEX_HOME"
+        ],
+        "executables": [
+          "codex"
+        ],
+        "filesystem_markers": [
+          ".codex"
+        ]
       }
     },
     {
-      "host_id": "workbuddy",
-      "aliases": ["workbuddy-desktop", "workbuddy-ai"],
-      "priority": 30,
-      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "supported_modes": ["explicit_host_id", "environment", "executable", "filesystem_marker"],
-      "capabilities": ["public_abi", "skill_plan", "shared_coreml_runtime"],
-      "public_adapter_entrypoint": null,
-      "mcp_config_key": null,
-      "mcp_cwd": null,
-      "integration": {
-        "hook_mode": "plugin_manifest",
-        "plugin_identity": {"canonical": "solve-lite@solve-lite-local", "aliases": []},
-        "plugin_root_env": ["CODEBUDDY_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"],
-        "skill_dir": "skills/solve-lite"
-      },
-      "detection": {
-        "environment_keys": ["CODEBUDDY_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"],
-        "executables": ["workbuddy"],
-        "filesystem_markers": [".workbuddy-ai", ".workbuddy", ".codebuddy"]
-      }
-    },
-    {
-      "host_id": "doubao",
-      "aliases": ["doubaowork"],
-      "priority": 40,
-      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
-      "supported_modes": ["explicit_host_id", "executable", "filesystem_marker"],
-      "capabilities": ["public_abi", "skill_plan", "shared_coreml_runtime"],
+      "host_id": "windsurf",
+      "aliases": [
+        "codeium"
+      ],
+      "priority": 50,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
       "public_adapter_entrypoint": null,
       "mcp_config_key": null,
       "mcp_cwd": null,
       "integration": {
         "hook_mode": "portable_skill",
-        "plugin_identity": {"canonical": "solve-lite@doubao", "aliases": []},
-        "plugin_root_env": ["PLUGIN_ROOT"],
-        "skill_dir": "skills/solve-lite"
+        "plugin_identity": {
+          "canonical": "solve-lite@windsurf",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "WINDSURF_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".codeium/windsurf/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "WINDSURF_HOME"
+        ],
+        "executables": [
+          "windsurf"
+        ],
+        "filesystem_markers": [
+          ".windsurf",
+          ".codeium/windsurf"
+        ]
+      }
+    },
+    {
+      "host_id": "gemini-cli",
+      "aliases": [
+        "gemini"
+      ],
+      "priority": 60,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@gemini-cli",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "GEMINI_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".gemini/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "GEMINI_HOME"
+        ],
+        "executables": [
+          "gemini"
+        ],
+        "filesystem_markers": [
+          ".gemini"
+        ]
+      }
+    },
+    {
+      "host_id": "amp",
+      "aliases": [
+        "amp-code"
+      ],
+      "priority": 70,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@amp",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "AMP_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".amp/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "AMP_HOME"
+        ],
+        "executables": [
+          "amp"
+        ],
+        "filesystem_markers": [
+          ".amp"
+        ]
+      }
+    },
+    {
+      "host_id": "goose",
+      "aliases": [
+        "block-goose"
+      ],
+      "priority": 80,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@goose",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "GOOSE_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".goose/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "GOOSE_HOME"
+        ],
+        "executables": [
+          "goose"
+        ],
+        "filesystem_markers": [
+          ".goose"
+        ]
+      }
+    },
+    {
+      "host_id": "aider",
+      "aliases": [],
+      "priority": 90,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@aider",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "AIDER_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".aider/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "AIDER_HOME"
+        ],
+        "executables": [
+          "aider"
+        ],
+        "filesystem_markers": [
+          ".aider"
+        ]
+      }
+    },
+    {
+      "host_id": "cline",
+      "aliases": [
+        "cline-nightly"
+      ],
+      "priority": 100,
+      "compatibility_status": "PARTIAL_FROZEN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@cline",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "CLINE_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".cline/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "CLINE_HOME"
+        ],
+        "executables": [
+          "cline"
+        ],
+        "filesystem_markers": [
+          ".cline"
+        ]
+      }
+    },
+    {
+      "host_id": "roo-code",
+      "aliases": [
+        "roo",
+        "roocode"
+      ],
+      "priority": 110,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@roo-code",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "ROO_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".roo-code/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "ROO_HOME"
+        ],
+        "executables": [
+          "roo"
+        ],
+        "filesystem_markers": [
+          ".roo-code"
+        ]
+      }
+    },
+    {
+      "host_id": "trae",
+      "aliases": [],
+      "priority": 120,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@trae",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "TRAE_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".trae/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "TRAE_HOME"
+        ],
+        "executables": [
+          "trae"
+        ],
+        "filesystem_markers": [
+          ".trae"
+        ]
+      }
+    },
+    {
+      "host_id": "hermes",
+      "aliases": [
+        "hermes-desktop"
+      ],
+      "priority": 130,
+      "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
+      "cold_fork_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@hermes",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "HERMES_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".hermes/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "HERMES_HOME"
+        ],
+        "executables": [
+          "hermes"
+        ],
+        "filesystem_markers": [
+          ".hermes"
+        ]
+      }
+    },
+    {
+      "host_id": "opencode",
+      "aliases": [
+        "open-code"
+      ],
+      "priority": 140,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@opencode",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "OPENCODE_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".opencode/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "OPENCODE_HOME"
+        ],
+        "executables": [
+          "opencode"
+        ],
+        "filesystem_markers": [
+          ".opencode"
+        ]
+      }
+    },
+    {
+      "host_id": "chatgpt",
+      "aliases": [
+        "chatgpt-desktop"
+      ],
+      "priority": 150,
+      "compatibility_status": "NOT_RUN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@chatgpt",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "CHATGPT_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".chatgpt/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "CHATGPT_HOME"
+        ],
+        "executables": [
+          "chatgpt"
+        ],
+        "filesystem_markers": [
+          ".chatgpt"
+        ]
+      }
+    },
+    {
+      "host_id": "workbuddy",
+      "aliases": [
+        "workbuddy-desktop",
+        "workbuddy-ai"
+      ],
+      "priority": 160,
+      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
+      "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "plugin_manifest",
+        "plugin_identity": {
+          "canonical": "solve-lite@solve-lite-local",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "CODEBUDDY_PLUGIN_ROOT",
+          "CLAUDE_PLUGIN_ROOT"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".workbuddy-ai/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "CODEBUDDY_PLUGIN_ROOT",
+          "CLAUDE_PLUGIN_ROOT"
+        ],
+        "executables": [
+          "workbuddy"
+        ],
+        "filesystem_markers": [
+          ".workbuddy-ai",
+          ".workbuddy",
+          ".codebuddy"
+        ]
+      }
+    },
+    {
+      "host_id": "doubao",
+      "aliases": [
+        "doubaowork"
+      ],
+      "priority": 170,
+      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
+      "cold_fork_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@doubao",
+          "aliases": []
+        },
+        "plugin_root_env": [],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": "Library/Application Support/DoubaoWork/Default/.doubaowork/agent_mode/workspace/.user_skills/solve-lite"
       },
       "detection": {
         "environment_keys": [],
-        "executables": ["doubaowork"],
-        "filesystem_markers": ["Library/Application Support/DoubaoWork"]
+        "executables": [
+          "doubaowork"
+        ],
+        "filesystem_markers": [
+          "Library/Application Support/DoubaoWork"
+        ]
+      }
+    },
+    {
+      "host_id": "qwen-code",
+      "aliases": [
+        "qwen"
+      ],
+      "priority": 180,
+      "compatibility_status": "PARTIAL_FROZEN",
+      "cold_fork_status": "UNTESTED_PUBLIC_ABI_AVAILABLE",
+      "supported_modes": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "capabilities": [
+        "public_abi",
+        "skill_plan",
+        "shared_coreml_runtime",
+        "twenty_scenario_router",
+        "percentage_surface",
+        "reward_pool"
+      ],
+      "public_adapter_entrypoint": null,
+      "mcp_config_key": null,
+      "mcp_cwd": null,
+      "integration": {
+        "hook_mode": "portable_skill",
+        "plugin_identity": {
+          "canonical": "solve-lite@qwen-code",
+          "aliases": []
+        },
+        "plugin_root_env": [
+          "QWEN_HOME"
+        ],
+        "skill_dir": "skills/solve-lite",
+        "user_skill_dir": ".qwen/skills/solve-lite"
+      },
+      "detection": {
+        "environment_keys": [
+          "QWEN_HOME"
+        ],
+        "executables": [
+          "qwen",
+          "qwen-code"
+        ],
+        "filesystem_markers": [
+          ".qwen"
+        ]
       }
     }
   ],
   "acceptance": {
     "scope": "isolated installed-copy before public release",
-    "required_hosts": ["workbuddy", "doubao", "codex", "hermes"],
+    "declared_hosts": 18,
+    "isolated_profile_install_status": "PASS_18_OF_18",
+    "isolated_profile_install_required": 18,
+    "isolated_profile_install_passed": 18,
+    "verified_hosts": [
+      "workbuddy",
+      "doubao",
+      "codex",
+      "hermes"
+    ],
+    "ordinary_session_verified_hosts": [
+      "workbuddy",
+      "doubao",
+      "codex",
+      "hermes"
+    ],
+    "ordinary_session_acceptance_mode": "PROGRESSIVE_POST_RELEASE",
+    "required_hosts": [
+      "workbuddy",
+      "doubao",
+      "codex",
+      "hermes"
+    ],
     "shared_runtime_copies": 1,
     "host_heavy_copy_count": 0,
     "network_calls_at_runtime": 0,
