@@ -17,9 +17,9 @@ class AgentAutoTest(unittest.TestCase):
 
     def test_registry_schema_and_truth(self):
         self.assertEqual(self.modes, agent_auto.SUPPORTED_MODES)
-        self.assertEqual(len(self.hosts), 4)
+        self.assertEqual(len(self.hosts), 18)
         self.assertEqual([host.priority for host in self.hosts], sorted(host.priority for host in self.hosts))
-        self.assertEqual(len({host.priority for host in self.hosts}), 4)
+        self.assertEqual(len({host.priority for host in self.hosts}), 18)
         passed = {"doubao", "workbuddy"}
         prior = {"codex", "hermes"}
         self.assertTrue(all(
@@ -37,6 +37,11 @@ class AgentAutoTest(unittest.TestCase):
         self.assertTrue(all(
             self.by_id[host].compatibility_status == "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE"
             for host in prior
+        ))
+        unverified = set(self.by_id) - passed - prior
+        self.assertTrue(all(
+            "PASS_VERIFIED" not in self.by_id[host].compatibility_status
+            for host in unverified
         ))
 
     def test_deterministic_supported_mode_priority(self):
