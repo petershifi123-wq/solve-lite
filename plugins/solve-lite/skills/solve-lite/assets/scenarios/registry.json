@@ -1,0 +1,266 @@
+{
+  "schema_version": "solve.scenario-registry.v1",
+  "scenarios": [
+    {
+      "scenario_id": "CHAT_RELATIONSHIP",
+      "display_name_zh": "聊天互动信号",
+      "input_schema": "message_or_transcript",
+      "privacy_note": "仅分析用户有权提供的文本",
+      "mind_reading_boundary": "只描述当前文本与互动信号",
+      "presentation_axis_ids": ["intent", "momentum"],
+      "axes": [
+        {"axis_id": "intent", "display_name_zh": "互动意图", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "romantic_interest", "display_label_zh": "浪漫兴趣信号"}, {"id": "friendly", "display_label_zh": "友好交流"}, {"id": "polite", "display_label_zh": "礼貌回应"}, {"id": "distance", "display_label_zh": "拉开距离"}]},
+        {"axis_id": "momentum", "display_name_zh": "互动趋势", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "warming", "display_label_zh": "升温"}, {"id": "stable", "display_label_zh": "稳定"}, {"id": "unclear", "display_label_zh": "不明确"}, {"id": "cooling", "display_label_zh": "冷淡"}]},
+        {"axis_id": "reciprocity", "display_name_zh": "双方投入", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "balanced", "display_label_zh": "双方投入均衡"}, {"id": "user_more_active", "display_label_zh": "我方更主动"}, {"id": "other_more_active", "display_label_zh": "对方更主动"}, {"id": "both_low", "display_label_zh": "双方低投入"}]},
+        {"axis_id": "next_step", "display_name_zh": "下一步", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "invite", "display_label_zh": "发出邀请"}, {"id": "continue_chat", "display_label_zh": "继续聊天"}, {"id": "clarify", "display_label_zh": "澄清意图"}, {"id": "give_space", "display_label_zh": "留出空间"}]},
+        {"axis_id": "reply_timing", "display_name_zh": "回复时机", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "now", "display_label_zh": "立即回复"}, {"id": "later", "display_label_zh": "稍后回复"}, {"id": "wait_other", "display_label_zh": "等待对方"}]},
+        {"axis_id": "conversation_risk", "display_name_zh": "对话风险", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}, {"id": "escalating", "display_label_zh": "升级"}]}
+      ]
+    },
+    {
+      "scenario_id": "MESSAGE_INTENT",
+      "display_name_zh": "消息意图",
+      "input_schema": "message_or_transcript",
+      "privacy_note": "仅处理用户授权的消息",
+      "mind_reading_boundary": "只分类文本表达的用途",
+      "presentation_axis_ids": ["intent"],
+      "axes": [
+        {"axis_id": "intent", "display_name_zh": "消息意图", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "request_help", "display_label_zh": "请求帮助"}, {"id": "ask_information", "display_label_zh": "提问信息"}, {"id": "complaint", "display_label_zh": "抱怨"}, {"id": "follow_up", "display_label_zh": "催促"}, {"id": "small_talk", "display_label_zh": "社交寒暄"}, {"id": "business_inquiry", "display_label_zh": "商务询价"}, {"id": "promotion", "display_label_zh": "推销"}, {"id": "spam", "display_label_zh": "垃圾信息"}]}
+      ]
+    },
+    {
+      "scenario_id": "CUSTOMER_SUPPORT",
+      "display_name_zh": "工单判断",
+      "input_schema": "ticket_text",
+      "privacy_note": "仅处理授权工单内容",
+      "mind_reading_boundary": "不推断客户未表达的动机",
+      "presentation_axis_ids": ["queue", "urgency", "human_escalation"],
+      "axes": [
+        {"axis_id": "queue", "display_name_zh": "队列", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "account", "display_label_zh": "账户"}, {"id": "billing", "display_label_zh": "账单"}, {"id": "technical", "display_label_zh": "技术"}, {"id": "sales", "display_label_zh": "销售"}, {"id": "other", "display_label_zh": "其他"}]},
+        {"axis_id": "urgency", "display_name_zh": "紧急程度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "calm", "display_label_zh": "平静"}, {"id": "waiting", "display_label_zh": "等待"}, {"id": "blocked", "display_label_zh": "被阻塞"}, {"id": "outage", "display_label_zh": "故障"}]},
+        {"axis_id": "human_escalation", "display_name_zh": "人工升级", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "需要人工升级"}
+      ]
+    },
+    {
+      "scenario_id": "SALES_LEAD",
+      "display_name_zh": "销售线索",
+      "input_schema": "lead_message",
+      "privacy_note": "仅分析授权线索文本",
+      "mind_reading_boundary": "不声称掌握购买者未表达的意图",
+      "presentation_axis_ids": ["intent", "readiness"],
+      "axes": [
+        {"axis_id": "intent", "display_name_zh": "客户意图", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "book_demo", "display_label_zh": "预约演示"}, {"id": "pricing", "display_label_zh": "询价"}, {"id": "technical_support", "display_label_zh": "技术支持"}, {"id": "partnership", "display_label_zh": "合作"}, {"id": "general_inquiry", "display_label_zh": "普通咨询"}, {"id": "spam", "display_label_zh": "垃圾信息"}]},
+        {"axis_id": "readiness", "display_name_zh": "购买准备度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}, {"id": "very_high", "display_label_zh": "很高"}]}
+      ]
+    },
+    {
+      "scenario_id": "EMAIL_PRIORITY",
+      "display_name_zh": "邮件优先级",
+      "input_schema": "email_text",
+      "privacy_note": "仅处理授权邮件内容",
+      "mind_reading_boundary": "优先级必须来自实际业务文本",
+      "presentation_axis_ids": ["priority", "urgency"],
+      "axes": [
+        {"axis_id": "priority", "display_name_zh": "处理优先级", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "reply_now", "display_label_zh": "需要立即回复"}, {"id": "today", "display_label_zh": "今天处理"}, {"id": "normal", "display_label_zh": "普通"}, {"id": "fyi", "display_label_zh": "仅知会"}, {"id": "ignore", "display_label_zh": "无需处理"}]},
+        {"axis_id": "urgency", "display_name_zh": "业务紧急度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}, {"id": "critical", "display_label_zh": "紧急"}]}
+      ]
+    },
+    {
+      "scenario_id": "AGENT_NEXT_ACTION",
+      "display_name_zh": "下一步",
+      "input_schema": "agent_state",
+      "privacy_note": "仅分析当前授权任务状态",
+      "mind_reading_boundary": "输出是动作建议而非权限授予",
+      "presentation_axis_ids": ["action"],
+      "axes": [
+        {"axis_id": "action", "display_name_zh": "下一动作", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "search", "display_label_zh": "继续检索"}, {"id": "retrieve", "display_label_zh": "读取证据"}, {"id": "write", "display_label_zh": "修改代码"}, {"id": "test", "display_label_zh": "运行测试"}, {"id": "ask_user", "display_label_zh": "询问用户"}, {"id": "stop", "display_label_zh": "停止"}]}
+      ]
+    },
+    {
+      "scenario_id": "AGENT_LOOP_CONTROL",
+      "display_name_zh": "循环控制",
+      "input_schema": "agent_trace",
+      "privacy_note": "仅分析当前任务轨迹",
+      "mind_reading_boundary": "停止与重试均为正式动作选项",
+      "presentation_axis_ids": ["control"],
+      "axes": [
+        {"axis_id": "control", "display_name_zh": "控制动作", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "continue", "display_label_zh": "继续"}, {"id": "retry", "display_label_zh": "重试"}, {"id": "ask_user", "display_label_zh": "询问用户"}, {"id": "stop", "display_label_zh": "停止"}]}
+      ]
+    },
+    {
+      "scenario_id": "COMPLETION_VERIFIER",
+      "display_name_zh": "完成度核验",
+      "input_schema": "task_evidence",
+      "privacy_note": "仅以可核验证据判断",
+      "mind_reading_boundary": "不以执行者自称完成代替事实",
+      "presentation_axis_ids": ["completion", "tests_passed"],
+      "axes": [
+        {"axis_id": "completion", "display_name_zh": "任务状态", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "complete", "display_label_zh": "完成"}, {"id": "needs_verification", "display_label_zh": "还需验证"}, {"id": "incomplete", "display_label_zh": "未完成"}]},
+        {"axis_id": "tests_passed", "display_name_zh": "测试通过", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "测试真实通过"},
+        {"axis_id": "artifact_exists", "display_name_zh": "交付物存在", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "交付物存在"},
+        {"axis_id": "goal_achieved", "display_name_zh": "目标达成", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "目标真正完成"}
+      ]
+    },
+    {
+      "scenario_id": "LLM_OUTPUT_GUARD",
+      "display_name_zh": "输出检查",
+      "input_schema": "output_with_sources",
+      "privacy_note": "仅检查给定输出与证据",
+      "mind_reading_boundary": "不把语言流畅度当事实依据",
+      "presentation_axis_ids": ["action", "grounded"],
+      "axes": [
+        {"axis_id": "action", "display_name_zh": "处理动作", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "pass", "display_label_zh": "通过"}, {"id": "revise", "display_label_zh": "修改"}, {"id": "block", "display_label_zh": "阻止"}]},
+        {"axis_id": "grounded", "display_name_zh": "证据支撑", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "证据充分支撑"}
+      ]
+    },
+    {
+      "scenario_id": "RAG_RELEVANCE",
+      "display_name_zh": "证据相关度",
+      "input_schema": "query_and_chunks",
+      "privacy_note": "仅评价给定检索片段",
+      "mind_reading_boundary": "相关度不等于事实真伪",
+      "presentation_axis_ids": ["relevance"],
+      "axes": [
+        {"axis_id": "relevance", "display_name_zh": "相关度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "irrelevant", "display_label_zh": "无关"}, {"id": "partial", "display_label_zh": "部分相关"}, {"id": "direct", "display_label_zh": "直接相关"}, {"id": "key_evidence", "display_label_zh": "关键证据"}]}
+      ]
+    },
+    {
+      "scenario_id": "CLAIM_VERIFICATION",
+      "display_name_zh": "主张核验",
+      "input_schema": "claim_and_sources",
+      "privacy_note": "仅核对给定材料",
+      "mind_reading_boundary": "不是事实真理机",
+      "presentation_axis_ids": ["verdict", "evidence_completeness"],
+      "axes": [
+        {"axis_id": "verdict", "display_name_zh": "材料结论", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "supported", "display_label_zh": "支持"}, {"id": "contradicted", "display_label_zh": "矛盾"}, {"id": "not_mentioned", "display_label_zh": "未提及"}]},
+        {"axis_id": "source_quality", "display_name_zh": "来源质量", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}]},
+        {"axis_id": "evidence_completeness", "display_name_zh": "证据完整度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "insufficient", "display_label_zh": "不足"}, {"id": "partial", "display_label_zh": "部分"}, {"id": "complete", "display_label_zh": "完整"}]}
+      ]
+    },
+    {
+      "scenario_id": "CONTENT_MODERATION",
+      "display_name_zh": "内容风险",
+      "input_schema": "content_text",
+      "privacy_note": "仅处理授权内容",
+      "mind_reading_boundary": "风险信号可并行存在",
+      "presentation_axis_ids": ["credible_threat", "malware", "harassment"],
+      "axes": [
+        {"axis_id": "spam", "display_name_zh": "垃圾信息", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "垃圾信息风险"},
+        {"axis_id": "harassment", "display_name_zh": "骚扰", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "骚扰风险"},
+        {"axis_id": "sexual", "display_name_zh": "性内容", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "性内容风险"},
+        {"axis_id": "self_harm", "display_name_zh": "自伤", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "自伤风险"},
+        {"axis_id": "malware", "display_name_zh": "恶意软件", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "恶意软件风险"},
+        {"axis_id": "credible_threat", "display_name_zh": "可信威胁", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "可信威胁风险"}
+      ]
+    },
+    {
+      "scenario_id": "OPERATIONS_DECISION",
+      "display_name_zh": "运营判断",
+      "input_schema": "operation_record",
+      "privacy_note": "仅处理授权业务记录",
+      "mind_reading_boundary": "高风险结果保留人工复核",
+      "presentation_axis_ids": ["risk_level", "human_escalation"],
+      "axes": [
+        {"axis_id": "refund_eligible", "display_name_zh": "退款资格", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "符合退款条件"},
+        {"axis_id": "duplicate", "display_name_zh": "重复请求", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "属于重复请求"},
+        {"axis_id": "spam", "display_name_zh": "垃圾请求", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "属于垃圾请求"},
+        {"axis_id": "human_escalation", "display_name_zh": "人工升级", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "需要人工升级"},
+        {"axis_id": "fraud_signal", "display_name_zh": "异常信号", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "存在异常或欺诈信号"},
+        {"axis_id": "risk_level", "display_name_zh": "风险等级", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}, {"id": "critical", "display_label_zh": "严重"}]},
+        {"axis_id": "expense_category", "display_name_zh": "费用类别", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "travel", "display_label_zh": "差旅"}, {"id": "software", "display_label_zh": "软件"}, {"id": "service", "display_label_zh": "服务"}, {"id": "other", "display_label_zh": "其他"}]},
+        {"axis_id": "document_anomaly", "display_name_zh": "单据异常", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "单据存在异常"},
+        {"axis_id": "urgency", "display_name_zh": "处理紧急度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}]}
+      ]
+    },
+    {
+      "scenario_id": "DOCUMENT_DATA_QUALITY",
+      "display_name_zh": "数据质量",
+      "input_schema": "document_or_record",
+      "privacy_note": "仅处理授权文档或记录",
+      "mind_reading_boundary": "机械校验优先交给确定性代码",
+      "presentation_axis_ids": ["validity", "schema_mismatch"],
+      "axes": [
+        {"axis_id": "validity", "display_name_zh": "处理结论", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "valid", "display_label_zh": "有效"}, {"id": "repair", "display_label_zh": "需要修复"}, {"id": "reject", "display_label_zh": "拒绝"}]},
+        {"axis_id": "missing_fields", "display_name_zh": "缺少字段", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "存在缺少字段"},
+        {"axis_id": "anomaly", "display_name_zh": "异常记录", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "存在异常记录"},
+        {"axis_id": "schema_mismatch", "display_name_zh": "结构不匹配", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "存在结构不匹配"},
+        {"axis_id": "duplicate", "display_name_zh": "重复记录", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "存在重复记录"}
+      ]
+    },
+    {
+      "scenario_id": "PRODUCT_CONTENT_ROUTING",
+      "display_name_zh": "内容路由",
+      "input_schema": "content_and_goal",
+      "privacy_note": "仅处理授权内容",
+      "mind_reading_boundary": "输出为有限路由建议",
+      "presentation_axis_ids": ["relevance", "route"],
+      "axes": [
+        {"axis_id": "relevance", "display_name_zh": "新闻相关度", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "high", "display_label_zh": "高度相关"}, {"id": "possible", "display_label_zh": "可能相关"}, {"id": "irrelevant", "display_label_zh": "无关"}]},
+        {"axis_id": "product_tag", "display_name_zh": "产品标签", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "feature", "display_label_zh": "功能"}, {"id": "pricing", "display_label_zh": "价格"}, {"id": "security", "display_label_zh": "安全"}, {"id": "support", "display_label_zh": "支持"}, {"id": "other", "display_label_zh": "其他"}]},
+        {"axis_id": "best_fit", "display_name_zh": "方案匹配", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "a", "display_label_zh": "方案 A"}, {"id": "b", "display_label_zh": "方案 B"}, {"id": "c", "display_label_zh": "方案 C"}]},
+        {"axis_id": "route", "display_name_zh": "路由动作", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "recommend", "display_label_zh": "推荐"}, {"id": "review", "display_label_zh": "审核"}, {"id": "ignore", "display_label_zh": "忽略"}]}
+      ]
+    },
+    {
+      "scenario_id": "AGENT_TOOL_GUARD",
+      "display_name_zh": "工具调用守卫",
+      "input_schema": "tool_call_and_policy",
+      "privacy_note": "仅检查调用参数与显式授权边界",
+      "mind_reading_boundary": "不把未提供的权限视为已授权",
+      "presentation_axis_ids": ["action", "permission_present"],
+      "axes": [
+        {"axis_id": "action", "display_name_zh": "守卫动作", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "allow", "display_label_zh": "允许"}, {"id": "revise", "display_label_zh": "修改后再调用"}, {"id": "block", "display_label_zh": "阻止"}, {"id": "ask_user", "display_label_zh": "请求明确授权"}]},
+        {"axis_id": "permission_present", "display_name_zh": "权限充分", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "存在明确且足够的权限"},
+        {"axis_id": "arguments_bounded", "display_name_zh": "参数有界", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "工具参数范围明确且有界"}
+      ]
+    },
+    {
+      "scenario_id": "MODEL_ROUTER",
+      "display_name_zh": "模型路由",
+      "input_schema": "task_and_model_catalog",
+      "privacy_note": "仅在显式提供的模型目录内建议",
+      "mind_reading_boundary": "不声称未实测的模型能力",
+      "presentation_axis_ids": ["route"],
+      "axes": [
+        {"axis_id": "route", "display_name_zh": "模型路线", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "local_fast", "display_label_zh": "本地快速模型"}, {"id": "local_reasoning", "display_label_zh": "本地推理模型"}, {"id": "cloud_standard", "display_label_zh": "云端标准模型"}, {"id": "cloud_reasoning", "display_label_zh": "云端推理模型"}, {"id": "human_review", "display_label_zh": "人工复核"}]}
+      ]
+    },
+    {
+      "scenario_id": "TASK_ROUTER",
+      "display_name_zh": "任务路由",
+      "input_schema": "task_and_worker_catalog",
+      "privacy_note": "仅在显式提供的处理路径内建议",
+      "mind_reading_boundary": "不臆测未声明的执行能力",
+      "presentation_axis_ids": ["route"],
+      "axes": [
+        {"axis_id": "route", "display_name_zh": "处理路径", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "direct_answer", "display_label_zh": "直接回答"}, {"id": "evidence_retrieval", "display_label_zh": "证据检索"}, {"id": "code_execution", "display_label_zh": "代码执行"}, {"id": "specialist_agent", "display_label_zh": "专门代理"}, {"id": "human_review", "display_label_zh": "人工复核"}]}
+      ]
+    },
+    {
+      "scenario_id": "AGENT_TRACE_OBSERVABILITY",
+      "display_name_zh": "代理轨迹观测",
+      "input_schema": "same_trace_receipt",
+      "privacy_note": "仅投影当前授权轨迹的审计字段",
+      "mind_reading_boundary": "不以进程存活代替任务完成证据",
+      "presentation_axis_ids": ["trace_health", "same_trace"],
+      "axes": [
+        {"axis_id": "trace_health", "display_name_zh": "轨迹完整度", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "complete", "display_label_zh": "完整"}, {"id": "partial", "display_label_zh": "部分完整"}, {"id": "broken", "display_label_zh": "断裂"}]},
+        {"axis_id": "same_trace", "display_name_zh": "同轨结算", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "打包、决策与结算属于同一轨迹"},
+        {"axis_id": "evidence_linked", "display_name_zh": "证据关联", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "子事件与证据引用可追溯"}
+      ]
+    },
+    {
+      "scenario_id": "SECURITY_INCIDENT_TRIAGE",
+      "display_name_zh": "安全事件分诊",
+      "input_schema": "incident_evidence",
+      "privacy_note": "仅处理经授权且已脱敏的事件材料",
+      "mind_reading_boundary": "不把可疑信号直接定性为攻击事实",
+      "presentation_axis_ids": ["severity", "action"],
+      "axes": [
+        {"axis_id": "severity", "display_name_zh": "事件严重度", "primitive": "score", "shape": "ORDERED_SCORE_DISTRIBUTION", "options": [{"id": "informational", "display_label_zh": "信息"}, {"id": "low", "display_label_zh": "低"}, {"id": "medium", "display_label_zh": "中"}, {"id": "high", "display_label_zh": "高"}, {"id": "critical", "display_label_zh": "严重"}]},
+        {"axis_id": "action", "display_name_zh": "处置动作", "primitive": "choice", "shape": "ONE_PRIMARY_DISTRIBUTION", "options": [{"id": "monitor", "display_label_zh": "继续监控"}, {"id": "investigate", "display_label_zh": "进一步调查"}, {"id": "contain", "display_label_zh": "隔离控制"}, {"id": "escalate", "display_label_zh": "人工升级"}]},
+        {"axis_id": "evidence_sufficient", "display_name_zh": "证据充分", "primitive": "noul", "shape": "MULTI_INDEPENDENT_NOUL", "proposition_label_zh": "当前证据足以支持分诊"}
+      ]
+    }
+  ]
+}
