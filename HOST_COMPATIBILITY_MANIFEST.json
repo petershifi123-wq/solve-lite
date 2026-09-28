@@ -1,0 +1,427 @@
+{
+  "schema_version": "solve-lite.host-compatibility.v1",
+  "current_install_target": "v0.1.11",
+  "source_of_truth": "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
+  "declared_host_profiles": 18,
+  "invariant": "INSTALL_PASS != PRODUCT_PASS",
+  "isolated_profile_install": "PASS_18_OF_18",
+  "ordinary_session_acceptance": "PROGRESSIVE_POST_RELEASE",
+  "ordinary_message_contract": {
+    "route_every_non_empty_message": true,
+    "scenario_catalog_size": 20,
+    "fallback_scenario": "MESSAGE_INTENT",
+    "percentage_required": true,
+    "reward_pool_required": true,
+    "token_line_only_when_measured_pack": true,
+    "scenario_blocks_per_turn": 1,
+    "percentage_blocks_per_turn": 1,
+    "reward_settlements_per_turn": 1,
+    "retry_idempotency_required": true,
+    "excluded_events": [
+      "system message",
+      "assistant message",
+      "tool event",
+      "hook internal event",
+      "empty or whitespace-only message",
+      "retry or internal replay"
+    ]
+  },
+  "hosts": [
+    {
+      "host_id": "claude-code",
+      "aliases": [
+        "claude"
+      ],
+      "adapter_name": "solve-lite-claude-code",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".claude/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "cursor",
+      "aliases": [
+        "cursor-desktop"
+      ],
+      "adapter_name": "solve-lite-cursor",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".cursor/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "github-copilot",
+      "aliases": [
+        "copilot"
+      ],
+      "adapter_name": "solve-lite-github-copilot",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".copilot/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "codex",
+      "aliases": [
+        "codex-desktop"
+      ],
+      "adapter_name": "solve-lite-codex",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".codex/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "plugin_manifest",
+      "auto_route_method": "native host hook when evidenced; otherwise mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
+      "prior_evidence_pass": true,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "windsurf",
+      "aliases": [
+        "codeium"
+      ],
+      "adapter_name": "solve-lite-windsurf",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".codeium/windsurf/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "gemini-cli",
+      "aliases": [
+        "gemini"
+      ],
+      "adapter_name": "solve-lite-gemini-cli",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".gemini/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "amp",
+      "aliases": [
+        "amp-code"
+      ],
+      "adapter_name": "solve-lite-amp",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".amp/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "goose",
+      "aliases": [
+        "block-goose"
+      ],
+      "adapter_name": "solve-lite-goose",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".goose/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "aider",
+      "aliases": [],
+      "adapter_name": "solve-lite-aider",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".aider/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "cline",
+      "aliases": [
+        "cline-nightly"
+      ],
+      "adapter_name": "solve-lite-cline",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".cline/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "PARTIAL_FROZEN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "roo-code",
+      "aliases": [
+        "roo",
+        "roocode"
+      ],
+      "adapter_name": "solve-lite-roo-code",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".roo-code/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "trae",
+      "aliases": [],
+      "adapter_name": "solve-lite-trae",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".trae/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "hermes",
+      "aliases": [
+        "hermes-desktop"
+      ],
+      "adapter_name": "solve-lite-hermes",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".hermes/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "PASS_VERIFIED_PUBLIC_ABI_PRIOR_SCOPE",
+      "prior_evidence_pass": true,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "opencode",
+      "aliases": [
+        "open-code"
+      ],
+      "adapter_name": "solve-lite-opencode",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".opencode/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "chatgpt",
+      "aliases": [
+        "chatgpt-desktop"
+      ],
+      "adapter_name": "solve-lite-chatgpt",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".chatgpt/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "NOT_RUN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "workbuddy",
+      "aliases": [
+        "workbuddy-desktop",
+        "workbuddy-ai"
+      ],
+      "adapter_name": "solve-lite-workbuddy",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".workbuddy-ai/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "plugin_manifest",
+      "auto_route_method": "native host hook when evidenced; otherwise mandatory portable pre-prompt",
+      "session_hook": "UserPromptSubmit",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
+      "prior_evidence_pass": true,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "doubao",
+      "aliases": [
+        "doubaowork"
+      ],
+      "adapter_name": "solve-lite-doubao",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": "Library/Application Support/DoubaoWork/Default/.doubaowork/agent_mode/workspace/.user_skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "PASS_VERIFIED_FRESH_INSTALL_PUBLIC_ABI",
+      "prior_evidence_pass": true,
+      "current_candidate_pass": false
+    },
+    {
+      "host_id": "qwen-code",
+      "aliases": [
+        "qwen"
+      ],
+      "adapter_name": "solve-lite-qwen-code",
+      "python_entrypoint": "plugins/solve-lite/hooks/user_prompt_submit.py",
+      "install_target": ".qwen/skills/solve-lite",
+      "discovery_method": [
+        "explicit_host_id",
+        "environment",
+        "executable",
+        "filesystem_marker"
+      ],
+      "registration_method": "portable_skill",
+      "auto_route_method": "mandatory portable pre-prompt",
+      "session_hook": "PORTABLE_PREPROMPT",
+      "healthcheck": "/usr/bin/python3 tools/installer.py --check --json",
+      "compatibility_status": "PARTIAL_FROZEN",
+      "prior_evidence_pass": false,
+      "current_candidate_pass": false
+    }
+  ],
+  "candidate_product_pass": false,
+  "candidate_gate": "REQUIRES_FRESH_ORDINARY_SESSION_AFTER_ROUTER_CHANGE"
+}

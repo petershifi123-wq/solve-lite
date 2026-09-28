@@ -1,19 +1,20 @@
 # Host Integration Notes / 宿主接入须知
 
-This file describes the current `v0.1.10` host contract only.
+This file describes the current `v0.1.11` host contract only.
 
 ## One shared runtime
 
 - One versioned CoreML runtime is installed per machine.
-- WorkBuddy, Doubao, Codex and Hermes receive thin adapters only.
+- Eighteen registry profiles receive thin adapters only; one shared runtime remains authoritative.
 - Adapters contain code and a `.solve-lite-runtime.json` pointer, never model copies.
 - Installation verifies the pinned Hugging Face revision, archive SHA-256 and installed-tree SHA-256.
 - Inference is offline and performs zero network calls.
 
 ## Automatic host detection
 
-`/usr/bin/python3 tools/installer.py --host auto` resolves the host from an explicit
-host marker first, then from the host's normal configuration directory:
+`/usr/bin/python3 tools/installer.py --host auto` resolves the host from the registry's
+environment, executable and filesystem signals. `--host <id>` selects an explicit profile;
+`--host all` is reserved for intentional multi-host installation.
 
 | Host | Default evidence |
 |---|---|
@@ -21,6 +22,10 @@ host marker first, then from the host's normal configuration directory:
 | Hermes | `~/.hermes` |
 | WorkBuddy | `~/.workbuddy-ai`, `~/.workbuddy` or `~/.codebuddy` |
 | Doubao | `~/Library/Application Support/DoubaoWork` |
+
+The full 18-profile list and evidence state are machine-readable in
+`HOST_COMPATIBILITY_MANIFEST.json`. A declared install target is not a verified
+ordinary-session PASS.
 
 An agent must not ask the user for a model path or an ML environment. If automatic
 detection cannot identify a supported host, the installer uses the portable generic
@@ -32,6 +37,8 @@ skill location and reports that choice in its JSON receipt.
 - Registration must be followed by `tools/hook_selftest.py` and installed-copy verification.
 - A host that snapshots hooks may require its normal restart or its own hook reload command.
 - Every hook command must fail open so a missing adapter never blocks the user's prompt.
+- Every non-empty ordinary message must still expose either a real 20-scenario percentage
+  plus one reward settlement, or an explicit `PRESENTATION_DATA_UNAVAILABLE` state.
 - WorkBuddy resolves `CODEBUDDY_PLUGIN_ROOT` or `CLAUDE_PLUGIN_ROOT`; Codex resolves
   `PLUGIN_ROOT`. Never write a developer-machine absolute path into a public manifest.
 

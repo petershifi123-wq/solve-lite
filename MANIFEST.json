@@ -1,6 +1,6 @@
 {
-  "content_tree_sha256": "893312543d6820827898d67ba53a4419bc39dc8a14d9d076dbbe1201c871825f",
-  "file_count_excluding_release_metadata": 83,
+  "content_tree_sha256": "af3a4c79b9a713f5197fbc1ee4787a672194f54ec78ca44695ef678d1c1e4c66",
+  "file_count_excluding_release_metadata": 86,
   "files": [
     {
       "bytes": 318,
@@ -13,29 +13,34 @@
       "sha256": "6feaded4e28ea86e001a6751b4e3d960e8b7c31b9616ff9936b79297086e809b"
     },
     {
-      "bytes": 954,
+      "bytes": 1246,
       "path": "AGENTS.md",
-      "sha256": "f860bb8b7e486d19920f62a8a3054bd7df4d44506423a8ed799d468280b596d4"
+      "sha256": "9482ff94c52076e486d613c2e4be54d2abd9b37774e155aa752b79580e381231"
     },
     {
-      "bytes": 1994,
+      "bytes": 2608,
       "path": "CHANGELOG.md",
-      "sha256": "70b67c1ef51e143c072a2e4fef2a77a37d7becfb237efbfca8a0b731767d4e9c"
+      "sha256": "05a6284c4a23e42af2e0c9c4228c9f8896d720bede3f0009ac66ee6c1394b775"
     },
     {
-      "bytes": 972,
+      "bytes": 1535,
       "path": "COMPATIBILITY.md",
-      "sha256": "1e771ff9924c7dabcddb7d43b70806a0c2c0eaa9185c0ee839557eabe183cb24"
+      "sha256": "ad5c181189a4e99f76955aa50efeb20ad19245e5524634815deba853f9dd4963"
     },
     {
       "bytes": 5769,
       "path": "CORE_ASSET_MANIFEST.json",
-      "sha256": "03d68f27edc0563e58193b85cd3e8436d3da62225333ab5e94c0b868fc3c1db2"
+      "sha256": "53890179b58251d4c74ef53733a36d2fed02d1687a968f22ecd5beeb941ec680"
     },
     {
-      "bytes": 2214,
+      "bytes": 14797,
+      "path": "HOST_COMPATIBILITY_MANIFEST.json",
+      "sha256": "2dcf6e6357f1a3a739101e9f0e4cb0680d753f38fdeee27822d74af1b745aa81"
+    },
+    {
+      "bytes": 2681,
       "path": "HOST_INTEGRATION_NOTES.md",
-      "sha256": "4a11834dd926c1849929b4c0c45c52b0178bacd0bb8a220ad2b6a14051a8cf0c"
+      "sha256": "2ed27139d80a8efa423f92acde55aad6e23e3d484e7984e6ff81be86869f35de"
     },
     {
       "bytes": 1196,
@@ -48,9 +53,9 @@
       "sha256": "b9700551a013cd5b124ddaaeb84d0211a0586c256f19984cfcca03868f46e318"
     },
     {
-      "bytes": 4614,
+      "bytes": 8540,
       "path": "README.md",
-      "sha256": "9c6c1368cef623842e7b27423c534e5b120d6434d5c4e8784dd39a925dd68816"
+      "sha256": "3a2ee6c67e7775655dcbaa63e7b8abe78d0ed20163b2655940f0cc3b674995f7"
     },
     {
       "bytes": 1511,
@@ -75,12 +80,12 @@
     {
       "bytes": 446,
       "path": "plugins/solve-lite/.codebuddy-plugin/plugin.json",
-      "sha256": "ea26cd885c5a0eef3dfd60e2645619dcb78694f982c7e0847d1a93d5ffbd888b"
+      "sha256": "7b15dd6b5b22794fdfc08e9f27da1f2acbaada884120a04b07601427766d17bb"
     },
     {
       "bytes": 1124,
       "path": "plugins/solve-lite/.codex-plugin/plugin.json",
-      "sha256": "5849b4e1f79e427ab448f9a66227361d0eed86e98db525921a5eb4452ac5d85f"
+      "sha256": "05eb3286b07d79d494472df6752e11f673d6cab0004df9820648dc977efb4f58"
     },
     {
       "bytes": 292,
@@ -93,9 +98,9 @@
       "sha256": "f2c94fffc6a8e1124323fb4684998d9affa853c5ef321dd6e841e2c78373c048"
     },
     {
-      "bytes": 20061,
+      "bytes": 23989,
       "path": "plugins/solve-lite/hooks/user_prompt_submit.py",
-      "sha256": "d67c360cf7254b05da0ef4a069a347bd40c1111372b914285b91f14c0c2e0481"
+      "sha256": "ad7962c2c7f53ce2be5c7e9a2157cda54063fa0f035bb2247e7b40f4e878d824"
     },
     {
       "bytes": 7320,
@@ -113,14 +118,14 @@
       "sha256": "1d5c9441af593e8cf9b94c8f1669eebd65879830c11407be7fcdf95371b46caa"
     },
     {
-      "bytes": 2114,
+      "bytes": 2768,
       "path": "plugins/solve-lite/skills/solve-lite/SKILL.md",
-      "sha256": "312f49b8bffe85d44c44b950f479ee1a8dbf150d9376c6ff82eba08df35b2651"
+      "sha256": "fdb74ce8224c596b4aff1213699bfacc51ad9b37add8b60dc6a0ff1e4ab1ead3"
     },
     {
-      "bytes": 4860,
+      "bytes": 23720,
       "path": "plugins/solve-lite/skills/solve-lite/assets/agent_registry.json",
-      "sha256": "b1bab380b99f1460b53bdcc884105c080ff92c3b0fca7f52a95efe4ade5a941e"
+      "sha256": "5fc2290ff7669196158e09fe41eadd5ed0c4456a4c789c5d6ad58d2493e356c9"
     },
     {
       "bytes": 344,
@@ -148,9 +153,14 @@
       "sha256": "e4e2fd7920376bfb383cfa07eabe545249fe6049da0ce612ba577116df1ae352"
     },
     {
+      "bytes": 24004,
+      "path": "plugins/solve-lite/skills/solve-lite/assets/scenarios/registry.json",
+      "sha256": "62c1f17761cec17dd8b5d13a10bbce1cd57b6b297d03f32620f555debe5aa1ca"
+    },
+    {
       "bytes": 1655,
       "path": "plugins/solve-lite/skills/solve-lite/assets/specialist-assets.json",
-      "sha256": "1075be0aff15c0cc306c0565312db9c881ee36f227861b25e805465782474f2f"
+      "sha256": "5d62bf0adb634a8abd9d0fe10716cd203ee0a5bb448b064b492dd9f8d1060d7e"
     },
     {
       "bytes": 1248,
@@ -180,7 +190,7 @@
     {
       "bytes": 6035,
       "path": "plugins/solve-lite/skills/solve-lite/runtime/CORE_ASSET_MANIFEST_LITE.json",
-      "sha256": "b582f59aed83f4c3d12291610d6d63c4cc157ea40060bf13220e67169b7445d7"
+      "sha256": "e20dd418cd13430583258591e4873ac36fd7b9b832a635820d04657b05102bf3"
     },
     {
       "bytes": 2410,
@@ -300,12 +310,17 @@
     {
       "bytes": 12203,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/compact_runtime.py",
-      "sha256": "b19ed87605873a1b2fdd04238c6a44670f225a2f25be0501514382175447ea9b"
+      "sha256": "f2646b5b4df79550ec3ce39281f225f1d2fccdaf7f5bf3b8c23569f1047e109a"
+    },
+    {
+      "bytes": 3367,
+      "path": "plugins/solve-lite/skills/solve-lite/scripts/scenario_router.py",
+      "sha256": "b8b3d13d687190b42ff777dab5263c9a98c116f57e22de0bcd2d468caaf27937"
     },
     {
       "bytes": 7165,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/shared_runtime.py",
-      "sha256": "7e38c86f9e6086accd865f30e0f594926ae3e9dd90769b860279fee3723c6f3d"
+      "sha256": "ee5104e09c68a647fe3bd0bcbf614b732a790cf35e57bf2c443a0ed6acd3ab10"
     },
     {
       "bytes": 25221,
@@ -313,14 +328,14 @@
       "sha256": "8b1db86591e8d93a60aee1b696e50432f760612f50c45babe6d5f183003ffd15"
     },
     {
-      "bytes": 8454,
+      "bytes": 8658,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_agent_auto.py",
-      "sha256": "8378983c426c40f3ff669aac7f08d392ad6ffce5665b29ed4fc752ffe2b317dc"
+      "sha256": "11aa47499fb14f1cf2d5f88dd371e7b221e81ff2edc23be2a5d397c1f5890c71"
     },
     {
       "bytes": 3144,
       "path": "plugins/solve-lite/skills/solve-lite/scripts/test_solve_lite_abi.py",
-      "sha256": "0803db19c842d6759bda8713d4a29ab0217d74b78c3dbe83cda004adaf213106"
+      "sha256": "b1b14ec0f8f5e838efb8de6a64d3c25d32ad350b926a7bdd221d445915958530"
     },
     {
       "bytes": 9716,
@@ -333,24 +348,24 @@
       "sha256": "fa2ee71cf0cf6b1da85be99f74c27490ceacd709840d2c282ac6bce4e4226d82"
     },
     {
-      "bytes": 5115,
+      "bytes": 10776,
       "path": "tests/test_hook_audit.py",
-      "sha256": "baaaf93def3fafaddb96b1babbad7ba5cc6e8f578ce49acefc08fea9217247c8"
+      "sha256": "67f66504a06f15c6f13290d6d38cbeeb9549bed5caaf3f36218c5b3e0c2a377a"
     },
     {
-      "bytes": 2820,
+      "bytes": 5972,
       "path": "tests/test_host_hooks.py",
-      "sha256": "e916771904078df89d57668666508567b2442582aa791c48e246bc8fd02f178d"
+      "sha256": "6cce9dd77ea6b0eb9ad8c0d101deb0a88eb4141e7b4986e307f7f852b38b1494"
     },
     {
-      "bytes": 3985,
+      "bytes": 5183,
       "path": "tests/test_package.py",
-      "sha256": "344065eaa5c6ea47f95a6041d6b4819fc01c4beefad90413936d6f684659dc6c"
+      "sha256": "bd4be2079b89c4b9429e663ae992b6ba5eb129cc144553748a222e392f0887fd"
     },
     {
       "bytes": 2538,
       "path": "tests/test_shared_runtime.py",
-      "sha256": "f2d71fef1c11c00e931614a2e48e7c18a59b4cfb7a64b8f1d6e1e0289337b06f"
+      "sha256": "c420a71db8c3d72fa74a50bf668ed42b5977cae5026113ac934b5e0c6c9f4a41"
     },
     {
       "bytes": 959,
@@ -363,14 +378,14 @@
       "sha256": "35f28f0b546212223ecbb6e4c9ee0868093a6d8a3680d000af0eec5e5399e557"
     },
     {
-      "bytes": 6372,
+      "bytes": 7210,
       "path": "tools/build_public_manifest.py",
-      "sha256": "87a8c6bdc68db04ff7d504c58b2494728fd13e6e92bdcbcb8b02f184ff673267"
+      "sha256": "e83867b66590a8b2df72d318ef0f388cc9662ae387e69c3ac3833e4f4c0d6792"
     },
     {
       "bytes": 7952,
       "path": "tools/build_release.py",
-      "sha256": "e2e4bb8d513de3bf7a9b3fb9c9a0566dfa10809b40de98eb9d937cdf3668995d"
+      "sha256": "e312c4d140951e2867cf51589dfdad547eda9918ec426e13b5f6b86adab7316a"
     },
     {
       "bytes": 3155,
@@ -380,7 +395,7 @@
     {
       "bytes": 2997,
       "path": "tools/doctor.py",
-      "sha256": "56b35c0dd798b25449553b0988c4454752d9a94d0ead762883802853d343748c"
+      "sha256": "231912069e33521b9d7fc471bd0bdb3dfb9da7b0ddfeed247c2bb754a69f516d"
     },
     {
       "bytes": 14656,
@@ -388,24 +403,24 @@
       "sha256": "cda5914cb310e3811221f481c2f860a08e1825e51076ab1dbe08ffa67cd7c365"
     },
     {
-      "bytes": 32285,
+      "bytes": 35536,
       "path": "tools/host_hooks.py",
-      "sha256": "75595dde7ab5a2a4a8b2ebe03cb523a80b26473edf783320416b0c75f38b9862"
+      "sha256": "6a1b84d9c174b48b97bb571324cda08cc66d8928c06ecc191d64df8937c8fff8"
     },
     {
-      "bytes": 5990,
+      "bytes": 5987,
       "path": "tools/installer.py",
-      "sha256": "76675fba4a8263e9346ac2fdc643b5e22da610fc061094d8156cf54039a0c52f"
+      "sha256": "72c1258168021b7e65ebde57cf4d6c47932424f805a0ba180615fe1e1eb90bfa"
     },
     {
-      "bytes": 3077,
+      "bytes": 3134,
       "path": "tools/offline_harness.py",
-      "sha256": "d48aaa4b4d7fcdc3ba8652870b8915bb84fde1cd0a6d625fec0818a30c72f41a"
+      "sha256": "2fb9ebe437dc0ef38356e708071b1c9a047d97e3fd8f11755267427944dff96b"
     },
     {
       "bytes": 2869,
       "path": "tools/startup_check.py",
-      "sha256": "2a860860e17c0f2d67788f8317290ec3db8a254c72d8da39e5a5533e801b2ad3"
+      "sha256": "d6247e26d58f4c465b51e4bf142c01a6f3729f0a228dbdb6f596e4e7be900bf4"
     },
     {
       "bytes": 211,
@@ -422,5 +437,5 @@
   "product_acceptance": "WAITING_OWNER_REAL_HOST_TEST",
   "schema_version": "solve-lite.local-package-manifest.v1",
   "status": "READY_FOR_PETER_FRESH_HOST_ACCEPTANCE",
-  "version": "0.1.10"
+  "version": "0.1.11"
 }

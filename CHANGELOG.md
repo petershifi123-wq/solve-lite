@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.1.10 — Current
+## 0.1.11 — Current
+
+- Replaced the four-name installer switch with an 18-profile registry-driven installer.
+- Added a deterministic portable `--text` pre-prompt entrypoint for hosts without a proven native hook.
+- Locked every non-empty ordinary message to one of 20 scenarios, a visible percentage surface and exactly one local reward settlement.
+- Added `HOST_COMPATIBILITY_MANIFEST.json`; install success remains distinct from per-host product PASS.
+- Added real CoreML 20-scenario coverage and 18-profile isolated-install coverage without changing the accepted model asset or scorecard.
+
+## 0.1.10 — Superseded; do not install
 
 - Removed the retired INT4 DLC/Torch source tree and its obsolete specialist runtime helpers.
 - Removed release-builder exclusion rules that had hidden those legacy files from packages.
@@ -36,4 +44,4 @@ Preserved as Git and release history. It is not a current install target.
 
 ## Earlier versions
 
-Historical only. Use `v0.1.10` for current installation.
+Historical only. Use `v0.1.11` for current installation.
