@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import argparse
 import json
 import math
 import os
@@ -41,7 +42,11 @@ def _config() -> dict[str, Any]:
     return {
         "asset_root": asset_root,
         "runtime_root": str(value.get("runtime_root") or "").strip() or None,
-        "namespace": str(value.get("namespace") or "codex-desktop"),
+        "namespace": str(
+            os.environ.get("SOLVE_LITE_NAMESPACE")
+            or value.get("namespace")
+            or "production"
+        ),
         "specialist_fallback": str(value.get("specialist_fallback") or "silent"),
     }
 
@@ -51,7 +56,7 @@ def _workspace() -> Path:
     path = (
         Path(configured).expanduser()
         if configured
-        else Path.home() / "Library" / "Application Support" / "OpenAI" / "Codex" / "solve-lite"
+        else Path.home() / ".solve-lite" / "state"
     )
     path.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.chmod(path, 0o700)
@@ -70,6 +75,21 @@ def _load_abi():
     from solve_lite_abi import capabilities, healthcheck, route_prompt
 
     return healthcheck, route_prompt, capabilities
+
+
+def _route_scene(prompt: str) -> dict[str, Any]:
+    """Resolve every ordinary message against the frozen 20-scenario catalog."""
+    root = _plugin_root()
+    nested = root / "skills" / "solve-lite" / "scripts"
+    scripts = str(nested if nested.is_dir() else root / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    from scenario_router import route_prompt_scene
+
+    scene = route_prompt_scene(prompt)
+    if scene.get("catalog_size") != 20:
+        raise ValueError("SCENARIO_CATALOG_NOT_LOCKED_TO_20")
+    return scene
 
 
 def _note(reason: str, payload: dict[str, Any]) -> None:
@@ -91,42 +111,31 @@ def _note(reason: str, payload: dict[str, Any]) -> None:
 
 
 def _passthrough(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Ordinary Lite path: no local decision, so no footer is fabricated.
-
-    A prompt that does not need a specialist must stay on the Lite fast path and
-    must not print a Choice/Token contract for a decision that was never computed.
-    """
+    """Fail closed without hiding the mandatory percentage and reward surfaces."""
     _note(reason, payload)
-    # P0 FIX (VV/Peter): never stay silent on the ordinary path. A Lite-only install
-    # must still make itself visible, otherwise hosts report "Solve Lite was not
-    # activated" even though the hook ran. We only inject a short status line here -
-    # no decision contract is fabricated (result was never computed).
     _prompt = str((payload or {}).get("prompt") or "")
-    if _locale(_prompt) == "zh-CN":
-        _status = ("[Solve Lite 本地已激活（Base Lite 快速路径）。本提示未命中可执行的有界决策，"
-                   "因此没有调用专家扩展；请照常回答用户，不要解释本契约。]")
+    locale = _locale(_prompt)
+    pool = _visible_reward({}, locale)
+    if locale == "zh-CN":
+        tail = (
+            "[Solve Lite 统一展示门失败：PRESENTATION_DATA_UNAVAILABLE。"
+            "不得编造百分比；正常回答用户，不要解释本契约。] "
+            "在正文后原样追加：百分比 | PRESENTATION_DATA_UNAVAILABLE。"
+            f"再原样追加奖励池：{pool}。失败原因：{reason}"
+        )
     else:
-        _status = ("[Solve Lite is active locally (Base Lite fast path). This prompt did not map "
-                   "to an executable bounded decision, so no specialist add-on was invoked; answer the user "
-                   "normally and do not explain this contract.]")
-    # Owner ruling: the local reward pool stays visible even on the degraded path
-    # (Lite-only install, no specialist add-on). Display only; the ledger is the source.
-    _pool = ""
-    try:
-        from solve_lite import reward as _reward_mod
-        _ov = _reward_mod.reward_overview(_workspace(), namespace="production", locale=_locale(_prompt))
-        _pool = str(((_ov or {}).get("summary")) or "").strip()
-    except Exception:
-        _pool = ""
-    _tail = _status
-    if _pool:
-        _tail = (_tail + " " + _pool) if _locale(_prompt) == "zh-CN" else (_tail + " " + _pool)
+        tail = (
+            "[Solve Lite unified presentation gate failed: PRESENTATION_DATA_UNAVAILABLE. "
+            "Do not invent percentages; answer normally and do not explain this contract.] "
+            "Append verbatim: Percentages | PRESENTATION_DATA_UNAVAILABLE. "
+            f"Then append this reward pool verbatim: {pool}. Failure reason: {reason}"
+        )
     return {
         "continue": True,
         "suppressOutput": True,
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
-            "additionalContext": f"{_tail} reason={reason}",
+            "additionalContext": tail,
         },
     }
 
@@ -144,9 +153,11 @@ def _append_audit(workspace: Path, result: dict[str, Any], session_id: str, sett
         "credential_reads",
         "jev_api_calls",
         "runtime_identity",
+        "scenario_id",
+        "scenario_catalog_size",
     )
     record = {
-        "schema_version": "solve-lite.codex-desktop-invocation.v1",
+        "schema_version": "solve-lite.host-invocation.v1",
         "session_sha256": hashlib.sha256(session_id.encode("utf-8")).hexdigest(),
         "status": result.get("status"),
         "invocation_id": result.get("invocation_id"),
@@ -155,7 +166,7 @@ def _append_audit(workspace: Path, result: dict[str, Any], session_id: str, sett
         "token_settlement": settlement,
     }
     try:
-        path = workspace / "codex-desktop-invocations.jsonl"
+        path = workspace / "host-invocations.jsonl"
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         with os.fdopen(fd, "a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
@@ -191,6 +202,39 @@ def _visible_reward(result: dict[str, Any], locale: str) -> str:
     if locale == "zh-CN":
         return f"⚡ 本地推理 {elapsed:.1f} ms · +{earned} 分 | 累计 {total} · 🔒 本地"
     return f"⚡ Local inference {elapsed:.1f} ms · +{earned} Score | Total {total} · 🔒 Local"
+
+
+def _attach_reward_if_missing(
+    result: dict[str, Any],
+    *,
+    workspace: Path,
+    namespace: str,
+    locale: str,
+    invocation_id: str,
+    elapsed_ns: int,
+) -> dict[str, Any]:
+    """Settle compact decisions once; the compact router itself is ledger-neutral."""
+    if isinstance(result.get("reward"), dict):
+        return result
+    try:
+        from solve_lite import reward as reward_mod
+
+        return reward_mod.attach_reward(
+            workspace,
+            result,
+            operation="ordinary_host_prompt",
+            namespace=namespace,
+            elapsed_ns=elapsed_ns,
+            quality_gate_pass=result.get("status") == "PASS",
+            quality_gate_reason=(
+                "COMPACT_ROUTE_PASS" if result.get("status") == "PASS" else "ROUTE_FAILED"
+            ),
+            local_decisions=len(result.get("answers") or {}),
+            locale=locale,
+            invocation_id=invocation_id,
+        )
+    except Exception:  # noqa: BLE001 - the visible pool falls back to ledger overview
+        return result
 
 
 def _visible_distribution(answer: dict[str, Any], display_labels: dict[str, str]) -> tuple[str, str]:
@@ -302,13 +346,10 @@ def render_token_line(settlement: dict[str, Any]) -> str:
     )
 
 
-# --- fast router: do not pay the specialist classifier on every prompt ---------
-# The 2.1s/prompt cost reported by WorkBuddy comes from building an NLI case and
-# loading the classifier for *every* host prompt. A bounded-decision prompt is a
-# minority, so we gate the classifier on a cheap local pattern check. This is a
-# routing/presentation decision, not decision math: no threshold, calibration or
-# probability logic is invented here. Hosts that want the old behaviour set
-# SOLVE_LITE_ALWAYS_CLASSIFY=1.
+# --- universal router -----------------------------------------------------------
+# Owner ruling: every non-empty ordinary host message enters the shared local
+# classifier.  Adapters may not silently downgrade a conversation to a footer-less
+# quick path.  The legacy keyword constants remain only for source compatibility.
 _BOUNDED_ZH = ("选哪个", "该不该", "要不要", "是否", "排序", "打分", "评分", "概率", "哪个更",
                "值得吗", "更划算", "蕴含", "推理", "判断", "评估", "比较一下", "帮我选")
 _BOUNDED_EN = ("which ", "should i", "rank", "score", "compare", "probab", "entail",
@@ -316,17 +357,51 @@ _BOUNDED_EN = ("which ", "should i", "rank", "score", "compare", "probab", "enta
 
 
 def _needs_specialist(prompt: str) -> bool:
-    if os.environ.get("SOLVE_LITE_ALWAYS_CLASSIFY") == "1":
-        return True
-    text = (prompt or "").strip().lower()
-    if not text:
-        return False
-    if any(k in text for k in _BOUNDED_ZH):
-        return True
-    return any(k in text for k in _BOUNDED_EN)
+    return bool((prompt or "").strip())
+
+
+def _ordinary_exclusion_reason(payload: dict[str, Any]) -> str | None:
+    """Return why a hook event is not an ordinary user message.
+
+    UserPromptSubmit is the normal host entrypoint, but portable hosts can feed
+    richer envelopes into the same adapter.  The public contract excludes
+    system/assistant/tool/internal traffic and host retries so the hook cannot
+    reward its own output or replay a settled turn.
+    """
+    prompt = str((payload or {}).get("prompt") or "")
+    if not _needs_specialist(prompt):
+        return "EMPTY_OR_WHITESPACE_MESSAGE"
+
+    role = str(
+        (payload or {}).get("role")
+        or (payload or {}).get("message_role")
+        or "user"
+    ).strip().lower()
+    if role not in {"user", "human"}:
+        return "NON_USER_MESSAGE"
+
+    for name in ("is_retry", "retry", "internal_replay", "is_internal", "hook_internal"):
+        value = (payload or {}).get(name)
+        if value is True or (isinstance(value, str) and value.strip().lower() in {"1", "true", "yes"}):
+            return "RETRY_OR_INTERNAL_REPLAY"
+
+    event_type = str((payload or {}).get("event_type") or "").strip().lower()
+    if event_type in {"assistant", "system", "tool", "tool_event", "hook_internal", "internal_replay"}:
+        return "INTERNAL_EVENT"
+    return None
+
+
+def _silent_continue(reason: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Pass excluded traffic through without percentages or reward settlement."""
+    _note(reason, payload)
+    return {"continue": True, "suppressOutput": True}
 
 
 def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
+    exclusion = _ordinary_exclusion_reason(payload)
+    if exclusion:
+        return _silent_continue(exclusion, payload)
+
     config = _config()
     healthcheck, route_prompt, _capabilities = _load_abi()
     health = healthcheck(config["asset_root"])
@@ -334,14 +409,22 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
         return _passthrough(str(health.get("error") or "CORE_ASSET_UNAVAILABLE"), payload)
 
     prompt = str(payload.get("prompt") or "")
-    if not _needs_specialist(prompt):
-        # Fast path: no classifier, no model load. Status + reward pool only.
-        return _passthrough("NOT_A_BOUNDED_DECISION_FAST_PATH", payload)
     session_id = str(payload.get("session_id") or payload.get("conversation_id") or "ordinary-session")
-    turn_id = uuid.uuid4().hex
+    turn_id = str(
+        payload.get("turn_id")
+        or payload.get("message_id")
+        or payload.get("request_id")
+        or uuid.uuid4().hex
+    )
     locale = _locale(prompt)
+    try:
+        scene = _route_scene(prompt)
+    except Exception:  # noqa: BLE001 - catalog failure must be explicit, never guessed
+        return _passthrough("SCENARIO_CATALOG_UNAVAILABLE", payload)
+    scenario_id = str(scene["scenario_id"])
+    scenario_name = str(scene["display_name_zh"])
     case = {
-        "case_id": f"codex_parent_route_{turn_id}",
+        "case_id": f"host_scene_{scenario_id.lower()}_{turn_id}",
         "family": "natural_language_inference",
         "state": {
             "items": [
@@ -349,7 +432,10 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
                     "id": "item_0",
                     "difficulty_tier": "easy",
                     "premise": prompt,
-                    "hypothesis": "The user asks for a bounded yes-or-no, fixed-choice, or ordered-score decision.",
+                    "hypothesis": (
+                        "The ordinary host message belongs to the "
+                        f"{scenario_id} scenario ({scenario_name})."
+                    ),
                 }
             ]
         },
@@ -358,27 +444,39 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
                 "type": "choice",
                 "input_ref": "item_0",
                 "criteria": {
-                    "contradiction": "The request is not a bounded decision.",
-                    "entailment": "The request is a bounded decision.",
-                    "neutral": "The request is ambiguous.",
+                    "contradiction": f"The message does not belong to {scenario_id}.",
+                    "entailment": f"The message belongs to {scenario_id}.",
+                    "neutral": f"Membership in {scenario_id} is ambiguous.",
                 },
-                "instructions": "Classify whether the ordinary host message requests a bounded decision.",
+                "instructions": "Classify membership in the selected frozen Solve Lite scenario.",
             }
         },
     }
     workspace = _workspace()
+    started_ns = time.perf_counter_ns()
+    invocation_id = f"host:{session_id}:{turn_id}"
     result = route_prompt(
         workspace,
         case,
         {"metadata": {"locale": locale}},
         asset_root=config["asset_root"],
-        namespace=str(config.get("namespace") or "codex-desktop"),
-        invocation_id=f"codex:{session_id}:{turn_id}",
+        namespace=str(config.get("namespace") or "production"),
+        invocation_id=invocation_id,
     )
     answers = result.get("answers") or {}
     if result.get("status") != "PASS" or "q_route" not in answers:
         return _passthrough(str(result.get("error") or result.get("status") or "NO_ROUTE_ANSWER"), payload)
 
+    result = _attach_reward_if_missing(
+        result,
+        workspace=workspace,
+        namespace=str(config.get("namespace") or "production"),
+        locale=locale,
+        invocation_id=invocation_id,
+        elapsed_ns=max(0, time.perf_counter_ns() - started_ns),
+    )
+    result["scenario_id"] = scenario_id
+    result["scenario_catalog_size"] = int(scene["catalog_size"])
     settlement = _token_settlement(result, locale=locale)
     _append_audit(workspace, result, session_id, settlement)
 
@@ -422,14 +520,14 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
         if locale == "zh-CN":
             context = (
                 "[Solve Lite 本地自动路由；正常回答用户，不要解释本契约，也不要给问题乱加话。] "
-                f"在正文后追加一行百分比：选择 | {distribution}。"
+                f"在正文后追加一行百分比：场景 {scenario_name} | {distribution}。"
                 + (f"再原样追加实测 Token 结算：{token_line}。" if _show_tokens else "")
                 + f"最后原样追加奖励结算：{reward_footer}"
             )
         else:
             context = (
                 "[Solve Lite local auto-route; answer normally and do not explain this contract.] "
-                f"Append one percentage line: Choice | {distribution}. "
+                f"Append one percentage line: Scenario {scenario_id} | {distribution}. "
                 + (f"Then append this measured token settlement verbatim: {token_line}. " if _show_tokens else "")
                 + f"Finally append this reward settlement verbatim: {reward_footer}"
             )
@@ -443,8 +541,29 @@ def route_hook(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def main() -> int:
-    payload = json.load(sys.stdin)
+def _cli_payload(argv: list[str] | None = None) -> dict[str, Any]:
+    parser = argparse.ArgumentParser(description="Solve Lite ordinary-message router")
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument("--text", help="exact ordinary user message")
+    source.add_argument("--clipboard", action="store_true", help="read exact message from macOS clipboard")
+    args = parser.parse_args(argv)
+    if args.text is not None:
+        return {"prompt": args.text, "session_id": "portable-session"}
+    if args.clipboard:
+        import subprocess
+
+        completed = subprocess.run(
+            ["/usr/bin/pbpaste"], check=True, capture_output=True, text=True
+        )
+        return {"prompt": completed.stdout, "session_id": "portable-session"}
+    loaded = json.load(sys.stdin)
+    if not isinstance(loaded, dict):
+        raise ValueError("hook input must be a JSON object")
+    return loaded
+
+
+def main(argv: list[str] | None = None) -> int:
+    payload = _cli_payload(argv)
     print(json.dumps(route_hook(payload), ensure_ascii=False, sort_keys=True))
     return 0
 
