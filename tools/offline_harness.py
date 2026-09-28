@@ -39,7 +39,7 @@ def main() -> int:
     checks = {
         "native_health": health.get("status") == "PASS",
         "native_route": native.get("status") == "PASS" and bool(native.get("answers")),
-        "current_target": asset.get("current_install_target") == "v0.1.10",
+        "current_target": asset.get("current_install_target") == "v0.1.11",
         "one_shared_encoder": (asset.get("runtime") or {}).get("shared_encoder_copies") == 1,
         "immutable_revision": len(str((asset.get("asset") or {}).get("immutable_revision") or "")) == 40,
         "network0": (asset.get("runtime") or {}).get("network_calls_at_runtime") == 0,
@@ -55,6 +55,7 @@ def main() -> int:
         run_test(SCRIPTS / "test_solve_lite_abi.py"),
         run_test(SCRIPTS / "test_agent_auto.py"),
         run_test(PLUGIN / "scripts" / "test_codex_desktop_adapter.py"),
+        run_test(ROOT / "tests" / "test_hook_audit.py"),
         run_test(ROOT / "tests" / "test_host_hooks.py"),
         run_test(ROOT / "tests" / "test_shared_runtime.py"),
         run_test(ROOT / "tests" / "test_package.py"),

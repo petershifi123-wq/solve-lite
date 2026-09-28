@@ -61,7 +61,6 @@ def rows_for(paths: List[Path]) -> List[Dict[str, Any]]:
             "path": path.relative_to(ROOT).as_posix(),
             "sha256": sha256_file(path),
             "bytes": path.stat().st_size,
-            "mode": mode_of(path),
         }
         for path in paths
     ]
@@ -69,7 +68,7 @@ def rows_for(paths: List[Path]) -> List[Dict[str, Any]]:
 
 def tree_hash(rows: List[Dict[str, Any]]) -> str:
     blob = "".join(
-        "%s\0%s\0%s\0%s\n" % (row["path"], row["sha256"], row["bytes"], row["mode"]) for row in rows
+        "%s\0%s\0%s\n" % (row["path"], row["sha256"], row["bytes"]) for row in rows
     )
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -82,10 +81,24 @@ def main() -> int:
 
     previous = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     previous_rows = previous["files"]
-    claimed = previous["payload_tree_sha256"]
-
+    claimed = previous.get("payload_tree_sha256")
     reproduced = tree_hash(previous_rows)
-    formula_matches = reproduced == claimed
+    legacy_checksum_proof = False
+    if claimed:
+        formula_matches = reproduced == claimed
+    else:
+        # v0.1.10 predates the aggregate tree-hash field.  Prove that its
+        # published row set and manifest were the exact inputs to SHA256SUMS,
+        # then migrate forward to the explicit aggregate hash.
+        sums: Dict[str, str] = {}
+        for line in CHECKSUMS_PATH.read_text(encoding="utf-8").splitlines():
+            digest, relative = line.split("  ", 1)
+            sums[relative] = digest
+        legacy_checksum_proof = (
+            all(sums.get(row["path"]) == row["sha256"] for row in previous_rows)
+            and sums.get(MANIFEST_PATH.name) == sha256_file(MANIFEST_PATH)
+        )
+        formula_matches = legacy_checksum_proof
 
     current_rows = rows_for(payload_paths())
     added = sorted(
@@ -106,6 +119,7 @@ def main() -> int:
         "schema_version": "solve-lite.public-manifest-refresh.v1",
         "tree_hash_formula": (previous.get("payload_tree_hash_algorithm") or "").strip(),
         "formula_reproduced": formula_matches,
+        "legacy_checksum_proof": legacy_checksum_proof,
         "previous_payload_tree_sha256": claimed,
         "reproduced_payload_tree_sha256": reproduced,
         "payload_file_count": len(current_rows),
@@ -139,6 +153,7 @@ def main() -> int:
     document["files"] = current_rows
     document["payload_file_count"] = len(current_rows)
     document["payload_tree_sha256"] = payload_tree_sha256
+    document["payload_tree_hash_algorithm"] = "sha256(path\\0sha256\\0bytes\\n for sorted payload files)"
     MANIFEST_PATH.write_text(
         json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )

@@ -49,7 +49,7 @@ def main() -> int:
     asset = compact.status(runtime)
     report = {
         "status": "PASS" if health.get("status") == "PASS" and asset.get("status") == "PASS" else "FAIL",
-        "version": "v0.1.10",
+        "version": "v0.1.11",
         "runtime_root": str(runtime),
         "healthcheck": health,
         "capabilities": caps,

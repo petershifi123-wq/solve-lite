@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install Solve Lite v0.1.10 with one shared, CoreML-native runtime."""
+"""Install Solve Lite v0.1.11 with one shared, CoreML-native runtime."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def _host_registration(host: str, config_dir: Path | None, runtime: Path) -> dic
     sys.path.insert(0, str(ROOT / "tools"))
     import host_hooks
 
-    targets = ["workbuddy", "doubao", "codex", "hermes"] if host == "all" else [host]
+    targets = host_hooks.supported_host_ids() if host == "all" else [host]
     reports = {}
     for host_id in targets:
         override = config_dir / host_id if config_dir is not None and host == "all" else config_dir
@@ -73,8 +73,8 @@ def _report(runtime: Path) -> dict:
     asset = compact.status(runtime)
     return {
         "status": "PASS" if health.get("status") == "PASS" and asset.get("status") == "PASS" else "FAIL",
-        "version": "v0.1.10",
-        "current_install_target": "v0.1.10",
+        "version": "v0.1.11",
+        "current_install_target": "v0.1.11",
         "runtime_root": str(runtime),
         "healthcheck": health,
         "compact_runtime": asset,
@@ -93,7 +93,11 @@ def main() -> int:
     parser.add_argument("--package-dir", type=Path, default=None,
                         help="verified offline directory containing the pinned shared archive")
     parser.add_argument("--offline", action="store_true")
-    parser.add_argument("--host", choices=("auto", "all", "workbuddy", "doubao", "codex", "hermes", "none"), default="auto")
+    parser.add_argument(
+        "--host",
+        default="auto",
+        help="auto|all|none|<registry host id or alias>; profiles are read from agent_registry.json",
+    )
     parser.add_argument("--config-dir", type=Path, default=None)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
@@ -116,8 +120,6 @@ def main() -> int:
         payload = {"status": "FAIL", "stage": "install_compact_runtime", "detail": install}
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 3
-    shared.write_pointer(SKILL, runtime)
-
     host = args.host
     if host == "auto":
         sys.path.insert(0, str(ROOT / "tools"))
@@ -137,7 +139,7 @@ def main() -> int:
     }
     payload = {
         "status": "PASS" if all(required.values()) else "FAIL",
-        "version": "v0.1.10",
+        "version": "v0.1.11",
         "required_checks": required,
         "shared_runtime": base,
         "compact_install": install,

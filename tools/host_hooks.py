@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install thin Solve Lite adapters that point to one shared v0.1.10 runtime."""
+"""Install thin Solve Lite adapters that point to one shared v0.1.11 runtime."""
 
 from __future__ import annotations
 
@@ -44,10 +44,17 @@ def _home() -> Path:
     return Path.home()
 
 
-def _integration(plugin_root: Path, host_id: str) -> Dict[str, Any]:
+def _registry_host(plugin_root: Path, host_id: str) -> Dict[str, Any]:
     registry = json.loads((Path(plugin_root) / REGISTRY_REL).read_text(encoding="utf-8"))
     host = next((item for item in registry.get("hosts", []) if item.get("host_id") == host_id), None)
-    if not host or not isinstance(host.get("integration"), dict):
+    if not host:
+        raise RuntimeError("host missing from agent_registry.json: %s" % host_id)
+    return host
+
+
+def _integration(plugin_root: Path, host_id: str) -> Dict[str, Any]:
+    host = _registry_host(plugin_root, host_id)
+    if not isinstance(host.get("integration"), dict):
         raise RuntimeError("host integration missing from agent_registry.json: %s" % host_id)
     return host["integration"]
 
@@ -66,7 +73,7 @@ class HostSpec:
 
 
 def _hosts() -> Dict[str, HostSpec]:
-    return {
+    hosts = {
         "workbuddy": HostSpec(
             host_id="workbuddy",
             display="WorkBuddy AI desktop (CodeBuddy CLI agent)",
@@ -154,6 +161,47 @@ def _hosts() -> Dict[str, HostSpec]:
             skill_locator="~/.solve-lite/hosts/generic/skills/solve-lite",
         ),
     }
+    registry_path = Path(__file__).resolve().parents[1] / "plugins" / "solve-lite" / REGISTRY_REL
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    for row in registry.get("hosts", []):
+        host_id = str(row.get("host_id") or "")
+        if not host_id or host_id in hosts:
+            continue
+        integration = row.get("integration") or {}
+        detection = row.get("detection") or {}
+        relative = str(integration.get("user_skill_dir") or "")
+        destination = _home() / relative if relative else None
+        hosts[host_id] = HostSpec(
+            host_id=host_id,
+            display=host_id,
+            hook_api="portable_skill",
+            hook_api_evidence=(
+                "registry-declared portable Agent Skills path; product PASS remains "
+                "separate and requires ordinary-session evidence"
+            ),
+            config_env=tuple(detection.get("environment_keys") or ()),
+            config_candidates=tuple(_home() / marker for marker in detection.get("filesystem_markers") or ()),
+            skill_dest=destination,
+            skill_locator=("~/" + relative if relative else ""),
+        )
+    return hosts
+
+
+def supported_host_ids() -> List[str]:
+    """All explicit registry profiles; ``generic`` is the fail-closed fallback."""
+    return sorted(host_id for host_id in _hosts() if host_id != "generic")
+
+
+def _canonical_host_id(value: str) -> Optional[str]:
+    wanted = value.strip().lower()
+    if wanted in _hosts():
+        return wanted
+    registry_path = Path(__file__).resolve().parents[1] / "plugins" / "solve-lite" / REGISTRY_REL
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    for row in registry.get("hosts", []):
+        if wanted in tuple(row.get("aliases") or ()):
+            return str(row.get("host_id"))
+    return None
 
 
 def resolve_auto(override: Optional[Path] = None) -> str:
@@ -164,23 +212,47 @@ def resolve_auto(override: Optional[Path] = None) -> str:
     work: hosts we have an adapter for get that adapter, everything else gets the
     portable skill banner + one-step command.
     """
-    for env_name, host_id in (("WORKBUDDY_CONFIG_DIR", "workbuddy"),
-                              ("CODEBUDDY_CONFIG_DIR", "workbuddy"),
-                              ("SOLVE_LITE_HOST", None)):
-        value = os.environ.get(env_name)
-        if value and host_id:
-            return host_id
-        if value and host_id is None:
-            wanted = value.strip().lower()
-            if wanted in _hosts():
-                return wanted
+    explicit = os.environ.get("SOLVE_LITE_HOST")
+    if explicit:
+        return _canonical_host_id(explicit) or "generic"
+
+    def unique_or_generic(matches: Sequence[str]) -> Optional[str]:
+        unique = sorted(set(matches))
+        if len(unique) == 1:
+            return unique[0]
+        if len(unique) > 1:
             return "generic"
-    for host_id, spec in _hosts().items():
-        if host_id == "generic":
-            continue
-        for candidate in spec.config_candidates:
-            if Path(candidate).exists():
-                return host_id
+        return None
+
+    hosts = _hosts()
+    environment_matches = [
+        host_id
+        for host_id, spec in hosts.items()
+        if host_id != "generic" and any(os.environ.get(name) for name in spec.config_env)
+    ]
+    selected = unique_or_generic(environment_matches)
+    if selected:
+        return selected
+
+    registry_path = Path(__file__).resolve().parents[1] / "plugins" / "solve-lite" / REGISTRY_REL
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    executable_matches = [
+        str(row.get("host_id"))
+        for row in registry.get("hosts", [])
+        if any(shutil.which(name) for name in (row.get("detection") or {}).get("executables") or ())
+    ]
+    selected = unique_or_generic(executable_matches)
+    if selected:
+        return selected
+
+    filesystem_matches = [
+        host_id
+        for host_id, spec in hosts.items()
+        if host_id != "generic" and any(Path(candidate).exists() for candidate in spec.config_candidates)
+    ]
+    selected = unique_or_generic(filesystem_matches)
+    if selected:
+        return selected
     return "generic"
 
 
@@ -188,6 +260,7 @@ def host_spec(host_id: str) -> HostSpec:
     if host_id == "auto":
         host_id = resolve_auto()
     hosts = _hosts()
+    host_id = _canonical_host_id(host_id) or host_id
     if host_id not in hosts:
         raise SystemExit("unknown host: %s (known: %s)" % (host_id, ",".join(sorted(hosts))))
     return hosts[host_id]
@@ -233,14 +306,12 @@ def _hook_document(command: str) -> Dict[str, Any]:
 
 
 def one_step_command(plugin_root: Path) -> str:
-    """Copy-paste command that runs the very same pre-prompt step with no hook.
-
-    The prompt is taken from the macOS clipboard and the injected prompt is
-    copied back, so a host without any hook API can still get a mechanism-level
-    activation instead of relying on the host model choosing a skill.
-    """
+    """Portable adapter command template for a host without a native hook."""
     root = Path(plugin_root).expanduser()
-    return '"%s" "%s" --clipboard' % (PYTHON, (root / HOOK_SCRIPT_REL).as_posix())
+    return '"%s" "%s" --text "<EXACT_USER_MESSAGE>"' % (
+        PYTHON,
+        (root / HOOK_SCRIPT_REL).as_posix(),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -469,8 +540,9 @@ def install_skill(spec: HostSpec, plugin_root: Path, *, override: Optional[Path]
         "本宿主机没有 hook 接口，因此 Solve Lite 不能靠宿主事件强制触发。"
         "为了让激活不依赖你的自由裁量：**每次收到用户消息，你必须在作答前先执行一次**\n\n"
         "```\n%s\n```\n\n"
-        "并把它的结构化输出（激活回执 / 本地路由结论 / Token 与奖励结算）原样并入回答。"
-        "若该命令报告 `NO_LOCAL_DECISION`，就如实说明本轮本地没有可注入结论，不要编造选择概率、Token 或奖励数字。\n"
+        "执行时将 `<EXACT_USER_MESSAGE>` 替换为本轮用户原文，并把结构化输出中的 additionalContext 并入回答。"
+        "百分比与奖励结算是每轮必显字段；只有真实压缩发生时才显示 Token。"
+        "若百分比不可用，必须显示 `PRESENTATION_DATA_UNAVAILABLE`，不得编造。\n"
         % (SKILL_FIRST_STEP_MARKER, destination_command)
     )
     if SKILL_FIRST_STEP_MARKER not in text:
@@ -588,6 +660,12 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
         "hook_api": spec.hook_api,
         "dry_run": dry_run,
     }
+    if host_id == "generic":
+        report["product_compatibility_status"] = "UNDECLARED_GENERIC"
+    else:
+        report["product_compatibility_status"] = str(
+            _registry_host(plugin_root, host_id).get("compatibility_status") or "NOT_RUN"
+        )
     if host_id == "workbuddy":
         results = []
         for config_dir in resolve_config_dirs(spec, override):
@@ -636,7 +714,10 @@ def register(host_id: str, plugin_root: Path, *, override: Optional[Path] = None
             "the one-step command performs the pre-prompt Lite run outside the host "
             "model; the skill banner additionally makes it a mandatory first step"
         )
-        report["verification"] = "run tools/hook_selftest.py --host doubao"
+        report["verification"] = (
+            "portable invoke installed; ordinary-session product acceptance remains "
+            + report["product_compatibility_status"]
+        )
     return report
 
 
@@ -672,7 +753,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--host",
         default="auto",
-        help="codex|hermes|workbuddy|doubao|generic|auto",
+        help="auto|all|generic|<registry host id or alias>",
     )
     parser.add_argument("--plugin-root", type=Path, default=Path(__file__).resolve().parents[1] / "plugins" / "solve-lite")
     parser.add_argument("--config-dir", type=Path, default=None, help="sandbox override for the host config dir")
@@ -682,7 +763,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     plugin_root = args.plugin_root.expanduser()
-    targets = ["workbuddy", "doubao"] if args.host == "auto" else [args.host]
+    if args.host == "auto":
+        targets = [resolve_auto(args.config_dir)]
+    elif args.host == "all":
+        targets = supported_host_ids()
+    else:
+        targets = [_canonical_host_id(args.host) or args.host]
     output: Dict[str, Any] = {"schema_version": SCHEMA, "action": args.action, "hosts": {}}
     for host_id in targets:
         if args.action == "detect":

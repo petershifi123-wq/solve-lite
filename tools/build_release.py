@@ -54,7 +54,7 @@ def metadata() -> None:
     content_rows = rows(content)
     manifest = {
         "schema_version": "solve-lite.local-package-manifest.v1",
-        "version": "0.1.10",
+        "version": "0.1.11",
         "status": "READY_FOR_PETER_FRESH_HOST_ACCEPTANCE",
         "product_acceptance": "WAITING_OWNER_REAL_HOST_TEST",
         "platform": "macOS-arm64",
@@ -72,10 +72,10 @@ def metadata() -> None:
     (ROOT / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     public_payload = sorted(content + [ROOT / "MANIFEST.json"], key=lambda value: value.relative_to(ROOT).as_posix())
     public_manifest = {
-        "schema_version": "solve-lite.public-repo-manifest.v0.1.10",
-        "version": "0.1.10",
+        "schema_version": "solve-lite.public-repo-manifest.v0.1.11",
+        "version": "0.1.11",
         "status": "CURRENT",
-        "current_install_target": "v0.1.10",
+        "current_install_target": "v0.1.11",
         "runtime": "Compact CoreML-native",
         "accuracy": 0.8228,
         "aps": 85.8999,
