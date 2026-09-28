@@ -1,9 +1,9 @@
 ---
 name: solve-lite
-description: Run Solve Lite v0.1.10 local decisions through one shared CoreML-native runtime.
+description: Run Solve Lite v0.1.11 local decisions through one shared CoreML-native runtime.
 ---
 
-# Solve Lite v0.1.10
+# Solve Lite v0.1.11
 
 `SOLVE_LITE_MANDATORY_FIRST_STEP`
 
@@ -11,7 +11,7 @@ Use `scripts/solve_lite_abi.py` as the public entry point. The installed adapter
 
 ## Current contract
 
-- Current install target: `v0.1.10`.
+- Current install target: `v0.1.11`.
 - Compact Runtime: 82.28% accuracy, APS 85.8999, 6 wrong answers at confidence ≥0.90.
 - Complete install: 50.932773 MB.
 - Backend: OS CoreML plus the shipped arm64 helper.
@@ -24,6 +24,8 @@ Use `scripts/solve_lite_abi.py` as the public entry point. The installed adapter
 NLI compact-precision debt is accepted and non-blocking.
 
 ## Before answering
+
+Every non-empty ordinary user message is mandatory input to the local pre-prompt router. The router must select exactly one entry from `assets/scenarios/registry.json` (exactly 20 frozen scenarios), expose that scenario's percentage line, and settle the local reward pool exactly once. Do not skip casual conversation. Do not fabricate percentages when the presentation data is unavailable. Show Token savings only when a real pack step was measured.
 
 For a structured case, call:
 
@@ -46,7 +48,7 @@ The GitHub-tracked control manifest is `assets/specialist-assets.json`. It pins 
 
 ## Host model
 
-WorkBuddy and Codex use thin plugin adapters. Doubao and Hermes use thin skill adapters. All four carry only code and `.solve-lite-runtime.json`; the shared encoder, heads, tokenizer and helper remain outside the adapter.
+The public registry declares 18 thin host profiles. Hosts with a proven native hook may use it; every other profile receives the portable mandatory pre-prompt step. All adapters carry only code and `.solve-lite-runtime.json`; the shared encoder, heads, tokenizer and helper remain outside the adapter. Registry declaration is not a product PASS claim: per-host `PASS`, `PARTIAL` and `NOT_RUN` remain evidence-backed states.
 
 ## Historical reference
 
