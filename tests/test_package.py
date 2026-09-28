@@ -17,9 +17,9 @@ class PublicPackageContractTest(unittest.TestCase):
             ROOT / "plugins/solve-lite/.codex-plugin/plugin.json",
             ROOT / "plugins/solve-lite/.codebuddy-plugin/plugin.json",
         ):
-            self.assertEqual(json.loads(path.read_text())["version"], "0.1.10")
+            self.assertEqual(json.loads(path.read_text())["version"], "0.1.11")
         manifest = json.loads((SKILL / "assets/specialist-assets.json").read_text())
-        self.assertEqual(manifest["current_install_target"], "v0.1.10")
+        self.assertEqual(manifest["current_install_target"], "v0.1.11")
         self.assertEqual(manifest["runtime"]["shared_encoder_copies"], 1)
         self.assertFalse(manifest["runtime"]["torch_runtime"])
         self.assertFalse(manifest["runtime"]["transformers_runtime"])
@@ -45,7 +45,7 @@ class PublicPackageContractTest(unittest.TestCase):
 
     def test_active_docs_have_one_current_target(self):
         text = "\n".join((ROOT / name).read_text() for name in ("README.md", "COMPATIBILITY.md", "CHANGELOG.md"))
-        self.assertIn("v0.1.10", text)
+        self.assertIn("v0.1.11", text)
         self.assertIn("82.28%", text)
         self.assertIn("50.93", text)
         self.assertIn("CoreML", text)
@@ -61,6 +61,7 @@ class PublicPackageContractTest(unittest.TestCase):
             "specialist-runtime-lock.json",
         ):
             self.assertFalse((SKILL / "assets" / name).exists(), name)
+        self.assertFalse((SKILL / ".solve-lite-runtime.json").exists())
         for relative in (
             "runtime/dlc_runtime",
             "scripts/solve_lite_dlc.py",
@@ -72,11 +73,28 @@ class PublicPackageContractTest(unittest.TestCase):
             self.assertFalse((SKILL / relative).exists(), relative)
         self.assertFalse((ROOT / "tools/specialist_clean_host_harness.py").exists())
 
-    def test_host_registry_is_thin_four_host(self):
+    def test_host_registry_is_thin_eighteen_profile(self):
         registry = json.loads((SKILL / "assets/agent_registry.json").read_text())
-        self.assertEqual({item["host_id"] for item in registry["hosts"]}, {"doubao", "workbuddy", "codex", "hermes"})
+        self.assertEqual(len({item["host_id"] for item in registry["hosts"]}), 18)
+        self.assertEqual(registry["declared_host_profiles"], 18)
         self.assertEqual(registry["runtime_model"], "ONE_SHARED_COREML_RUNTIME")
         self.assertEqual(registry["acceptance"]["host_heavy_copy_count"], 0)
+
+    def test_host_compatibility_manifest_does_not_fake_candidate_pass(self):
+        manifest = json.loads((ROOT / "HOST_COMPATIBILITY_MANIFEST.json").read_text())
+        registry = json.loads((SKILL / "assets/agent_registry.json").read_text())
+        self.assertEqual(manifest["declared_host_profiles"], 18)
+        self.assertEqual(
+            {item["host_id"] for item in manifest["hosts"]},
+            {item["host_id"] for item in registry["hosts"]},
+        )
+        self.assertFalse(manifest["candidate_product_pass"])
+        self.assertEqual(manifest["isolated_profile_install"], "PASS_18_OF_18")
+        self.assertEqual(manifest["ordinary_session_acceptance"], "PROGRESSIVE_POST_RELEASE")
+        self.assertTrue(all(not item["current_candidate_pass"] for item in manifest["hosts"]))
+        self.assertEqual(manifest["ordinary_message_contract"]["scenario_catalog_size"], 20)
+        self.assertEqual(manifest["ordinary_message_contract"]["fallback_scenario"], "MESSAGE_INTENT")
+        self.assertTrue(manifest["ordinary_message_contract"]["retry_idempotency_required"])
 
 
 if __name__ == "__main__":

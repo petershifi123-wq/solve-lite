@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +16,78 @@ SPEC.loader.exec_module(HOOK)
 
 
 class HookAuditRegressionTest(unittest.TestCase):
+    def test_frozen_scenario_catalog_has_exactly_twenty_routes(self):
+        seen = set()
+        for prompt in (
+            "关系聊天", "消息意图", "客户支持工单", "销售询价", "邮件收件箱",
+            "下一步动作", "继续重试", "完成验收", "输出检查", "RAG 检索相关",
+            "事实核查", "内容风险审核", "退款运营", "数据质量字段", "产品内容路由",
+            "工具权限", "模型路由", "任务分派", "轨迹追踪", "安全事件分诊",
+        ):
+            scene = HOOK._route_scene(prompt)
+            self.assertEqual(scene["catalog_size"], 20)
+            seen.add(scene["scenario_id"])
+        self.assertEqual(len(seen), 20)
+
+    def test_unmatched_chat_still_routes_to_default_scenario(self):
+        scene = HOOK._route_scene("今天适合跳舞吗")
+        self.assertEqual(scene["scenario_id"], "MESSAGE_INTENT")
+        self.assertTrue(scene["fallback"])
+
+    def test_portable_cli_accepts_exact_text(self):
+        payload = HOOK._cli_payload(["--text", "汉堡还是薯条"])
+        self.assertEqual(payload["prompt"], "汉堡还是薯条")
+        self.assertEqual(payload["session_id"], "portable-session")
+
+    def test_every_non_empty_dialog_requires_local_classification(self):
+        prompts = (
+            "今天适合跳舞吗",
+            "你好",
+            "帮我看看这句话",
+            "汉堡和薯条哪个好吃",
+            "写一段摘要",
+            "解释这段代码",
+            "这个消息什么意思",
+            "客户为什么生气",
+            "下一步做什么",
+            "任务完成了吗",
+            "这条证据相关吗",
+            "这个说法真实吗",
+            "内容安全吗",
+            "应该退款吗",
+            "数据有没有问题",
+            "这篇内容放哪里",
+            "可以调用工具吗",
+            "用哪个模型",
+            "任务交给谁",
+            "这个安全事件严重吗",
+        )
+        self.assertEqual(len(prompts), 20)
+        self.assertTrue(all(HOOK._needs_specialist(prompt) for prompt in prompts))
+
+    def test_empty_prompt_is_not_classified(self):
+        self.assertFalse(HOOK._needs_specialist("  "))
+
+    def test_nonordinary_events_are_silent_and_never_reach_runtime(self):
+        excluded = (
+            {"prompt": "", "role": "user"},
+            {"prompt": "system text", "role": "system"},
+            {"prompt": "assistant text", "role": "assistant"},
+            {"prompt": "tool result", "role": "tool"},
+            {"prompt": "retry", "role": "user", "is_retry": True},
+            {"prompt": "replay", "role": "user", "internal_replay": "true"},
+        )
+        for payload in excluded:
+            with self.subTest(payload=payload), \
+                    mock.patch.object(HOOK, "_load_abi") as load_abi, \
+                    mock.patch.object(HOOK, "_note"):
+                result = HOOK.route_hook(payload)
+                self.assertEqual(result, {"continue": True, "suppressOutput": True})
+                load_abi.assert_not_called()
+
+    def test_ordinary_user_message_is_not_excluded(self):
+        self.assertIsNone(HOOK._ordinary_exclusion_reason({"prompt": "hello", "role": "user"}))
+
     def test_raw_support_priority(self):
         rendered, status = HOOK._visible_distribution(
             {
@@ -87,12 +160,58 @@ class HookAuditRegressionTest(unittest.TestCase):
                 mock.patch.dict("sys.modules", {"solve_lite": mock.Mock(reward=reward_module)}):
             self.assertEqual(HOOK._visible_reward({}, "zh-CN"), "REWARD_DISPLAY_UNAVAILABLE")
 
+    def test_compact_answer_is_attached_to_reward_ledger_once(self):
+        reward_module = mock.Mock()
+        reward_module.attach_reward.return_value = {"status": "PASS", "reward": {"score": {"earned": 5}}}
+        result = {"status": "PASS", "answers": {"q_route": {"value": "neutral"}}}
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict("sys.modules", {"solve_lite": mock.Mock(reward=reward_module)}):
+            rendered = HOOK._attach_reward_if_missing(
+                result,
+                workspace=Path(tmp),
+                namespace="production",
+                locale="zh-CN",
+                invocation_id="host:test:turn",
+                elapsed_ns=123,
+            )
+        self.assertIn("reward", rendered)
+        reward_module.attach_reward.assert_called_once()
+
+    def test_same_invocation_id_creates_no_duplicate_reward_event(self):
+        runtime = ROOT / "plugins/solve-lite/skills/solve-lite/runtime"
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+            sys, "path", [str(runtime)] + list(sys.path)
+        ):
+            from solve_lite import reward as reward_module
+
+            workspace = Path(tmp)
+            for _ in range(2):
+                result = {"status": "PASS", "answers": {"q_route": {"value": "neutral"}}}
+                attached = HOOK._attach_reward_if_missing(
+                    result,
+                    workspace=workspace,
+                    namespace="retry-idempotency",
+                    locale="en-US",
+                    invocation_id="host:session:stable-turn",
+                    elapsed_ns=123,
+                )
+            self.assertEqual(reward_module.reward_stats(workspace, "retry-idempotency")["events"], 1)
+            self.assertEqual(attached["reward_transaction"]["reward_status"], "DUPLICATE")
+
+    def test_failure_path_still_requires_visible_percentage_status_and_pool(self):
+        with mock.patch.object(HOOK, "_visible_reward", return_value="🎁 本地奖励池 | 累计 10 分 · 🔒 本地"), \
+                mock.patch.object(HOOK, "_note"):
+            result = HOOK._passthrough("CORE_ASSET_UNAVAILABLE", {"prompt": "你好"})
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("百分比 | PRESENTATION_DATA_UNAVAILABLE", context)
+        self.assertIn("🎁 本地奖励池", context)
+
     def test_missing_optional_trace_id_is_recorded_without_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             workspace = Path(tmp)
             result = {"status": "PASS", "invocation_id": "test:missing-trace"}
             HOOK._append_audit(workspace, result, "session-1", {"status": "NO_PACK_STEP_IN_TRACE"})
-            record = json.loads((workspace / "codex-desktop-invocations.jsonl").read_text())
+            record = json.loads((workspace / "host-invocations.jsonl").read_text())
             self.assertIsNone(record["trace_id"])
             self.assertIn("trace_id", record["audit_missing_fields"])
             self.assertEqual(record["status"], "PASS")
